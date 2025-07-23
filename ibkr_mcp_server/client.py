@@ -33,6 +33,23 @@ class IBKRClient:
         self._connected = False
         self._connecting = False
     
+    @property
+    def is_paper(self) -> bool:
+        """Check if this is a paper trading connection."""
+        return self.port in [7497, 4002]  # Common paper trading ports
+    
+    async def _ensure_connected(self) -> bool:
+        """Ensure IBKR connection is active, reconnect if needed."""
+        if self.is_connected():
+            return True
+        
+        try:
+            await self.connect()
+            return self.is_connected()
+        except Exception as e:
+            self.logger.error(f"Failed to ensure connection: {e}")
+            return False
+    
     @retry_on_failure(max_attempts=3)
     async def connect(self) -> bool:
         """Establish connection and discover accounts."""
