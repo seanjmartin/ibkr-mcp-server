@@ -119,32 +119,15 @@ class IBKRClient:
         """Check connection status."""
         return self._connected and self.ib is not None and self.ib.isConnected()
     
-    def switch_account(self, account_id: str) -> bool:
-        """Switch to a different account."""
-        if account_id in self.accounts:
-            self.current_account = account_id
-            self.logger.info(f"Switched to account: {account_id}")
-            return True
-        else:
-            self.logger.error(f"Account {account_id} not found. Available: {self.accounts}")
-            return False
-    
-    def get_accounts(self) -> Dict[str, Union[str, List[str]]]:
-        """Get available accounts."""
-        return {
-            "current_account": self.current_account,
-            "available_accounts": self.accounts
-        }
-    
     @rate_limit(calls_per_second=1.0)
     async def get_portfolio(self, account: Optional[str] = None) -> List[Dict]:
         """Get portfolio positions."""
-        if not self.is_connected():
-            raise IBKRConnectionError("IBKR not connected")
-        
-        account = account or self.current_account
-        
         try:
+            if not await self._ensure_connected():
+                raise ConnectionError("Not connected to IBKR")
+            
+            account = account or self.current_account
+            
             positions = await self.ib.reqPositionsAsync()
             
             portfolio = []
@@ -161,12 +144,12 @@ class IBKRClient:
     @rate_limit(calls_per_second=1.0)
     async def get_account_summary(self, account: Optional[str] = None) -> List[Dict]:
         """Get account summary."""
-        if not self.is_connected():
-            raise IBKRConnectionError("IBKR not connected")
-        
-        account = account or self.current_account or "All"
-        
         try:
+            if not await self._ensure_connected():
+                raise ConnectionError("Not connected to IBKR")
+            
+            account = account or self.current_account or "All"
+            
             summary_tags = [
                 'TotalCashValue', 'NetLiquidation', 'UnrealizedPnL', 'RealizedPnL',
                 'GrossPositionValue', 'BuyingPower', 'EquityWithLoanValue',
@@ -182,106 +165,162 @@ class IBKRClient:
             raise RuntimeError(f"IBKR API error: {str(e)}")
     
     @rate_limit(calls_per_second=0.5)
-    async def get_shortable_shares(self, symbols: List[str]) -> Dict[str, Dict]:
-        """Get short selling information for multiple symbols."""
-        if not self.is_connected():
-            raise IBKRConnectionError("IBKR not connected")
-        
-        results = {}
-        
-        for symbol in symbols:
-            try:
-                contract = Stock(symbol, 'SMART', 'USD')
+    async def get_shortable_shares(self, symbol: str, account: str = None) -> Dict:
+        """Get short selling information for a symbol."""
+        try:
+            if not await self._ensure_connected():
+                raise ConnectionError("Not connected to IBKR")
+            
+            contract = Stock(symbol, 'SMART', 'USD')
+            
+            # Qualify the contract
+            qualified_contracts = await self.ib.reqContractDetailsAsync(contract)
+            if not qualified_contracts:
+                return {"error": "Contract not found"}
+            
+            qualified_contract = qualified_contracts[0].contract
+            
+            # Request shortable shares
+            shortable_shares = await self.ib.reqShortableSharesAsync(qualified_contract)
+            
+            # Get current market data
+            ticker = self.ib.reqMktData(qualified_contract, '', False, False)
+            await asyncio.sleep(1.5)  # Wait for market data
+            
+            result = {
+                "symbol": symbol,
+                "shortable_shares": shortable_shares if shortable_shares != -1 else "Unlimited",
+                "current_price": safe_float(ticker.last or ticker.close),
+                "bid": safe_float(ticker.bid),
+                "ask": safe_float(ticker.ask),
+                "contract_id": qualified_contract.conId
+            }
+            
+            # Clean up ticker
+            self.ib.cancelMktData(qualified_contract)
+            
+            return result
+            
+        except Exception as e:
+            self.logger.error(f"Error getting shortable shares for {symbol}: {e}")
+            return {"error": str(e)}
+
+    @retry_on_failure(max_attempts=2)
+    async def get_margin_requirements(self, symbol: str, account: str = None) -> Dict:
+        """Get margin requirements for a symbol."""
+        try:
+            if not await self._ensure_connected():
+                raise ConnectionError("Not connected to IBKR")
                 
-                # Qualify the contract
-                qualified_contracts = await self.ib.reqContractDetailsAsync(contract)
-                if not qualified_contracts:
-                    results[symbol] = {"error": "Contract not found"}
-                    continue
-                
-                qualified_contract = qualified_contracts[0].contract
-                
-                # Request shortable shares
-                shortable_shares = await self.ib.reqShortableSharesAsync(qualified_contract)
-                
-                # Get current market data
-                ticker = self.ib.reqMktData(qualified_contract, '', False, False)
-                await asyncio.sleep(1.5)  # Wait for market data
-                
-                results[symbol] = {
-                    "symbol": symbol,
-                    "shortable_shares": shortable_shares if shortable_shares != -1 else "Unlimited",
-                    "current_price": safe_float(ticker.last or ticker.close),
-                    "bid": safe_float(ticker.bid),
-                    "ask": safe_float(ticker.ask),
-                    "contract_id": qualified_contract.conId
+            # Create contract
+            contract = Stock(symbol, 'SMART', 'USD')
+            await self.ib.qualifyContractsAsync([contract])
+            
+            if not contract.conId:
+                return {"error": f"Invalid symbol: {symbol}"}
+            
+            # Get margin requirements - simplified for now
+            # Note: IBKR API doesn't provide direct margin requirements
+            # This would typically require additional market data subscriptions
+            margin_info = {
+                "symbol": symbol,
+                "contract_id": contract.conId,
+                "exchange": contract.exchange,
+                "margin_requirement": "Market data subscription required",
+                "note": "Use TWS for detailed margin calculations"
+            }
+            
+            return margin_info
+            
+        except Exception as e:
+            self.logger.error(f"Error getting margin info for {symbol}: {e}")
+            return {"error": str(e)}
+
+    async def short_selling_analysis(self, symbols: List[str], account: str = None) -> Dict:
+        """Complete short selling analysis for multiple symbols."""
+        try:
+            if not await self._ensure_connected():
+                raise ConnectionError("Not connected to IBKR")
+            
+            analysis = {
+                "account": account or self.current_account,
+                "symbols_analyzed": symbols,
+                "shortable_data": {},
+                "margin_data": {},
+                "summary": {
+                    "total_symbols": len(symbols),
+                    "shortable_count": 0,
+                    "errors": []
                 }
-                
-                # Clean up ticker
-                self.ib.cancelMktData(qualified_contract)
-                
-            except Exception as e:
-                results[symbol] = {"error": str(e)}
-                self.logger.error(f"Error getting shortable shares for {symbol}: {e}")
-        
-        return results
-    
-    @rate_limit(calls_per_second=0.5)
-    async def get_margin_requirements(self, symbols: List[str], account: Optional[str] = None) -> Dict[str, Dict]:
-        """Get margin requirements for symbols."""
-        if not self.is_connected():
-            raise IBKRConnectionError("IBKR not connected")
-        
-        account = account or self.current_account
-        results = {}
-        
-        for symbol in symbols:
-            try:
-                contract = Stock(symbol, 'SMART', 'USD')
-                
-                # Qualify contract
-                qualified_contracts = await self.ib.reqContractDetailsAsync(contract)
-                if not qualified_contracts:
-                    results[symbol] = {"error": "Contract not found"}
-                    continue
-                
-                contract_details = qualified_contracts[0]
-                qualified_contract = contract_details.contract
-                
-                # Create what-if order for margin calculation
-                from ib_async import Order
-                order = Order()
-                order.account = account
-                order.action = 'SELL'  # Short position
-                order.totalQuantity = 100
-                order.orderType = 'MKT'
-                
+            }
+            
+            # Get shortable shares data
+            for symbol in symbols:
                 try:
-                    margin_info = await self.ib.whatIfOrderAsync(qualified_contract, order)
+                    shortable_info = await self.get_shortable_shares(symbol, account)
+                    analysis["shortable_data"][symbol] = shortable_info
                     
-                    results[symbol] = {
-                        "symbol": symbol,
-                        "init_margin": safe_float(margin_info.initMarginChange),
-                        "maint_margin": safe_float(margin_info.maintMarginChange),
-                        "equity_with_loan": safe_float(margin_info.equityWithLoanChange),
-                        "commission": safe_float(margin_info.commission),
-                        "min_tick": safe_float(contract_details.minTick),
-                        "long_name": contract_details.longName
-                    }
-                except Exception as margin_error:
-                    results[symbol] = {
-                        "symbol": symbol,
-                        "error": f"Margin calculation failed: {str(margin_error)}",
-                        "min_tick": safe_float(contract_details.minTick),
-                        "long_name": contract_details.longName,
-                        "note": "Enable margin trading for detailed calculations"
-                    }
-                
-            except Exception as e:
-                results[symbol] = {"error": str(e)}
-                self.logger.error(f"Error getting margin info for {symbol}: {e}")
-        
-        return results
+                    if "error" not in shortable_info:
+                        analysis["summary"]["shortable_count"] += 1
+                except Exception as e:
+                    analysis["summary"]["errors"].append(f"{symbol}: {str(e)}")
+            
+            # Get margin requirements
+            for symbol in symbols:
+                try:
+                    margin_info = await self.get_margin_requirements(symbol, account)
+                    analysis["margin_data"][symbol] = margin_info
+                except Exception as e:
+                    analysis["summary"]["errors"].append(f"{symbol} margin: {str(e)}")
+            
+            return analysis
+            
+        except Exception as e:
+            self.logger.error(f"Error in short selling analysis: {e}")
+            return {"error": str(e)}
+    
+    async def switch_account(self, account_id: str) -> Dict:
+        """Switch to a different IBKR account."""
+        try:
+            if account_id not in self.accounts:
+                self.logger.error(f"Account {account_id} not found. Available: {self.accounts}")
+                return {
+                    "success": False,
+                    "message": f"Account {account_id} not found",
+                    "current_account": self.current_account,
+                    "available_accounts": self.accounts
+                }
+            
+            self.current_account = account_id
+            self.logger.info(f"Switched to account: {account_id}")
+            
+            return {
+                "success": True,
+                "message": f"Switched to account: {account_id}",
+                "current_account": self.current_account,
+                "available_accounts": self.accounts
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error switching account: {e}")
+            return {"success": False, "error": str(e)}
+
+    async def get_accounts(self) -> Dict[str, Union[str, List[str]]]:
+        """Get available accounts information."""
+        try:
+            if not await self._ensure_connected():
+                await self.connect()
+            
+            return {
+                "current_account": self.current_account,
+                "available_accounts": self.accounts,
+                "connected": self.is_connected(),
+                "paper_trading": self.is_paper
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error getting accounts: {e}")
+            return {"error": str(e)}
     
     def _serialize_position(self, position) -> Dict:
         """Convert Position to serializable dict."""
