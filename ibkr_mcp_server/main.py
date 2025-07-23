@@ -11,7 +11,9 @@ from mcp.server.stdio import stdio_server
 from rich.console import Console
 from rich.logging import RichHandler
 
+from .client import ibkr_client
 from .config import settings
+from .tools import server
 
 
 console = Console()
@@ -57,45 +59,106 @@ async def test_connection():
     console.print("[bold blue]🧪 Testing IBKR MCP Server...[/bold blue]")
     
     try:
-        # Test connection - placeholder for actual implementation
+        # Test connection
         console.print("📡 Testing IBKR connection...")
-        console.print("[green]✅ Connection test placeholder - needs full implementation[/green]")
+        await ibkr_client.connect()
+        console.print("✅ IBKR connection successful")
         
-        return True
+        # Test account discovery
+        console.print("🔍 Discovering accounts...")
+        accounts = ibkr_client.get_accounts()
+        console.print(f"✅ Found accounts: {accounts['available_accounts']}")
+        console.print(f"📊 Current account: {accounts['current_account']}")
+        
+        # Test basic portfolio data
+        console.print("📈 Testing portfolio data...")
+        try:
+            portfolio = await ibkr_client.get_portfolio()
+            console.print(f"✅ Portfolio loaded: {len(portfolio)} positions")
+        except Exception as e:
+            console.print(f"⚠️ Portfolio test failed: {e}")
+        
+        # Test account summary
+        console.print("💰 Testing account summary...")
+        try:
+            summary = await ibkr_client.get_account_summary()
+            console.print(f"✅ Account summary loaded: {len(summary)} items")
+        except Exception as e:
+            console.print(f"⚠️ Account summary test failed: {e}")
+        
+        console.print("\n[bold green]🎉 All tests passed! Server is ready.[/bold green]")
+        
     except Exception as e:
-        console.print(f"[red]❌ Connection test failed: {e}[/red]")
+        console.print(f"[bold red]❌ Test failed: {e}[/bold red]")
         return False
+    finally:
+        await ibkr_client.disconnect()
+    
+    return True
+
+
+async def run_server():
+    """Run the MCP server with connection management."""
+    logger = logging.getLogger(__name__)
+    killer = GracefulKiller()
+    
+    console.print("[bold blue]🚀 Starting IBKR MCP Server...[/bold blue]")
+    
+    while not killer.kill_now:
+        try:
+            # Connect to IBKR
+            console.print("📡 Connecting to IBKR...")
+            await ibkr_client.connect()
+            console.print("✅ IBKR connection established")
+            
+            # Start MCP server
+            console.print("🔧 Starting MCP server...")
+            async with stdio_server() as (read_stream, write_stream):
+                await server.run(
+                    read_stream,
+                    write_stream,
+                    server.create_initialization_options()
+                )
+                
+        except KeyboardInterrupt:
+            logger.info("Keyboard interrupt received")
+            break
+        except ConnectionError as e:
+            logger.error(f"IBKR connection failed: {e}")
+            console.print(f"[yellow]⏳ Retrying in 30 seconds...[/yellow]")
+            await asyncio.sleep(30)
+        except Exception as e:
+            logger.error(f"Server error: {e}")
+            console.print(f"[yellow]⏳ Restarting in 10 seconds...[/yellow]")
+            await asyncio.sleep(10)
+        finally:
+            await ibkr_client.disconnect()
+    
+    console.print("[bold green]👋 Server shutdown complete[/bold green]")
 
 
 @click.command()
-@click.option('--test', is_flag=True, help='Test the server connection')
-@click.option('--debug', is_flag=True, help='Enable debug logging')
-def cli(test: bool, debug: bool):
-    """IBKR MCP Server CLI."""
-    
-    # Setup logging
-    log_level = "DEBUG" if debug else settings.log_level
-    setup_logging(log_level, settings.log_file)
+@click.option('--test', is_flag=True, help='Test connection and exit')
+@click.option('--log-level', default=settings.log_level, help='Logging level')
+@click.option('--log-file', default=settings.log_file, help='Log file path')
+def cli(test: bool, log_level: str, log_file: str):
+    """IBKR MCP Server - Interactive Brokers integration for Claude."""
+    setup_logging(log_level, log_file)
     
     if test:
         # Run connection test
-        asyncio.run(test_connection())
-        return
-    
-    # Run the MCP server
-    console.print("[bold green]🚀 Starting IBKR MCP Server...[/bold green]")
-    console.print(f"Host: {settings.ibkr_host}:{settings.ibkr_port}")
-    console.print(f"Paper Trading: {'Yes' if settings.ibkr_is_paper else 'No'}")
-    
-    # Placeholder for actual server implementation
-    console.print("[yellow]⚠️  Server implementation needs to be completed[/yellow]")
-    console.print("This is a placeholder - full MCP server needs implementation")
+        success = asyncio.run(test_connection())
+        sys.exit(0 if success else 1)
+    else:
+        # Run the server
+        asyncio.run(run_server())
 
 
-def main():
-    """Main entry point."""
-    cli()
+async def main():
+    """Main entry point when called as module."""
+    setup_logging(settings.log_level, settings.log_file)
+    await run_server()
 
 
 if __name__ == "__main__":
-    main()
+    cli()

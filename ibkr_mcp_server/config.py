@@ -3,7 +3,7 @@
 import os
 from typing import List, Optional
 from pydantic_settings import BaseSettings
-from pydantic import validator
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -39,14 +39,16 @@ class Settings(BaseSettings):
     mcp_server_name: str = "ibkr-mcp"
     mcp_server_version: str = "1.0.0"
     
-    @validator('ibkr_managed_accounts')
+    @field_validator('ibkr_managed_accounts')
+    @classmethod
     def parse_managed_accounts(cls, v) -> Optional[List[str]]:
         """Parse comma-separated managed accounts."""
         if v:
             return [acc.strip() for acc in v.split(',') if acc.strip()]
         return None
     
-    @validator('log_level')
+    @field_validator('log_level')
+    @classmethod
     def validate_log_level(cls, v):
         """Validate log level."""
         valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
@@ -54,10 +56,11 @@ class Settings(BaseSettings):
             raise ValueError(f'Log level must be one of: {valid_levels}')
         return v.upper()
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = 'utf-8'
-        case_sensitive = False
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": False
+    }
 
 
 # Global settings instance
