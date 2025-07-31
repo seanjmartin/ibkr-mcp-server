@@ -148,15 +148,15 @@ class EnhancedSettings(BaseSettings):
     
     # Logging
     log_level: str = "INFO"
-    log_file: str = "/tmp/ibkr-mcp-server.log"
+    log_file: str = "logs/ibkr-mcp-server.log"
     
     # Audit and compliance logging
     enable_audit_logging: bool = True
-    audit_log_file: str = "/tmp/ibkr-trading-audit.log"
+    audit_log_file: str = "logs/ibkr-trading-audit.log"
     
     # Performance monitoring
     enable_performance_monitoring: bool = True
-    performance_log_file: str = "/tmp/ibkr-performance.log"
+    performance_log_file: str = "logs/ibkr-performance.log"
     
     # Health check settings
     enable_health_checks: bool = True

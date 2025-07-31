@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 import signal
 import sys
 from typing import Optional
@@ -12,7 +13,8 @@ from rich.console import Console
 from rich.logging import RichHandler
 
 from .client import ibkr_client
-from .config import settings
+from .enhanced_config import EnhancedSettings
+settings = EnhancedSettings()
 from .tools import server
 
 
@@ -40,6 +42,11 @@ def setup_logging(level: str = "INFO", log_file: Optional[str] = None, mcp_mode:
     
     # Always add file handler if specified
     if log_file:
+        # Create log directory if it doesn't exist
+        log_dir = os.path.dirname(log_file)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+        
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(
             logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -107,7 +114,19 @@ async def run_server():
     logger.info("Starting IBKR MCP Server...")
     
     try:
-        # Start MCP server immediately - connection will be established on demand
+        # Auto-connect to IBKR Gateway on startup
+        logger.info("Connecting to IBKR Gateway...")
+        try:
+            connection_success = await ibkr_client.connect()
+            if connection_success:
+                logger.info(f"Connected to IBKR Gateway - Paper Trading: {ibkr_client.is_paper}")
+                logger.info(f"Available accounts: {ibkr_client.accounts}")
+            else:
+                logger.warning("Failed to connect to IBKR Gateway - operating in offline mode")
+        except Exception as e:
+            logger.warning(f"IBKR connection failed: {e} - operating in offline mode")
+        
+        # Start MCP server
         logger.info("Starting MCP server...")
         async with stdio_server() as (read_stream, write_stream):
             await server.run(
