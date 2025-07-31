@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     # IBKR Connection
     ibkr_host: str = "127.0.0.1"
     ibkr_port: int = 7497
-    ibkr_client_id: int = 2
+    ibkr_client_id: int = 1
     ibkr_is_paper: bool = True
     
     # Account Management

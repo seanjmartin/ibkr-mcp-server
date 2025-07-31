@@ -1,6 +1,7 @@
 {
-  "timestamp": "2025-07-31T14:21:30.211235",
-  "action": "custom",
-  "message": "you can kill the running server (id 1 - we wont be using it again after this update)",
-  "consumed": false
+  "timestamp": "2025-07-31T14:31:18.227549",
+  "action": "cleared",
+  "message": "HIL state cleared by user",
+  "consumed": true,
+  "cleared_by": "user"
 }
