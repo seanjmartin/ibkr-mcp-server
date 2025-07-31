@@ -56,39 +56,12 @@ TOOLS = [
         inputSchema={"type": "object", "properties": {}, "additionalProperties": False}
     ),
     Tool(
-        name="check_shortable_shares",
-        description="Check short selling availability for securities",
+        name="get_market_data",
+        description="Get real-time market quotes for securities",
         inputSchema={
             "type": "object",
             "properties": {
-                "symbols": {"type": "string", "description": "Comma-separated list of symbols"},
-                "account": {"type": "string", "description": "Account ID (optional, uses current account if not specified)"}
-            },
-            "required": ["symbols"],
-            "additionalProperties": False
-        }
-    ),
-    Tool(
-        name="get_margin_requirements",
-        description="Get margin requirements for securities",
-        inputSchema={
-            "type": "object",
-            "properties": {
-                "symbols": {"type": "string", "description": "Comma-separated list of symbols"},
-                "account": {"type": "string", "description": "Account ID (optional, uses current account if not specified)"}
-            },
-            "required": ["symbols"],
-            "additionalProperties": False
-        }
-    ),
-    Tool(
-        name="short_selling_analysis",
-        description="Complete short selling analysis: availability, margin requirements, and summary",
-        inputSchema={
-            "type": "object",
-            "properties": {
-                "symbols": {"type": "string", "description": "Comma-separated list of symbols"},
-                "account": {"type": "string", "description": "Account ID (optional, uses current account if not specified)"}
+                "symbols": {"type": "string", "description": "Comma-separated list of symbols (e.g., AAPL,TSLA,GOOGL)"}
             },
             "required": ["symbols"],
             "additionalProperties": False
@@ -145,64 +118,18 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
                 text=json.dumps(accounts, indent=2)
             )]
             
-        elif name == "check_shortable_shares":
+        elif name == "get_market_data":
             symbols = arguments["symbols"]
-            account = arguments.get("account")
             try:
-                symbol_list = validate_symbols(symbols)
-                results = []
-                for symbol in symbol_list:
-                    shortable_info = await ibkr_client.get_shortable_shares(symbol, account)
-                    results.append({
-                        "symbol": symbol,
-                        "shortable_shares": shortable_info
-                    })
+                quotes = await ibkr_client.get_market_data(symbols)
                 return [TextContent(
                     type="text",
-                    text=json.dumps(results, indent=2)
+                    text=json.dumps(quotes, indent=2)
                 )]
             except Exception as e:
                 return [TextContent(
                     type="text",
-                    text=f"Error checking shortable shares: {str(e)}"
-                )]
-                
-        elif name == "get_margin_requirements":
-            symbols = arguments["symbols"]
-            account = arguments.get("account")
-            try:
-                symbol_list = validate_symbols(symbols)
-                results = []
-                for symbol in symbol_list:
-                    margin_info = await ibkr_client.get_margin_requirements(symbol, account)
-                    results.append({
-                        "symbol": symbol,
-                        "margin_requirements": margin_info
-                    })
-                return [TextContent(
-                    type="text",
-                    text=json.dumps(results, indent=2)
-                )]
-            except Exception as e:
-                return [TextContent(
-                    type="text",
-                    text=f"Error getting margin requirements: {str(e)}"
-                )]
-                
-        elif name == "short_selling_analysis":
-            symbols = arguments["symbols"]
-            account = arguments.get("account")
-            try:
-                symbol_list = validate_symbols(symbols)
-                analysis = await ibkr_client.short_selling_analysis(symbol_list, account)
-                return [TextContent(
-                    type="text",
-                    text=json.dumps(analysis, indent=2)
-                )]
-            except Exception as e:
-                return [TextContent(
-                    type="text",
-                    text=f"Error performing short selling analysis: {str(e)}"
+                    text=f"Error getting market data: {str(e)}"
                 )]
                 
         elif name == "get_connection_status":
