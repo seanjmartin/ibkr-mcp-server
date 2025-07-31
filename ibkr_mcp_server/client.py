@@ -6,8 +6,10 @@ from typing import Dict, List, Optional, Union
 from decimal import Decimal
 
 from ib_async import IB, Stock, util
-from .config import settings
+from .enhanced_config import EnhancedSettings
+settings = EnhancedSettings()
 from .utils import rate_limit, retry_on_failure, safe_float, safe_int, ValidationError, ConnectionError as IBKRConnectionError
+from .trading import ForexManager, InternationalManager, StopLossManager
 
 
 class IBKRClient:
@@ -32,6 +34,11 @@ class IBKRClient:
         # Connection state
         self._connected = False
         self._connecting = False
+        
+        # Trading managers (initialized after connection)
+        self.forex_manager = None
+        self.international_manager = None
+        self.stop_loss_manager = None
     
     @property
     def is_paper(self) -> bool:
@@ -95,6 +102,10 @@ class IBKRClient:
             
             self._connected = True
             self.reconnect_attempts = 0
+            
+            # Initialize trading managers
+            self._initialize_trading_managers()
+            
             return True
             
         except Exception as e:
@@ -102,6 +113,16 @@ class IBKRClient:
             raise IBKRConnectionError(f"Connection failed: {e}")
         finally:
             self._connecting = False
+    
+    def _initialize_trading_managers(self):
+        """Initialize trading managers after successful connection."""
+        try:
+            self.forex_manager = ForexManager(self.ib)
+            self.international_manager = InternationalManager(self.ib)
+            self.stop_loss_manager = StopLossManager(self.ib)
+            self.logger.info("Trading managers initialized successfully")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize trading managers: {e}")
     
     async def disconnect(self):
         """Clean disconnection."""
@@ -301,6 +322,41 @@ class IBKRClient:
         except Exception as e:
             self.logger.error(f"Error getting accounts: {e}")
             return {"error": str(e)}
+
+    async def get_connection_status(self) -> Dict:
+        """Check IBKR TWS/Gateway connection status and account information."""
+        try:
+            is_connected = self.is_connected()
+            
+            result = {
+                "connected": is_connected,
+                "paper_trading": self.is_paper,
+                "client_id": settings.ibkr_client_id,
+                "host": settings.ibkr_host,
+                "port": settings.ibkr_port
+            }
+            
+            if is_connected:
+                result.update({
+                    "current_account": self.current_account,
+                    "available_accounts": self.accounts,
+                    "total_accounts": len(self.accounts) if self.accounts else 0,
+                    "server_version": getattr(self.ib, 'serverVersion', 'unknown'),
+                    "connection_time": str(getattr(self.ib, 'connectedAt', 'unknown'))
+                })
+            
+            return result
+            
+        except Exception as e:
+            self.logger.error(f"Error getting connection status: {e}")
+            return {
+                "connected": False,
+                "error": str(e),
+                "paper_trading": self.is_paper,
+                "client_id": settings.ibkr_client_id,
+                "host": settings.ibkr_host,
+                "port": settings.ibkr_port
+            }
     
     def _serialize_position(self, position) -> Dict:
         """Convert Position to serializable dict."""
@@ -325,6 +381,97 @@ class IBKRClient:
             "currency": account_value.currency,
             "account": account_value.account
         }
+
+
+
+    # ============ FOREX TRADING METHODS ============
+    
+    async def get_forex_rates(self, currency_pairs: str) -> List[Dict]:
+        """Get real-time forex rates."""
+        if not await self._ensure_connected():
+            raise IBKRConnectionError("Not connected to IBKR")
+        
+        if not self.forex_manager:
+            raise ValidationError("Forex manager not initialized")
+        
+        return await self.forex_manager.get_forex_rates(currency_pairs)
+    
+    async def convert_currency(self, amount: float, from_currency: str, to_currency: str) -> Dict:
+        """Convert currency using live forex rates."""
+        if not await self._ensure_connected():
+            raise IBKRConnectionError("Not connected to IBKR")
+        
+        if not self.forex_manager:
+            raise ValidationError("Forex manager not initialized")
+        
+        return await self.forex_manager.convert_currency(amount, from_currency, to_currency)
+
+    # ============ INTERNATIONAL TRADING METHODS ============
+    
+    async def get_international_market_data(self, symbols: str, auto_detect: bool = True) -> List[Dict]:
+        """Get market data for international stocks."""
+        if not await self._ensure_connected():
+            raise IBKRConnectionError("Not connected to IBKR")
+        
+        if not self.international_manager:
+            raise ValidationError("International manager not initialized")
+        
+        return await self.international_manager.get_international_market_data(symbols, auto_detect)
+    
+    async def resolve_international_symbol(self, symbol: str, exchange: str = None, currency: str = None) -> Dict:
+        """Resolve international symbol with comprehensive information."""
+        if not self.international_manager:
+            raise ValidationError("International manager not initialized")
+        
+        return self.international_manager.resolve_symbol(symbol, exchange, currency)
+
+    # ============ STOP LOSS MANAGEMENT METHODS ============
+    
+    async def place_stop_loss(self, symbol: str, exchange: str = "SMART", 
+                             currency: str = "USD", action: str = "SELL",
+                             quantity: int = 100, stop_price: float = 0.0,
+                             order_type: str = "STP", **kwargs) -> Dict:
+        """Place stop loss order."""
+        if not await self._ensure_connected():
+            raise IBKRConnectionError("Not connected to IBKR")
+        
+        if not self.stop_loss_manager:
+            raise ValidationError("Stop loss manager not initialized")
+        
+        return await self.stop_loss_manager.place_stop_loss(
+            symbol, exchange, currency, action, quantity, stop_price, order_type, **kwargs
+        )
+    
+    async def get_stop_losses(self, account: str = None, symbol: str = None, 
+                             status: str = "active") -> List[Dict]:
+        """Get existing stop loss orders."""
+        if not await self._ensure_connected():
+            raise IBKRConnectionError("Not connected to IBKR")
+        
+        if not self.stop_loss_manager:
+            raise ValidationError("Stop loss manager not initialized")
+        
+        return await self.stop_loss_manager.get_stop_losses(account, symbol, status)
+    
+    async def modify_stop_loss(self, order_id: int, **modifications) -> Dict:
+        """Modify existing stop loss order."""
+        if not await self._ensure_connected():
+            raise IBKRConnectionError("Not connected to IBKR")
+        
+        if not self.stop_loss_manager:
+            raise ValidationError("Stop loss manager not initialized")
+        
+        return await self.stop_loss_manager.modify_stop_loss(order_id, **modifications)
+    
+    async def cancel_stop_loss(self, order_id: int) -> Dict:
+        """Cancel existing stop loss order."""
+        if not await self._ensure_connected():
+            raise IBKRConnectionError("Not connected to IBKR")
+        
+        if not self.stop_loss_manager:
+            raise ValidationError("Stop loss manager not initialized")
+        
+        return await self.stop_loss_manager.cancel_stop_loss(order_id)
 
 
 # Global client instance

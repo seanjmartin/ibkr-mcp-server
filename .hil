@@ -1,7 +1,7 @@
 {
-  "timestamp": "2025-07-31T14:31:18.227549",
-  "action": "cleared",
-  "message": "HIL state cleared by user",
+  "timestamp": "2025-07-31T16:48:36.160490",
+  "action": "custom",
+  "message": "Is ceif not working for you?",
   "consumed": true,
-  "cleared_by": "user"
+  "consumed_timestamp": "2025-07-31T16:48:39.451560"
 }
