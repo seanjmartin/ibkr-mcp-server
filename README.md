@@ -168,10 +168,27 @@ max_daily_orders: int = 50              # Maximum orders per day
 
 ## 📚 Documentation
 
-- **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** - Complete system overview
-- **[TECHNICAL_ARCHITECTURE.md](TECHNICAL_ARCHITECTURE.md)** - Technical architecture details
-- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Configuration and deployment
-- **[CHANGELOG.md](CHANGELOG.md)** - Implementation history
+### **📖 Complete Documentation Hub**
+- **[Documentation Center](docs/README.md)** - Navigate all documentation sections
+
+### **🚀 Getting Started**
+- **[Quick Start Guide](docs/guides/quick-start.md)** - Get up and running in 5 minutes
+- **[Basic Usage Examples](docs/examples/basic-usage.md)** - Real Claude conversations and workflows
+
+### **🔧 API & Technical Reference**
+- **[MCP Tools Reference](docs/api/tools.md)** - Complete documentation for all 17 tools
+- **[System Architecture](docs/architecture/system-architecture.md)** - Comprehensive technical architecture
+- **[Supported Markets](docs/reference/markets.md)** - Complete global markets, exchanges, and currencies
+
+### **🏢 System Information** 
+- **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** - High-level system overview
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Production deployment guide
+- **[CHANGELOG.md](CHANGELOG.md)** - Complete implementation history
+
+### **👥 For Different Users**
+- **New Users**: Start with [Quick Start Guide](docs/guides/quick-start.md) → [Basic Examples](docs/examples/basic-usage.md)
+- **Developers**: Check [System Architecture](docs/architecture/system-architecture.md) → [API Reference](docs/api/tools.md)
+- **Traders**: Review [Supported Markets](docs/reference/markets.md) → [Trading Examples](docs/examples/basic-usage.md)
 
 ## 🧪 Paper Trading
 
