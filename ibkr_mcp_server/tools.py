@@ -19,7 +19,7 @@ TOOLS = [
     # ============ ORIGINAL TOOLS ============
     Tool(
         name="get_portfolio",
-        description="Retrieve current portfolio positions and P&L from IBKR",
+        description="View your current stock positions, quantities, and profit/loss across all holdings",
         inputSchema={
             "type": "object",
             "properties": {
@@ -30,7 +30,7 @@ TOOLS = [
     ),
     Tool(
         name="get_account_summary", 
-        description="Get account balances and key metrics from IBKR",
+        description="Check your account balance, buying power, and key financial metrics",
         inputSchema={
             "type": "object",
             "properties": {
@@ -41,7 +41,7 @@ TOOLS = [
     ),
     Tool(
         name="switch_account",
-        description="Switch between IBKR accounts",
+        description="Switch between different IBKR accounts if you have multiple accounts",
         inputSchema={
             "type": "object",
             "properties": {
@@ -53,16 +53,17 @@ TOOLS = [
     ),
     Tool(
         name="get_accounts",
-        description="Get available IBKR accounts and current account", 
+        description="List all available IBKR accounts and see which one is currently active", 
         inputSchema={"type": "object", "properties": {}, "additionalProperties": False}
     ),
     Tool(
         name="get_market_data",
-        description="Get real-time market quotes for securities",
+        description="Get live stock prices for any company worldwide - auto-detects exchange/currency or use SYMBOL.EXCHANGE.CURRENCY format to force specific exchange (e.g., ASML.AEB.EUR for Amsterdam, ASML.SMART.USD for US ADR)",
         inputSchema={
             "type": "object",
             "properties": {
-                "symbols": {"type": "string", "description": "Comma-separated list of symbols (e.g., AAPL,TSLA,GOOGL)"}
+                "symbols": {"type": "string", "description": "Comma-separated symbols: simple (AAPL,ASML,7203) for auto-detection, or explicit format (ASML.AEB.EUR,SAP.XETRA.EUR) to force exchange/currency"},
+                "auto_detect": {"type": "boolean", "description": "Auto-detect exchange and currency", "default": True}
             },
             "required": ["symbols"],
             "additionalProperties": False
@@ -70,14 +71,14 @@ TOOLS = [
     ),
     Tool(
         name="get_connection_status",
-        description="Check IBKR TWS/Gateway connection status and account information",
+        description="Check if you're connected to IBKR and view connection details",
         inputSchema={"type": "object", "properties": {}, "additionalProperties": False}
     ),
     
     # ============ FOREX TRADING TOOLS ============
     Tool(
         name="get_forex_rates",
-        description="Get real-time forex exchange rates for currency pairs",
+        description="Get live exchange rates for 20+ currency pairs (EURUSD, GBPUSD, USDJPY, etc.)",
         inputSchema={
             "type": "object",
             "properties": {
@@ -92,7 +93,7 @@ TOOLS = [
     ),
     Tool(
         name="convert_currency",
-        description="Convert amount between currencies using live exchange rates",
+        description="Convert money between currencies using live exchange rates (USD to EUR, GBP to JPY, etc.)",
         inputSchema={
             "type": "object",
             "properties": {
@@ -106,25 +107,10 @@ TOOLS = [
     ),
     
     # ============ INTERNATIONAL TRADING TOOLS ============
-    Tool(
-        name="get_international_market_data",
-        description="Get market data for international stocks with auto-detection",
-        inputSchema={
-            "type": "object",
-            "properties": {
-                "symbols": {
-                    "type": "string", 
-                    "description": "Symbols with optional exchange.currency format (e.g., ASML,SAP.XETRA.EUR,00700)"
-                },
-                "auto_detect": {"type": "boolean", "description": "Auto-detect exchange and currency", "default": True}
-            },
-            "required": ["symbols"],
-            "additionalProperties": False
-        }
-    ),
+
     Tool(
         name="resolve_international_symbol",
-        description="Resolve international symbol with comprehensive exchange and currency information",
+        description="Look up which exchange and currency an international stock trades on (finds ASML->AEB/EUR, SAP->XETRA/EUR)",
         inputSchema={
             "type": "object",
             "properties": {
@@ -140,7 +126,7 @@ TOOLS = [
     # ============ STOP LOSS MANAGEMENT TOOLS ============
     Tool(
         name="place_stop_loss",
-        description="Place stop loss order for risk management",
+        description="Set automatic sell orders to limit losses - sells your stock if price drops below your chosen level",
         inputSchema={
             "type": "object",
             "properties": {
@@ -162,7 +148,7 @@ TOOLS = [
     ),
     Tool(
         name="get_stop_losses",
-        description="Get existing stop loss orders with filtering options",
+        description="View all your active stop loss orders and their current status",
         inputSchema={
             "type": "object",
             "properties": {
@@ -175,7 +161,7 @@ TOOLS = [
     ),
     Tool(
         name="modify_stop_loss",
-        description="Modify existing stop loss order parameters",
+        description="Change the trigger price or quantity of an existing stop loss order",
         inputSchema={
             "type": "object",
             "properties": {
@@ -193,13 +179,71 @@ TOOLS = [
     ),
     Tool(
         name="cancel_stop_loss",
-        description="Cancel existing stop loss order",
+        description="Remove a stop loss order you no longer want",
         inputSchema={
             "type": "object",
             "properties": {
                 "order_id": {"type": "integer", "description": "Order ID to cancel"}
             },
             "required": ["order_id"],
+            "additionalProperties": False
+        }
+    ),
+    
+    # ============ ORDER MANAGEMENT TOOLS ============
+    Tool(
+        name="get_open_orders",
+        description="View all your pending orders that haven't been filled yet",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "account": {"type": "string", "description": "Account ID filter (optional)"}
+            },
+            "additionalProperties": False
+        }
+    ),
+    Tool(
+        name="get_completed_orders",
+        description="View your recently completed trades and transactions",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "account": {"type": "string", "description": "Account ID filter (optional)"}
+            },
+            "additionalProperties": False
+        }
+    ),
+    Tool(
+        name="get_executions",
+        description="View detailed execution information for your trades",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "account": {"type": "string", "description": "Account ID filter (optional)"},
+                "symbol": {"type": "string", "description": "Symbol filter (optional)"}
+            },
+            "additionalProperties": False
+        }
+    ),
+    
+    # ============ DOCUMENTATION TOOL ============
+    Tool(
+        name="get_tool_documentation",
+        description="Get comprehensive documentation for any IBKR tool with examples, workflows, and troubleshooting. Ask about specific tools ('get_forex_rates') or categories ('forex', 'stop_loss', 'international'). Essential for understanding tool capabilities and parameters.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "tool_or_category": {
+                    "type": "string", 
+                    "description": "Tool name (e.g., 'get_forex_rates') or category ('forex', 'stop_loss', 'international', 'portfolio')"
+                },
+                "aspect": {
+                    "type": "string", 
+                    "description": "Optional focus: 'overview', 'examples', 'parameters', 'workflow', 'troubleshooting', 'related_tools'",
+                    "enum": ["overview", "examples", "parameters", "workflow", "troubleshooting", "related_tools", "all"]
+                }
+            },
+            "required": ["tool_or_category"],
             "additionalProperties": False
         }
     )
@@ -276,8 +320,9 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
                 
         elif name == "get_market_data":
             symbols = arguments["symbols"]
+            auto_detect = arguments.get("auto_detect", True)
             try:
-                result = await ibkr_client.get_market_data(symbols)
+                result = await ibkr_client.get_market_data(symbols, auto_detect)
                 return [TextContent(
                     type="text",
                     text=json.dumps(result, indent=2)
@@ -299,6 +344,20 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
                 return [TextContent(
                     type="text",
                     text=f"Error getting connection status: {str(e)}"
+                )]
+                
+        elif name == "get_open_orders":
+            account = arguments.get("account")
+            try:
+                result = await ibkr_client.get_open_orders(account)
+                return [TextContent(
+                    type="text",
+                    text=json.dumps(result, indent=2)
+                )]
+            except Exception as e:
+                return [TextContent(
+                    type="text",
+                    text=f"Error getting open orders: {str(e)}"
                 )]
         
         # ============ FOREX TRADING TOOLS ============
@@ -333,21 +392,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
                 )]
         
         # ============ INTERNATIONAL TRADING TOOLS ============
-        elif name == "get_international_market_data":
-            symbols = arguments["symbols"]
-            auto_detect = arguments.get("auto_detect", True)
-            try:
-                result = await ibkr_client.get_international_market_data(symbols, auto_detect)
-                return [TextContent(
-                    type="text",
-                    text=json.dumps(result, indent=2)
-                )]
-            except Exception as e:
-                return [TextContent(
-                    type="text",
-                    text=f"Error getting international market data: {str(e)}"
-                )]
-                
+
         elif name == "resolve_international_symbol":
             symbol = arguments["symbol"]
             exchange = arguments.get("exchange")
@@ -421,6 +466,58 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
                 return [TextContent(
                     type="text",
                     text=f"Error cancelling stop loss: {str(e)}"
+                )]
+        
+        elif name == "get_completed_orders":
+            account = arguments.get("account")
+            try:
+                result = await ibkr_client.get_completed_orders(account)
+                return [TextContent(
+                    type="text",
+                    text=json.dumps(result, indent=2)
+                )]
+            except Exception as e:
+                return [TextContent(
+                    type="text",
+                    text=f"Error getting completed orders: {str(e)}"
+                )]
+                
+        elif name == "get_executions":
+            account = arguments.get("account")
+            try:
+                result = await ibkr_client.get_executions(account)
+                return [TextContent(
+                    type="text",
+                    text=json.dumps(result, indent=2)
+                )]
+            except Exception as e:
+                return [TextContent(
+                    type="text",
+                    text=f"Error getting trade executions: {str(e)}"
+                )]
+        
+        # ============ DOCUMENTATION TOOL ============
+        elif name == "get_tool_documentation":
+            try:
+                from .documentation.doc_processor import doc_processor
+                
+                tool_or_category = arguments.get('tool_or_category', '').strip()
+                aspect = arguments.get('aspect', 'all').strip()
+                
+                if not tool_or_category:
+                    return [TextContent(
+                        type="text",
+                        text="Please specify a tool name or category. Examples: 'get_forex_rates', 'forex', 'stop_loss'"
+                    )]
+                
+                documentation = doc_processor.get_documentation(tool_or_category, aspect)
+                
+                return [TextContent(type="text", text=documentation)]
+                
+            except Exception as e:
+                return [TextContent(
+                    type="text", 
+                    text=f"Documentation error: {str(e)}"
                 )]
         
         else:

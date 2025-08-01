@@ -115,16 +115,34 @@ class ForexManager:
     def _format_forex_ticker(self, ticker) -> Dict:
         """Format forex ticker data into standardized response."""
         contract = ticker.contract
-        pair = contract.symbol
+        raw_symbol = contract.symbol
+        
+        # Handle IBKR's modified symbols for paper trading
+        # IBKR sometimes returns just base currency (EUR, GBP) instead of pair (EURUSD, GBPUSD)
+        if len(raw_symbol) == 3:
+            # Try to reconstruct the full pair name
+            # Most common pairs are vs USD
+            pair = f"{raw_symbol}USD"
+            base_currency = raw_symbol
+            quote_currency = "USD"
+        elif len(raw_symbol) == 6:
+            pair = raw_symbol
+            base_currency = raw_symbol[:3]
+            quote_currency = raw_symbol[3:]
+        else:
+            # Fallback to raw symbol
+            pair = raw_symbol
+            base_currency = raw_symbol[:3] if len(raw_symbol) >= 3 else raw_symbol
+            quote_currency = raw_symbol[3:] if len(raw_symbol) >= 6 else ""
         
         # Get pair metadata
         pair_info = self.forex_db.get_pair_info(pair)
         
         result = {
-            "pair": pair,
-            "base_currency": pair_info.get('base', pair[:3]) if pair_info else pair[:3],
-            "quote_currency": pair_info.get('quote', pair[3:]) if pair_info else pair[3:],
-            "name": pair_info.get('name', f"{pair[:3]}/{pair[3:]}") if pair_info else f"{pair[:3]}/{pair[3:]}",
+            "pair": pair,  # Use reconstructed pair name
+            "base_currency": pair_info.get('base', base_currency) if pair_info else base_currency,
+            "quote_currency": pair_info.get('quote', quote_currency) if pair_info else quote_currency,
+            "name": pair_info.get('name', f"{base_currency}/{quote_currency}") if pair_info else f"{base_currency}/{quote_currency}",
             "last": safe_float(ticker.last),
             "bid": safe_float(ticker.bid),
             "ask": safe_float(ticker.ask),
@@ -135,6 +153,7 @@ class ForexManager:
             "spread": safe_float(ticker.ask) - safe_float(ticker.bid) if ticker.ask and ticker.bid else 0.0,
             "pip_value": pair_info.get('pip_value', 0.0001) if pair_info else 0.0001,
             "contract_id": contract.conId,
+            "raw_contract_symbol": raw_symbol,  # Include original for debugging
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         

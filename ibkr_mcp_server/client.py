@@ -180,46 +180,16 @@ class IBKRClient:
             raise RuntimeError(f"IBKR API error: {str(e)}")
     
     @rate_limit(calls_per_second=2.0)
-    async def get_market_data(self, symbols: str) -> List[Dict]:
-        """Get real-time market quotes for symbols."""
-        try:
-            if not await self._ensure_connected():
-                raise ConnectionError("Not connected to IBKR")
-            
-            symbol_list = [s.strip().upper() for s in symbols.split(',')]
-            contracts = []
-            
-            # Create stock contracts
-            for symbol in symbol_list:
-                stock = Stock(symbol, 'SMART', 'USD')
-                contracts.append(stock)
-            
-            # Qualify contracts first
-            qualified = await self.ib.qualifyContractsAsync(*contracts)
-            
-            if not qualified:
-                return [{"error": "No valid contracts found"}]
-            
-            # Get tickers
-            tickers = await self.ib.reqTickersAsync(*qualified)
-            
-            results = []
-            for ticker in tickers:
-                results.append({
-                    "symbol": ticker.contract.symbol,
-                    "last": safe_float(ticker.last),
-                    "bid": safe_float(ticker.bid),
-                    "ask": safe_float(ticker.ask),
-                    "close": safe_float(ticker.close),
-                    "volume": safe_int(ticker.volume),
-                    "contract_id": ticker.contract.conId
-                })
-            
-            return results
-            
-        except Exception as e:
-            self.logger.error(f"Market data request failed: {e}")
-            raise RuntimeError(f"IBKR API error: {str(e)}")
+    async def get_market_data(self, symbols: str, auto_detect: bool = True) -> List[Dict]:
+        """Get real-time market quotes for US and international symbols with intelligent auto-detection."""
+        if not await self._ensure_connected():
+            raise IBKRConnectionError("Not connected to IBKR")
+        
+        # Use international manager for all symbols (handles US + international intelligently)
+        if not self.international_manager:
+            raise ValidationError("International manager not initialized")
+        
+        return await self.international_manager.get_international_market_data(symbols, auto_detect)
     
     @rate_limit(calls_per_second=1.0)
     async def get_account_summary(self, account: Optional[str] = None) -> List[Dict]:
@@ -408,15 +378,7 @@ class IBKRClient:
 
     # ============ INTERNATIONAL TRADING METHODS ============
     
-    async def get_international_market_data(self, symbols: str, auto_detect: bool = True) -> List[Dict]:
-        """Get market data for international stocks."""
-        if not await self._ensure_connected():
-            raise IBKRConnectionError("Not connected to IBKR")
-        
-        if not self.international_manager:
-            raise ValidationError("International manager not initialized")
-        
-        return await self.international_manager.get_international_market_data(symbols, auto_detect)
+
     
     async def resolve_international_symbol(self, symbol: str, exchange: str = None, currency: str = None) -> Dict:
         """Resolve international symbol with comprehensive information."""
@@ -472,6 +434,151 @@ class IBKRClient:
             raise ValidationError("Stop loss manager not initialized")
         
         return await self.stop_loss_manager.cancel_stop_loss(order_id)
+
+    async def get_open_orders(self, account: str = None) -> List[Dict]:
+        """Get all open/pending orders from IBKR."""
+        if not await self._ensure_connected():
+            raise IBKRConnectionError("Not connected to IBKR")
+        
+        try:
+            # Get all open orders from IBKR
+            open_orders = await self.ib.reqOpenOrdersAsync()
+            
+            orders_list = []
+            for order_state in open_orders:
+                if hasattr(order_state, 'order') and hasattr(order_state, 'contract'):
+                    order = order_state.order
+                    contract = order_state.contract
+                    
+                    order_info = {
+                        "order_id": order.orderId,
+                        "symbol": contract.symbol,
+                        "exchange": getattr(contract, 'exchange', 'Unknown'),
+                        "currency": getattr(contract, 'currency', 'Unknown'),
+                        "action": order.action,
+                        "quantity": order.totalQuantity,
+                        "order_type": order.orderType,
+                        "status": getattr(order_state, 'orderStatus', {}).get('status', 'Unknown'),
+                        "filled": getattr(order_state, 'orderStatus', {}).get('filled', 0),
+                        "remaining": getattr(order_state, 'orderStatus', {}).get('remaining', order.totalQuantity),
+                        "avg_fill_price": getattr(order_state, 'orderStatus', {}).get('avgFillPrice', 0),
+                        "last_fill_price": getattr(order_state, 'orderStatus', {}).get('lastFillPrice', 0),
+                        "time_in_force": order.tif,
+                        "account": getattr(order_state, 'orderStatus', {}).get('account', account or 'Unknown')
+                    }
+                    
+                    # Add order-type specific info
+                    if order.orderType == 'LMT':
+                        order_info["limit_price"] = order.lmtPrice
+                    elif order.orderType in ['STP', 'STP LMT']:
+                        order_info["stop_price"] = order.auxPrice
+                    
+                    orders_list.append(order_info)
+            
+            return orders_list
+            
+        except Exception as e:
+            self.logger.error(f"Error getting open orders: {e}")
+            return []
+
+    async def get_completed_orders(self, account: str = None) -> List[Dict]:
+        """Get completed orders from IBKR."""
+        try:
+            if not await self._ensure_connected():
+                raise IBKRConnectionError("Not connected to IBKR")
+
+            completed_orders = await self.ib.reqCompletedOrdersAsync()
+            
+            # Filter by account if specified
+            if account:
+                completed_orders = [order for order in completed_orders if hasattr(order, 'account') and order.account == account]
+            
+            results = []
+            for order in completed_orders:
+                order_data = {
+                    "order_id": order.orderId,
+                    "symbol": getattr(order.contract, 'symbol', 'Unknown'),
+                    "exchange": getattr(order.contract, 'exchange', 'Unknown'),
+                    "currency": getattr(order.contract, 'currency', 'Unknown'),
+                    "action": order.action,
+                    "quantity": order.totalQuantity,
+                    "order_type": order.orderType,
+                    "limit_price": getattr(order, 'lmtPrice', None),
+                    "aux_price": getattr(order, 'auxPrice', None),
+                    "time_in_force": order.tif,
+                    "status": getattr(order, 'orderState', {}).get('status', 'Unknown') if hasattr(order, 'orderState') else 'Unknown',
+                    "filled": getattr(order, 'filled', 0),
+                    "remaining": getattr(order, 'remaining', order.totalQuantity),
+                    "avg_fill_price": getattr(order, 'avgFillPrice', 0),
+                    "commission": getattr(order, 'commission', 0),
+                    "account": getattr(order, 'account', 'Unknown'),
+                    "order_ref": getattr(order, 'orderRef', ''),
+                    "client_id": getattr(order, 'clientId', self.client_id)
+                }
+                results.append(order_data)
+            
+            return results
+            
+        except Exception as e:
+            self.logger.error(f"Error getting completed orders: {e}")
+            raise IBKRConnectionError(f"Failed to get completed orders: {str(e)}")
+
+    async def get_executions(self, account: str = None, symbol: str = None, days_back: int = 7) -> List[Dict]:
+        """Get trade executions from IBKR."""
+        try:
+            if not await self._ensure_connected():
+                raise IBKRConnectionError("Not connected to IBKR")
+
+            # Create execution filter
+            from ib_async import ExecutionFilter
+            exec_filter = ExecutionFilter()
+            
+            if account:
+                exec_filter.account = account
+            if symbol:
+                exec_filter.symbol = symbol
+            
+            # Get executions
+            executions = await self.ib.reqExecutionsAsync(exec_filter)
+            
+            results = []
+            for execution_detail in executions:
+                execution = execution_detail.execution
+                contract = execution_detail.contract
+                
+                execution_data = {
+                    "execution_id": execution.execId,
+                    "order_id": execution.orderId,
+                    "client_id": execution.clientId,
+                    "symbol": contract.symbol,
+                    "exchange": contract.exchange,
+                    "currency": contract.currency,
+                    "security_type": contract.secType,
+                    "side": execution.side,
+                    "shares": execution.shares,
+                    "price": safe_float(execution.price),
+                    "perm_id": execution.permId,
+                    "liquidation": execution.liquidation,
+                    "cumulative_quantity": execution.cumQty,
+                    "average_price": safe_float(execution.avgPrice),
+                    "order_ref": execution.orderRef,
+                    "ev_rule": execution.evRule,
+                    "ev_multiplier": safe_float(execution.evMultiplier),
+                    "model_code": execution.modelCode,
+                    "last_liquidity": execution.lastLiquidity,
+                    "time": execution.time,
+                    "account": execution.acctNumber
+                }
+                results.append(execution_data)
+            
+            # Sort by time (most recent first)
+            results.sort(key=lambda x: x['time'], reverse=True)
+            
+            return results
+            
+        except Exception as e:
+            self.logger.error(f"Error getting executions: {e}")
+            raise IBKRConnectionError(f"Failed to get executions: {str(e)}")
 
 
 # Global client instance

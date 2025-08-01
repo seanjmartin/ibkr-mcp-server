@@ -1,6 +1,7 @@
 """Enhanced configuration for IBKR MCP Server with comprehensive trading capabilities."""
 
 import os
+import tempfile
 from typing import List, Optional
 from pydantic_settings import BaseSettings
 from pydantic import field_validator
@@ -148,15 +149,15 @@ class EnhancedSettings(BaseSettings):
     
     # Logging
     log_level: str = "INFO"
-    log_file: str = "logs/ibkr-mcp-server.log"
+    log_file: str = os.path.join(tempfile.gettempdir(), "ibkr-mcp-server.log")
     
     # Audit and compliance logging
     enable_audit_logging: bool = True
-    audit_log_file: str = "logs/ibkr-trading-audit.log"
+    audit_log_file: str = os.path.join(tempfile.gettempdir(), "ibkr-trading-audit.log")
     
     # Performance monitoring
     enable_performance_monitoring: bool = True
-    performance_log_file: str = "logs/ibkr-performance.log"
+    performance_log_file: str = os.path.join(tempfile.gettempdir(), "ibkr-performance.log")
     
     # Health check settings
     enable_health_checks: bool = True

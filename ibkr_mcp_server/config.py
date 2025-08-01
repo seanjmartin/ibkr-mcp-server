@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     
     # Logging
     log_level: str = "INFO"
-    log_file: str = "/tmp/ibkr-mcp-server.log"
+    log_file: str = "C:/temp/ibkr-mcp-server.log"
     
     # Reconnection
     max_reconnect_attempts: int = 5

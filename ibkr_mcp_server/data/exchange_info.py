@@ -197,8 +197,31 @@ class ExchangeManager:
         self.logger = logging.getLogger(__name__)
     
     def get_exchange_info(self, exchange: str) -> Optional[Dict]:
-        """Get comprehensive exchange information."""
-        return self.exchanges.get(exchange.upper())
+        """Get comprehensive exchange information with JSON-serializable time formats."""
+        info = self.exchanges.get(exchange.upper())
+        if not info:
+            return None
+        
+        # Create a copy to avoid modifying the original
+        info_copy = info.copy()
+        
+        # Convert time objects to strings for JSON serialization
+        if 'trading_hours' in info_copy and isinstance(info_copy['trading_hours'], dict):
+            trading_hours = info_copy['trading_hours'].copy()
+            for key, value in trading_hours.items():
+                if hasattr(value, 'strftime'):  # Check if it's a time object
+                    trading_hours[key] = value.strftime('%H:%M')
+            info_copy['trading_hours'] = trading_hours
+        
+        # Also handle market_maker_hours if present
+        if 'market_maker_hours' in info_copy and isinstance(info_copy['market_maker_hours'], dict):
+            mm_hours = info_copy['market_maker_hours'].copy()
+            for key, value in mm_hours.items():
+                if hasattr(value, 'strftime'):  # Check if it's a time object
+                    mm_hours[key] = value.strftime('%H:%M')
+            info_copy['market_maker_hours'] = mm_hours
+        
+        return info_copy
     
     def get_trading_hours(self, exchange: str) -> Optional[Dict]:
         """Get trading hours for an exchange."""
@@ -216,56 +239,42 @@ class ExchangeManager:
         return info.get('currency') if info else None
     
     def is_market_open(self, exchange: str, current_time: datetime = None) -> bool:
-        """Check if market is currently open."""
+        """Check if market is currently open using pandas-market-calendars."""
+        # Import here to avoid circular imports
+        try:
+            from ibkr_mcp_server.market_status import market_status_manager
+            return market_status_manager.is_market_open(exchange, current_time)
+        except Exception as e:
+            self.logger.error(f"Error checking market status with market_status_manager: {e}")
+            # Fallback to simple time-based check
+            return self._simple_market_check(exchange, current_time)
+    
+    def _simple_market_check(self, exchange: str, current_time: datetime = None) -> bool:
+        """Simple fallback market check without time objects."""
         if not current_time:
             current_time = datetime.now(timezone.utc)
         
-        info = self.get_exchange_info(exchange)
-        if not info:
+        # Simple weekday check - avoid time object serialization issues
+        if current_time.weekday() >= 5:  # Weekend
             return False
         
-        # Handle forex (24/5 trading)
+        # Forex is special case
         if exchange.upper() == 'IDEALPRO':
             weekday = current_time.weekday()
-            # Closed Saturday (5) and Sunday (6) until 22:00 UTC
-            if weekday == 5:  # Saturday - closed
+            hour = current_time.hour
+            
+            if weekday == 5:  # Saturday
                 return False
-            elif weekday == 6:  # Sunday - opens at 22:00 UTC
-                return current_time.time() >= time(22, 0)
-            elif weekday == 4:  # Friday - closes at 22:00 UTC
-                return current_time.time() < time(22, 0)
-            else:  # Monday-Thursday - open 24h
+            elif weekday == 6:  # Sunday  
+                return hour >= 22
+            elif weekday == 4:  # Friday
+                return hour < 22
+            else:
                 return True
         
-        # Get market timezone
-        market_tz = pytz.timezone(info['timezone'])
-        market_time = current_time.astimezone(market_tz)
-        
-        # Check if it's a weekday
-        if market_time.weekday() >= 5:  # Saturday (5) or Sunday (6)
-            return False
-        
-        trading_hours = info['trading_hours']
-        current_market_time = market_time.time()
-        
-        # Handle exchanges with lunch breaks (TSE, SEHK)
-        if info.get('has_lunch_break'):
-            morning_open = trading_hours.get('morning_open')
-            morning_close = trading_hours.get('morning_close')
-            afternoon_open = trading_hours.get('afternoon_open')
-            afternoon_close = trading_hours.get('afternoon_close')
-            
-            return ((morning_open <= current_market_time <= morning_close) or
-                    (afternoon_open <= current_market_time <= afternoon_close))
-        else:
-            # Regular trading hours
-            market_open = trading_hours.get('open')
-            market_close = trading_hours.get('close')
-            
-            if market_open and market_close:
-                return market_open <= current_market_time <= market_close
-        
-        return False
+        # For other exchanges, assume open during business hours UTC
+        hour = current_time.hour
+        return 8 <= hour <= 20  # Rough business hours
     
     def get_settlement_info(self, exchange: str) -> Optional[str]:
         """Get settlement period for an exchange."""

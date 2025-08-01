@@ -54,7 +54,10 @@ class InternationalManager:
             
             # Qualify contracts
             contracts = [c[0] for c in contracts_with_specs]
-            qualified = await self.ib.qualifyContractsAsync(*contracts)
+            qualified_raw = await self.ib.qualifyContractsAsync(*contracts)
+            
+            # Filter out None values from qualification results
+            qualified = [contract for contract in qualified_raw if contract is not None]
             
             if not qualified:
                 raise ValidationError("Could not qualify any international contracts")
@@ -147,13 +150,26 @@ class InternationalManager:
     def _create_contract_from_spec(self, spec: Dict) -> Optional[Contract]:
         """Create IBKR contract from symbol specification."""
         try:
+            from ib_async import Stock, Forex, Index
+            
             if spec['type'] == 'stock':
-                return Stock(spec['symbol'], spec['exchange'], spec['currency'])
+                contract = Stock(spec['symbol'], spec['exchange'], spec['currency'])
+                # Ensure secType is set
+                if not hasattr(contract, 'secType') or not contract.secType:
+                    contract.secType = 'STK'
+                return contract
             elif spec['type'] == 'forex':
-                from ib_async import Forex
-                return Forex(spec['symbol'])
+                contract = Forex(spec['symbol'])
+                # Ensure secType is set
+                if not hasattr(contract, 'secType') or not contract.secType:
+                    contract.secType = 'CASH'
+                return contract
             elif spec['type'] == 'index':
-                return Index(spec['symbol'], spec['exchange'], spec['currency'])
+                contract = Index(spec['symbol'], spec['exchange'], spec['currency'])
+                # Ensure secType is set
+                if not hasattr(contract, 'secType') or not contract.secType:
+                    contract.secType = 'IND'
+                return contract
             else:
                 self.logger.warning(f"Unknown contract type: {spec['type']}")
                 return None
@@ -203,13 +219,7 @@ class InternationalManager:
         try:
             symbol = symbol.upper().strip()
             
-            # Check cache first
-            cache_key = f"{symbol}_{exchange}_{currency}"
-            cached_result = self._get_cached_resolution(cache_key)
-            if cached_result:
-                return cached_result
-            
-            # Try database lookup
+            # Simple database lookup without problematic exchange info
             matches = self.symbol_db.resolve_symbol(symbol, exchange, currency)
             
             result = {
@@ -226,22 +236,25 @@ class InternationalManager:
                     result["matches"] = guessed_matches
                     result["resolution_method"] = "guessed"
             
-            # Add additional information
+            # Add simplified exchange information
             if matches or result.get("matches"):
                 best_match = (matches or result["matches"])[0]
-                exchange_info = self.exchange_mgr.get_exchange_info(best_match['exchange'])
-                if exchange_info:
-                    result["exchange_info"] = {
-                        "name": exchange_info['name'],
-                        "country": exchange_info['country'],
-                        "timezone": exchange_info['timezone'],
-                        "trading_hours": exchange_info.get('trading_hours', {}),
-                        "settlement": exchange_info.get('settlement', ''),
-                        "market_open": self.exchange_mgr.is_market_open(best_match['exchange'])
-                    }
-            
-            # Cache the result
-            self._cache_resolution(cache_key, result)
+                
+                # Get market status safely
+                try:
+                    from ibkr_mcp_server.market_status import market_status_manager
+                    is_open = market_status_manager.is_market_open(best_match['exchange'])
+                    market_status = "open" if is_open else "closed"
+                except Exception as e:
+                    self.logger.error(f"Error getting market status: {e}")
+                    market_status = "unknown"
+                
+                result["exchange_info"] = {
+                    "exchange": best_match['exchange'],
+                    "currency": best_match['currency'],
+                    "market_status": market_status,
+                    "note": "For complete exchange details, use get_international_market_data"
+                }
             
             return result
             
