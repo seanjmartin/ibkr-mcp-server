@@ -12,7 +12,7 @@ A comprehensive Model Context Protocol (MCP) server that provides Claude AI with
 - 🇺🇸 **US Markets**: NASDAQ, NYSE, AMEX
 - 🇪🇺 **European Markets**: XETRA, LSE, AEB, SBF, SWX, KFX
 - 🌏 **Asian Markets**: TSE, SEHK, KSE, ASX
-- 💱 **Forex Trading**: 20+ major currency pairs with real-time conversion
+- 💱 **Forex Trading**: 21 currency pairs across 13 currencies with real-time conversion
 
 ### **Advanced Trading Capabilities**
 - 📊 **Portfolio Management**: Real-time positions, P&L, multi-currency accounts
@@ -86,7 +86,7 @@ Add to your Claude Desktop configuration:
 - `resolve_international_symbol` - Look up exchange/currency for international stocks
 
 ### Forex Trading
-- `get_forex_rates` - Real-time rates for 20+ currency pairs
+- `get_forex_rates` - Real-time rates for 21 currency pairs
 - `convert_currency` - Convert amounts between currencies using live rates
 
 ### Risk Management
@@ -123,7 +123,7 @@ Add to your Claude Desktop configuration:
 
 **Global Trading (2):**
 - **SMART** (IBKR Routing) - USD: All US stocks
-- **IDEALPRO** (Forex) - Multiple: 20+ currency pairs
+- **IDEALPRO** (Forex) - Multiple: 21 currency pairs, 13 currencies
 
 ### Auto-Detection Examples
 ```python
@@ -136,10 +136,10 @@ get_market_data("AAPL,ASML") # Mixed markets handled seamlessly
 
 ## 💱 Forex & Currency Features
 
-### Supported Currency Pairs
-- **Majors**: EURUSD, GBPUSD, USDJPY, USDCHF, AUDUSD, USDCAD
-- **Crosses**: EURGBP, EURJPY, GBPJPY, CHFJPY
-- **Exotics**: EURNZD, GBPAUD, AUDNZD
+### Supported Currency Pairs (21 Total)
+- **Major Pairs (7)**: EURUSD, GBPUSD, USDJPY, USDCHF, AUDUSD, USDCAD, NZDUSD
+- **Cross Pairs (14)**: EURGBP, EURJPY, GBPJPY, CHFJPY, EURCHF, AUDJPY, CADJPY, NZDJPY, EURAUD, EURNZD, GBPAUD, GBPNZD, AUDCAD, AUDNZD
+- **Supported Currencies (13)**: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD, HKD, KRW, DKK, SEK, NOK
 
 ### Currency Conversion
 ```python
@@ -214,7 +214,7 @@ Perfect for testing and learning:
 
 ### Reference Data
 - **25+ International Stocks**: Complete metadata with auto-detection
-- **20+ Forex Pairs**: Trading specifications and market hours
+- **21 Forex Pairs**: Complete trading specifications and metadata
 - **10+ Global Exchanges**: Trading hours, currencies, settlement rules
 
 ## 🚨 Safety Features
