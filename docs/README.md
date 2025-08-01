@@ -6,11 +6,7 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 
 ### **Getting Started**
 - [Quick Start Guide](guides/quick-start.md) - Get up and running in 5 minutes
-- [API Quick Reference](API_QUICK_REFERENCE.md) - Essential commands and examples ⭐
 - [Production Deployment](PRODUCTION_DEPLOYMENT.md) - Complete deployment guide ⭐
-- [Installation Guide](guides/installation.md) - Detailed installation instructions
-- [Configuration Guide](guides/configuration.md) - Complete configuration reference
-- [Claude Desktop Integration](guides/claude-integration.md) - Setting up with Claude Desktop
 
 ### **User Guides**
 - [Trading Guide](guides/trading.md) - Complete trading workflows and examples
@@ -20,14 +16,12 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 - [Paper Trading](guides/paper-trading.md) - Safe testing and learning
 
 ### **API Reference**
+- [API Quick Reference](api/API_QUICK_REFERENCE.md) - Essential commands and examples ⭐
 - [MCP Tools Reference](api/tools.md) - Complete tool documentation (17 tools)
-- [Market Data API](api/market-data.md) - Real-time quotes and data
-- [Trading API](api/trading.md) - Order placement and management
-- [Portfolio API](api/portfolio.md) - Account and position management
 
 ### **Examples & Tutorials**
 - [Basic Usage Examples](examples/basic-usage.md) - Common operations
-- [Advanced Trading Scenarios](examples/advanced-trading.md) - Complex workflows
+- [Advanced Trading Examples](examples/advanced-trading.md) - Complex workflows
 - [Integration Examples](examples/integrations.md) - Custom implementations
 - [Troubleshooting Examples](examples/troubleshooting.md) - Common issues and solutions
 
@@ -35,33 +29,12 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 - [System Architecture](architecture/system-architecture.md) - Complete technical architecture
 - [Safety Measures & Risk Management](architecture/safety-measures.md) - Comprehensive safety framework
 - [Testing Strategy & Implementation](architecture/testing-strategy.md) - Complete testing approach
-- [Development Guide](guides/development.md) - Contributing and extending
-- [Deployment Guide](../DEPLOYMENT_GUIDE.md) - Production deployment
 
 ### **Reference**
 - [Supported Markets](reference/markets.md) - Complete list of supported exchanges and currencies
-- [Configuration Reference](reference/configuration.md) - All configuration options
-- [Error Codes](reference/errors.md) - Error handling and codes
 - [Changelog](../CHANGELOG.md) - Version history and changes
 
-## 🚀 Quick Links
 
-### **New Users**
-1. [API Quick Reference](API_QUICK_REFERENCE.md) - Essential commands & examples ⭐
-2. [Quick Start Guide](guides/quick-start.md) - Get started immediately
-3. [Paper Trading Setup](guides/paper-trading.md) - Safe testing environment  
-4. [Basic Examples](examples/basic-usage.md) - Common use cases
-
-### **Developers**
-1. [Production Deployment](PRODUCTION_DEPLOYMENT.md) - Complete deployment guide ⭐
-2. [Technical Architecture](../TECHNICAL_ARCHITECTURE.md) - System overview
-3. [MCP Tools Reference](api/tools.md) - Complete API documentation
-4. [Development Guide](guides/development.md) - Contributing guidelines
-
-### **Traders**
-1. [Trading Guide](guides/trading.md) - Complete trading workflows
-2. [Risk Management](guides/risk-management.md) - Portfolio protection
-3. [Advanced Examples](examples/advanced-trading.md) - Professional strategies
 
 ## 🌍 Global Coverage
 
@@ -89,17 +62,9 @@ This documentation follows these principles:
 
 ## 🆘 Getting Help
 
-- **Quick Questions**: Check the [FAQ](guides/faq.md)
 - **Issues**: Search [Common Problems](examples/troubleshooting.md)
 - **API Reference**: Complete [Tools Documentation](api/tools.md)
 - **Examples**: Browse [Usage Examples](examples/basic-usage.md)
-
-## 📝 Contributing to Documentation
-
-We welcome contributions to improve this documentation:
-1. Found an error? Open an issue
-2. Want to add an example? Submit a pull request
-3. Missing information? Let us know what you need
 
 ---
 
