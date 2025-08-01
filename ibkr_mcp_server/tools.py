@@ -8,6 +8,72 @@ from mcp.types import Tool, TextContent, CallToolRequest
 
 from .client import ibkr_client
 from .utils import validate_symbols, IBKRError
+from .safety_framework import safety_manager
+
+
+# ============ SAFETY VALIDATION WRAPPER ============
+
+async def safe_trading_operation(operation_type: str, operation_data: dict, operation_func) -> dict:
+    """Safety-enhanced trading operation wrapper for all MCP tools."""
+    # Pre-flight safety checks
+    validation = safety_manager.validate_trading_operation(operation_type, operation_data)
+    
+    if not validation["is_safe"]:
+        return {
+            "success": False,
+            "error": "Safety validation failed",
+            "details": validation["errors"],
+            "warnings": validation.get("warnings", [])
+        }
+    
+    # If safety checks pass, execute the operation
+    try:
+        result = await operation_func()
+        
+        # Log successful operation
+        if hasattr(result, 'get') and result.get('success', True):
+            safety_manager.audit_logger.log_system_event("OPERATION_SUCCESS", {
+                "operation_type": operation_type,
+                "operation_data": operation_data
+            })
+        
+        return result
+    except Exception as e:
+        # Log failed operation
+        safety_manager.audit_logger.log_system_event("OPERATION_FAILED", {
+            "operation_type": operation_type,
+            "operation_data": operation_data,
+            "error": str(e)
+        })
+        raise
+
+
+# ============ TRADING OPERATION CLASSIFICATION ============
+
+TRADING_OPERATIONS = {
+    # Stop loss management (all require safety validation)
+    "place_stop_loss": "order_placement",
+    "modify_stop_loss": "order_modification", 
+    "cancel_stop_loss": "order_cancellation",
+    
+    # Account switching (requires account verification)
+    "switch_account": "account_operation",
+}
+
+# Market data operations (no safety validation needed, but rate limited)
+MARKET_DATA_OPERATIONS = {
+    "get_market_data": "market_data",
+    "get_forex_rates": "market_data", 
+    "convert_currency": "market_data",
+    "resolve_international_symbol": "market_data",
+}
+
+# Safe operations (no validation needed)
+SAFE_OPERATIONS = {
+    "get_portfolio", "get_account_summary", "get_accounts", "get_connection_status",
+    "get_open_orders", "get_completed_orders", "get_executions", "get_stop_losses",
+    "get_tool_documentation"
+}
 
 
 # Create the server instance
@@ -294,7 +360,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
         elif name == "switch_account":
             account_id = arguments["account_id"]
             try:
-                result = await ibkr_client.switch_account(account_id)
+                # Use safety wrapper for account switching (requires account verification)
+                result = await safe_trading_operation(
+                    operation_type="account_operation",
+                    operation_data=arguments,
+                    operation_func=lambda: ibkr_client.switch_account(account_id)
+                )
                 return [TextContent(
                     type="text",
                     text=json.dumps(result, indent=2)
@@ -322,6 +393,17 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
             symbols = arguments["symbols"]
             auto_detect = arguments.get("auto_detect", True)
             try:
+                # Check rate limits for market data requests
+                if not safety_manager.rate_limiter.check_rate_limit("market_data"):
+                    return [TextContent(
+                        type="text",
+                        text=json.dumps({
+                            "success": False,
+                            "error": "Rate limit exceeded for market data requests",
+                            "details": "Too many market data requests in the last minute"
+                        }, indent=2)
+                    )]
+                
                 result = await ibkr_client.get_market_data(symbols, auto_detect)
                 return [TextContent(
                     type="text",
@@ -364,6 +446,17 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
         elif name == "get_forex_rates":
             currency_pairs = arguments["currency_pairs"]
             try:
+                # Check rate limits for forex data requests
+                if not safety_manager.rate_limiter.check_rate_limit("market_data"):
+                    return [TextContent(
+                        type="text",
+                        text=json.dumps({
+                            "success": False,
+                            "error": "Rate limit exceeded for forex data requests",
+                            "details": "Too many market data requests in the last minute"
+                        }, indent=2)
+                    )]
+                
                 result = await ibkr_client.get_forex_rates(currency_pairs)
                 return [TextContent(
                     type="text",
@@ -412,7 +505,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
         # ============ STOP LOSS MANAGEMENT TOOLS ============
         elif name == "place_stop_loss":
             try:
-                result = await ibkr_client.place_stop_loss(**arguments)
+                # Use safety wrapper for stop loss placement
+                result = await safe_trading_operation(
+                    operation_type="stop_loss_placement",
+                    operation_data=arguments,
+                    operation_func=lambda: ibkr_client.place_stop_loss(**arguments)
+                )
                 return [TextContent(
                     type="text",
                     text=json.dumps(result, indent=2)
@@ -443,7 +541,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
             order_id = arguments["order_id"]
             changes = {k: v for k, v in arguments.items() if k != "order_id"}
             try:
-                result = await ibkr_client.modify_stop_loss(order_id, **changes)
+                # Use safety wrapper for stop loss modification
+                result = await safe_trading_operation(
+                    operation_type="order_modification",
+                    operation_data=arguments,
+                    operation_func=lambda: ibkr_client.modify_stop_loss(order_id, **changes)
+                )
                 return [TextContent(
                     type="text",
                     text=json.dumps(result, indent=2)
@@ -457,7 +560,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
         elif name == "cancel_stop_loss":
             order_id = arguments["order_id"]
             try:
-                result = await ibkr_client.cancel_stop_loss(order_id)
+                # Use safety wrapper for stop loss cancellation
+                result = await safe_trading_operation(
+                    operation_type="order_cancellation",
+                    operation_data=arguments,
+                    operation_func=lambda: ibkr_client.cancel_stop_loss(order_id)
+                )
                 return [TextContent(
                     type="text",
                     text=json.dumps(result, indent=2)

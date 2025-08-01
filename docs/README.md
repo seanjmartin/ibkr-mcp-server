@@ -6,6 +6,8 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 
 ### **Getting Started**
 - [Quick Start Guide](guides/quick-start.md) - Get up and running in 5 minutes
+- [API Quick Reference](API_QUICK_REFERENCE.md) - Essential commands and examples ⭐
+- [Production Deployment](PRODUCTION_DEPLOYMENT.md) - Complete deployment guide ⭐
 - [Installation Guide](guides/installation.md) - Detailed installation instructions
 - [Configuration Guide](guides/configuration.md) - Complete configuration reference
 - [Claude Desktop Integration](guides/claude-integration.md) - Setting up with Claude Desktop
@@ -45,14 +47,16 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 ## 🚀 Quick Links
 
 ### **New Users**
-1. [Quick Start Guide](guides/quick-start.md) - Get started immediately
-2. [Paper Trading Setup](guides/paper-trading.md) - Safe testing environment
-3. [Basic Examples](examples/basic-usage.md) - Common use cases
+1. [API Quick Reference](API_QUICK_REFERENCE.md) - Essential commands & examples ⭐
+2. [Quick Start Guide](guides/quick-start.md) - Get started immediately
+3. [Paper Trading Setup](guides/paper-trading.md) - Safe testing environment  
+4. [Basic Examples](examples/basic-usage.md) - Common use cases
 
 ### **Developers**
-1. [Technical Architecture](../TECHNICAL_ARCHITECTURE.md) - System overview
-2. [MCP Tools Reference](api/tools.md) - Complete API documentation
-3. [Development Guide](guides/development.md) - Contributing guidelines
+1. [Production Deployment](PRODUCTION_DEPLOYMENT.md) - Complete deployment guide ⭐
+2. [Technical Architecture](../TECHNICAL_ARCHITECTURE.md) - System overview
+3. [MCP Tools Reference](api/tools.md) - Complete API documentation
+4. [Development Guide](guides/development.md) - Contributing guidelines
 
 ### **Traders**
 1. [Trading Guide](guides/trading.md) - Complete trading workflows

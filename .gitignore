@@ -58,3 +58,6 @@ Thumbs.db
 
 # Human-in-the-loop - HIL
 .hil
+
+# Claude related
+IMPLEMENTATION_PROGRESS.md

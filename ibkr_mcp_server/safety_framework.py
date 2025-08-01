@@ -403,6 +403,12 @@ class TradingSafetyManager:
             # Operation-specific validation
             if operation_type == 'order_placement':
                 self._validate_order_operation(operation_data, validation_result)
+            elif operation_type == 'stop_loss_placement':
+                self._validate_stop_loss_operation(operation_data, validation_result)
+            elif operation_type == 'order_modification':
+                self._validate_order_modification(operation_data, validation_result)
+            elif operation_type == 'order_cancellation':
+                self._validate_order_cancellation(operation_data, validation_result)
             elif operation_type == 'market_data':
                 self._validate_market_data_operation(operation_data, validation_result)
             
@@ -449,6 +455,58 @@ class TradingSafetyManager:
             
         except Exception as e:
             validation_result["errors"].append(f"Order validation failed: {str(e)}")
+    
+    def _validate_stop_loss_operation(self, order_data: Dict, validation_result: Dict):
+        """Validate stop loss order specific safety requirements."""
+        try:
+            # Import here to avoid circular imports
+            from .enhanced_validators import StopLossValidator
+            
+            # Validate stop loss orders are enabled
+            StopLossValidator.validate_stop_loss_enabled()
+            
+            # Basic order validation  
+            quantity = order_data.get('quantity', 0)
+            TradingSafetyValidator.validate_order_size(quantity)
+            
+            # Estimate order value
+            price = order_data.get('price', order_data.get('stop_price', 100))
+            estimated_value = quantity * price
+            TradingSafetyValidator.validate_order_value(estimated_value)
+            
+            # Validate stop loss specific parameters
+            StopLossValidator.validate_stop_loss_order(order_data)
+            
+            validation_result["safety_checks"].append("Stop loss order validation OK")
+            
+        except Exception as e:
+            validation_result["errors"].append(f"Stop loss validation failed: {str(e)}")
+    
+    def _validate_order_modification(self, order_data: Dict, validation_result: Dict):
+        """Validate order modification safety requirements."""
+        try:
+            from .enhanced_validators import StopLossValidator
+            
+            # For stop loss modifications, check if stop loss orders are enabled
+            if 'stop_price' in order_data or 'trail_percent' in order_data:
+                StopLossValidator.validate_stop_loss_enabled()
+            
+            validation_result["safety_checks"].append("Order modification validation OK")
+            
+        except Exception as e:
+            validation_result["errors"].append(f"Order modification validation failed: {str(e)}")
+    
+    def _validate_order_cancellation(self, order_data: Dict, validation_result: Dict):
+        """Validate order cancellation safety requirements."""
+        try:
+            from .enhanced_validators import StopLossValidator 
+            
+            # For stop loss cancellations, check if stop loss orders are enabled
+            # This allows cancelling existing stop losses even if new ones are disabled
+            validation_result["safety_checks"].append("Order cancellation validation OK")
+            
+        except Exception as e:
+            validation_result["errors"].append(f"Order cancellation validation failed: {str(e)}")
     
     def _validate_market_data_operation(self, data_request: Dict, validation_result: Dict):
         """Validate market data request safety."""
