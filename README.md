@@ -1,68 +1,70 @@
-# IBKR MCP Server
+# IBKR MCP Server - Enhanced Global Trading Platform
 
-A professional Model Context Protocol (MCP) server for Interactive Brokers API integration, designed for use with Claude Desktop and Claude Code.
+A comprehensive Model Context Protocol (MCP) server that provides Claude AI with professional-grade global trading capabilities through Interactive Brokers.
 
-[![CI](https://github.com/yourusername/ibkr-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/ibkr-mcp-server/actions/workflows/ci.yml)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![IBKR API](https://img.shields.io/badge/IBKR-API%20Compatible-green.svg)](https://interactivebrokers.github.io/tws-api/)
 
-## Features
+## 🌟 Features
 
-- ✅ **Multi-Account Support** - Switch between multiple IBKR accounts
-- ✅ **Short Selling Analysis** - Shortable shares, borrow rates, margin requirements
-- ✅ **Real-time Market Data** - Live quotes, historical data, options chains
-- ✅ **Portfolio Management** - Positions, P&L, account summaries
-- ✅ **Trading Operations** - Place, modify, cancel orders (with safety checks)
-- ✅ **Auto-Reconnection** - Handles TWS/Gateway restarts gracefully
-- ✅ **Production Ready** - Proper error handling, logging, and monitoring
+### **Global Market Access**
+- 🇺🇸 **US Markets**: NASDAQ, NYSE, AMEX
+- 🇪🇺 **European Markets**: XETRA, LSE, AEB, SBF, SWX, KFX
+- 🌏 **Asian Markets**: TSE, SEHK, KSE, ASX
+- 💱 **Forex Trading**: 20+ major currency pairs with real-time conversion
 
-## Quick Start
+### **Advanced Trading Capabilities**
+- 📊 **Portfolio Management**: Real-time positions, P&L, multi-currency accounts
+- 💹 **Market Data**: Live quotes with intelligent exchange detection
+- 🛡️ **Risk Management**: Stop loss orders, bracket orders, trailing stops
+- 🔄 **Currency Conversion**: Real-time forex rates with cross-currency calculations
+- 🎯 **Order Management**: Complete order lifecycle with modification and cancellation
+
+### **Safety & Security**
+- 🔒 **Safety-First Design**: All trading disabled by default
+- 📝 **Complete Audit Trail**: Every operation logged with context
+- ⚡ **Emergency Controls**: Kill switch for instant trading halt
+- 🧪 **Paper Trading Ready**: Full compatibility with IBKR paper accounts
+- ⚖️ **Risk Limits**: Configurable order size, value, and count restrictions
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.10 or higher
-- Interactive Brokers account with TWS or IB Gateway
-- Claude Desktop or Claude Code
+- Python 3.9+ (tested with 3.13.2)
+- Interactive Brokers account (paper or live)
+- IB Gateway or TWS
+- Claude Desktop
 
 ### Installation
+```bash
+git clone <repository-url>
+cd ibkr-mcp-server
+python -m venv venv
+source venv/bin/activate  # Windows: venv\\Scripts\\activate
+pip install -r requirements.txt
+```
 
-1. **Clone the repository:**
+### Configuration
+1. Copy `.env.example` to `.env`
+2. Configure IBKR connection:
    ```bash
-   git clone https://github.com/yourusername/ibkr-mcp-server.git
-   cd ibkr-mcp-server
+   IBKR_HOST=127.0.0.1
+   IBKR_PORT=7497        # Paper: 7497, Live: 7496
+   IBKR_IS_PAPER=true
+   ```
+3. Set safety parameters:
+   ```bash
+   ENABLE_TRADING=false  # Enable explicitly when ready
    ```
 
-2. **Run the setup script:**
-   ```bash
-   # macOS/Linux
-   chmod +x scripts/setup.sh
-   ./scripts/setup.sh
-   
-   # Windows
-   scripts\setup.bat
-   ```
-
-3. **Configure your settings:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your IBKR settings
-   ```
-
-4. **Start TWS/IB Gateway** and enable API connections
-
-5. **Test the server:**
-   ```bash
-   python -m ibkr_mcp_server.main --test
-   ```
-
-### Claude Integration
-
-**Claude Desktop:**
-Add to your `claude_desktop_config.json`:
+### Claude Desktop Integration
+Add to your Claude Desktop configuration:
 ```json
 {
   "mcpServers": {
     "ibkr": {
-      "command": "python",
+      "command": "/path/to/venv/bin/python",
       "args": ["-m", "ibkr_mcp_server.main"],
       "cwd": "/path/to/ibkr-mcp-server"
     }
@@ -70,152 +72,175 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-**Claude Code:**
-```bash
-claude mcp add ibkr 'python -m ibkr_mcp_server.main' --cwd /path/to/ibkr-mcp-server
+## 🛠️ Available Tools (17 Total)
+
+### Portfolio & Account Management
+- `get_portfolio` - View current positions and P&L
+- `get_account_summary` - Account balances and metrics  
+- `get_accounts` - List available accounts
+- `switch_account` - Change active account
+- `get_connection_status` - IBKR connection status
+
+### Global Market Data
+- `get_market_data` - Live quotes for any stock worldwide (auto-detects exchange)
+- `resolve_international_symbol` - Look up exchange/currency for international stocks
+
+### Forex Trading
+- `get_forex_rates` - Real-time rates for 20+ currency pairs
+- `convert_currency` - Convert amounts between currencies using live rates
+
+### Risk Management
+- `place_stop_loss` - Set automatic sell orders to limit losses
+- `get_stop_losses` - View existing stop loss orders
+- `modify_stop_loss` - Adjust stop prices or quantities
+- `cancel_stop_loss` - Remove stop loss orders
+
+### Order Management
+- `get_open_orders` - View pending orders
+- `get_completed_orders` - View recent trades
+- `get_executions` - Detailed execution information
+
+### Documentation
+- `get_tool_documentation` - Comprehensive help system
+
+## 🌍 Global Market Support
+
+### Supported Exchanges & Currencies
+- **XETRA** (Germany) - EUR: SAP, Adidas, BMW
+- **LSE** (London) - GBP: Vodafone, BP, Shell  
+- **TSE** (Tokyo) - JPY: Toyota (7203), Honda, Sony
+- **SEHK** (Hong Kong) - HKD: Tencent (00700), TSMC (2330)
+- **ASX** (Australia) - AUD: BHP, CBA, Woolworths
+
+### Auto-Detection Examples
+```python
+# These work automatically:
+get_market_data("AAPL")      # US stock → SMART/USD
+get_market_data("ASML")      # Dutch stock → AEB/EUR  
+get_market_data("7203")      # Japanese stock → TSE/JPY
+get_market_data("AAPL,ASML") # Mixed markets handled seamlessly
 ```
 
-## Usage Examples
+## 💱 Forex & Currency Features
 
-### Basic Operations
+### Supported Currency Pairs
+- **Majors**: EURUSD, GBPUSD, USDJPY, USDCHF, AUDUSD, USDCAD
+- **Crosses**: EURGBP, EURJPY, GBPJPY, CHFJPY
+- **Exotics**: EURNZD, GBPAUD, AUDNZD
+
+### Currency Conversion
 ```python
-# Get portfolio across all accounts
+convert_currency(1000, "USD", "EUR")  # Direct conversion
+convert_currency(500, "GBP", "JPY")   # Cross-currency via USD
+```
+
+## 🛡️ Safety Configuration
+
+### Default Safety Settings
+```python
+# All trading disabled by default
+enable_trading: bool = False
+enable_forex_trading: bool = False
+enable_international_trading: bool = False
+enable_stop_loss_orders: bool = False
+require_paper_account_verification: bool = True
+```
+
+### Order Limits
+```python
+max_order_size: int = 1000              # Maximum shares per order
+max_order_value_usd: float = 10000.0    # Maximum USD value per order
+max_daily_orders: int = 50              # Maximum orders per day
+```
+
+## 📚 Documentation
+
+- **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** - Complete system overview
+- **[TECHNICAL_ARCHITECTURE.md](TECHNICAL_ARCHITECTURE.md)** - Technical architecture details
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Configuration and deployment
+- **[CHANGELOG.md](CHANGELOG.md)** - Implementation history
+
+## 🧪 Paper Trading
+
+Perfect for testing and learning:
+- Virtual $1,000,000 account
+- All markets accessible
+- No real money at risk
+- Mock data systems for API limitations
+
+## 🔧 Usage Examples
+
+### Portfolio Management
+```
 "Show me my current portfolio"
-
-# Switch accounts
-"Switch to account DU7654321"
-
-# Market data
-"Get real-time quotes for AAPL, TSLA, MSFT"
+"What's my account balance in different currencies?"
+"Switch to my other IBKR account"
 ```
 
-### Short Selling Analysis
-```python
-# Complete short selling analysis
-"Analyze short selling for GME, AMC, BBBY - show availability, borrow costs, and margin requirements"
-
-# Check specific account
-"Check shortable shares for TSLA in my paper trading account"
+### Global Trading
+```
+"Get quotes for Apple, ASML, and Toyota"
+"What's the current EUR/USD exchange rate?"
+"Convert $5000 to British pounds"
 ```
 
-### Trading Operations
-```python
-# Place orders (paper trading recommended)
-"Place a limit order to buy 100 shares of AAPL at $150"
-
-# Check margin requirements
-"What are the margin requirements for shorting 200 shares of TSLA?"
+### Risk Management
+```
+"Set a stop loss on my Tesla position at $200"
+"Show me all my stop loss orders"
+"Place a bracket order for AAPL with stop at $180 and target at $200"
 ```
 
-## Available Tools
+## 🏗️ Architecture
 
-| Tool | Description |
-|------|-------------|
-| `get_portfolio` | Current portfolio positions and P&L |
-| `get_account_summary` | Account balances and key metrics |
-| `switch_account` | Switch between IBKR accounts |
-| `check_shortable_shares` | Short selling availability |
-| `get_margin_requirements` | Margin requirements for securities |
-| `get_borrow_rates` | Stock borrow rates (short selling costs) |
-| `short_selling_analysis` | Complete short selling analysis |
-| `get_market_data` | Real-time market quotes |
-| `get_historical_data` | Historical price data |
-| `place_order` | Place trading orders (with safety checks) |
-| `get_connection_status` | Check IBKR connection status |
+### Modular Design
+- **ForexManager**: Currency trading and conversion
+- **InternationalManager**: Global symbol resolution  
+- **StopLossManager**: Advanced risk management
+- **Safety Framework**: Comprehensive protection system
 
-## Configuration
+### Reference Data
+- **25+ International Stocks**: Complete metadata with auto-detection
+- **20+ Forex Pairs**: Trading specifications and market hours
+- **10+ Global Exchanges**: Trading hours, currencies, settlement rules
 
-### Environment Variables
-```env
-# IBKR Connection
-IBKR_HOST=127.0.0.1
-IBKR_PORT=7497  # 7497=TWS Paper, 7496=TWS Live, 4001=Gateway
-IBKR_CLIENT_ID=1
-IBKR_IS_PAPER=true
+## 🚨 Safety Features
 
-# Logging
-LOG_LEVEL=INFO
+- **Multiple Validation Layers**: Prevent unsafe operations
+- **Complete Audit Trail**: Every operation logged
+- **Emergency Kill Switch**: Instant trading halt
+- **Paper Trading Mode**: Safe testing environment
+- **Order Size Limits**: Configurable restrictions
+- **Account Protection**: Prevent accidental live trading
 
-# Safety
-ENABLE_LIVE_TRADING=false  # Set to true for live trading
-MAX_ORDER_SIZE=1000  # Maximum order size
-```
+## 📈 Performance
 
-### TWS/Gateway Setup
-1. Start TWS or IB Gateway
-2. Go to Configuration → API → Settings
-3. Enable "ActiveX and Socket Clients"
-4. Set socket port (7497 for paper, 7496 for live)
-5. Add 127.0.0.1 to "Trusted IPs"
-6. Check "Download open orders on connection"
+- **Response Times**: Sub-second for cached data, 2-3 seconds for fresh data
+- **Intelligent Caching**: 5-second forex cache, automatic cleanup
+- **Rate Limiting**: Respects IBKR API limits
+- **Memory Efficient**: Optimized resource usage
 
-## Development
-
-### Setup Development Environment
-```bash
-pip install -e ".[dev]"
-pre-commit install
-```
-
-### Running Tests
-```bash
-pytest tests/ -v
-```
-
-### Code Quality
-```bash
-black ibkr_mcp_server/
-isort ibkr_mcp_server/
-mypy ibkr_mcp_server/
-```
-
-## Deployment
-
-### Auto-start on Boot (macOS)
-```bash
-python scripts/install_service.py --platform macos
-```
-
-### Auto-start on Boot (Linux)
-```bash
-python scripts/install_service.py --platform linux
-```
-
-### Docker Deployment
-```bash
-docker build -t ibkr-mcp-server .
-docker run -d --name ibkr-mcp -p 8080:8080 ibkr-mcp-server
-```
-
-## Documentation
-
-- [API Reference](docs/API.md)
-- [Deployment Guide](docs/DEPLOYMENT.md)  
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
-
-## Safety & Disclaimers
-
-⚠️ **Important Safety Notes:**
-- Always test with paper trading first
-- Verify all data in TWS before making trading decisions
-- This software is for educational purposes
-- Use at your own risk
-- No warranty provided
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+3. Test with paper trading
+4. Submit a pull request
 
-## License
+## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## Support
+## ⚠️ Disclaimer
 
-- [Issues](https://github.com/yourusername/ibkr-mcp-server/issues)
-- [Discussions](https://github.com/yourusername/ibkr-mcp-server/discussions)
-- [Wiki](https://github.com/yourusername/ibkr-mcp-server/wiki)
+This software is for educational and informational purposes. Trading involves risk of financial loss. Always test with paper trading before using real money. The authors are not responsible for any financial losses.
+
+## 🔗 Links
+
+- [Interactive Brokers API Documentation](https://interactivebrokers.github.io/tws-api/)
+- [Claude Desktop MCP Guide](https://claude.ai/docs/mcp)
+- [ib-async Library](https://github.com/erdewit/ib_async)
+
+---
+
+**Status**: Production Ready - Global Trading Platform with Comprehensive Safety Protection
