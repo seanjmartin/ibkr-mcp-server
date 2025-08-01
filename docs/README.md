@@ -6,7 +6,7 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 
 ### **Getting Started**
 - [Quick Start Guide](guides/quick-start.md) - Get up and running in 5 minutes
-- [Production Deployment](PRODUCTION_DEPLOYMENT.md) - Complete deployment guide ⭐
+- [Deployment Guide](guides/deployment.md) - Complete deployment and configuration guide ⭐
 
 ### **User Guides**
 - [Trading Guide](guides/trading.md) - Complete trading workflows and examples
@@ -14,6 +14,7 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 - [International Markets](guides/international.md) - Global stock trading
 - [Risk Management](guides/risk-management.md) - Stop losses and portfolio protection
 - [Paper Trading](guides/paper-trading.md) - Safe testing and learning
+- [Deployment Guide](guides/deployment.md) - Production deployment and configuration
 
 ### **API Reference**
 - [API Quick Reference](api/API_QUICK_REFERENCE.md) - Essential commands and examples ⭐
