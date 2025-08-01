@@ -105,12 +105,25 @@ Add to your Claude Desktop configuration:
 
 ## 🌍 Global Market Support
 
-### Supported Exchanges & Currencies
-- **XETRA** (Germany) - EUR: SAP, Adidas, BMW
+### Supported Exchanges & Currencies (12 Total)
+
+**European Exchanges (6):**
+- **XETRA** (Germany) - EUR: SAP, Siemens, BMW
 - **LSE** (London) - GBP: Vodafone, BP, Shell  
+- **SBF** (Euronext Paris) - EUR: LVMH, Total, Sanofi
+- **AEB** (Euronext Amsterdam) - EUR: ASML, Unilever, ING
+- **SWX** (SIX Swiss Exchange) - CHF: Nestle, Novartis, Roche
+- **KFX** (Nasdaq Copenhagen) - DKK: Novo Nordisk, Maersk, Carlsberg
+
+**Asian & Pacific Exchanges (4):**
 - **TSE** (Tokyo) - JPY: Toyota (7203), Honda, Sony
 - **SEHK** (Hong Kong) - HKD: Tencent (00700), TSMC (2330)
+- **KSE** (Korea) - KRW: Samsung (005930), LG, SK Hynix
 - **ASX** (Australia) - AUD: BHP, CBA, Woolworths
+
+**Global Trading (2):**
+- **SMART** (IBKR Routing) - USD: All US stocks
+- **IDEALPRO** (Forex) - Multiple: 20+ currency pairs
 
 ### Auto-Detection Examples
 ```python
