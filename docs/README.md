@@ -51,15 +51,6 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 - **Paper Trading**: Full compatibility with IBKR paper accounts
 - **Safety Framework**: Comprehensive protection and audit logging
 
-## 📖 Documentation Standards
-
-This documentation follows these principles:
-- **Practical Examples**: Every concept includes working examples
-- **Step-by-Step**: Clear, actionable instructions
-- **Safety First**: Emphasizes safe trading practices
-- **Complete Coverage**: All features and capabilities documented
-- **Regular Updates**: Kept current with system changes
-
 ## 🆘 Getting Help
 
 - **Issues**: Search [Common Problems](examples/troubleshooting.md)
