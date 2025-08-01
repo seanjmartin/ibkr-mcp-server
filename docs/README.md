@@ -30,7 +30,7 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 - [Troubleshooting Examples](examples/troubleshooting.md) - Common issues and solutions
 
 ### **Architecture & Development**
-- [Technical Architecture](../TECHNICAL_ARCHITECTURE.md) - System design and components
+- [System Architecture](architecture/system-architecture.md) - Complete technical architecture
 - [Development Guide](guides/development.md) - Contributing and extending
 - [Testing Guide](guides/testing.md) - Testing strategies and frameworks
 - [Deployment Guide](../DEPLOYMENT_GUIDE.md) - Production deployment
