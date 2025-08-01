@@ -55,3 +55,6 @@ Thumbs.db
 *.TWS
 *.xml
 *.out
+
+# Human-in-the-loop - HIL
+.hil

@@ -31,8 +31,9 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 
 ### **Architecture & Development**
 - [System Architecture](architecture/system-architecture.md) - Complete technical architecture
+- [Safety Measures & Risk Management](architecture/safety-measures.md) - Comprehensive safety framework
+- [Testing Strategy & Implementation](architecture/testing-strategy.md) - Complete testing approach
 - [Development Guide](guides/development.md) - Contributing and extending
-- [Testing Guide](guides/testing.md) - Testing strategies and frameworks
 - [Deployment Guide](../DEPLOYMENT_GUIDE.md) - Production deployment
 
 ### **Reference**

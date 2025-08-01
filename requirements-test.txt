@@ -1,0 +1,39 @@
+# Testing dependencies for IBKR MCP Server
+# Install with: pip install -r requirements-test.txt
+
+# Core testing framework
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+
+# Mocking and test utilities
+pytest-mock>=3.10.0
+responses>=0.23.0
+
+# Performance testing
+pytest-benchmark>=4.0.0
+memory-profiler>=0.60.0
+psutil>=5.9.0
+
+# Test reporting and coverage
+coverage[toml]>=7.0.0
+pytest-html>=3.1.0
+pytest-json-report>=1.5.0
+
+# Development and debugging
+pytest-xdist>=3.0.0  # Parallel test execution
+pytest-sugar>=0.9.0  # Better test output
+pytest-clarity>=1.0.0  # Clearer assertion errors
+
+# Code quality integration
+flake8>=6.0.0
+black>=23.0.0
+isort>=5.12.0
+mypy>=1.0.0
+
+# Documentation testing
+pytest-doctestplus>=0.12.0
+
+# Fixtures and test data
+factory-boy>=3.2.0
+Faker>=18.0.0
