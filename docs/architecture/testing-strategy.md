@@ -487,106 +487,18 @@ class TestTradingWorkflows:
 
 ## 5. Paper Trading Validation Tests
 
-### 5.1 Live Connection Tests
+Paper trading validation represents the critical bridge between unit tests and live trading deployment, ensuring all MCP tools work correctly with real IBKR Gateway connections.
 
-#### Paper Trading Integration (test_paper_trading.py)
-```python
-import pytest
-import asyncio
-from ibkr_mcp_server.client import IBKRClient
-from ibkr_mcp_server.enhanced_config import EnhancedSettings
+**See**: [Paper Testing Strategy](paper-testing-strategy.md) for comprehensive documentation of paper trading validation approach, including:
 
-@pytest.mark.paper
-class TestPaperTradingIntegration:
-    """Tests requiring actual connection to IBKR paper trading account"""
-    
-    @pytest.fixture(scope="class")
-    async def live_client(self):
-        """Create client connected to actual paper trading account"""
-        settings = EnhancedSettings()
-        settings.ibkr_is_paper = True
-        settings.enable_trading = True
-        
-        client = IBKRClient()
-        client.settings = settings
-        
-        # Connect to paper trading
-        connected = await client.connect()
-        if not connected:
-            pytest.skip("Could not connect to IBKR paper trading")
-        
-        yield client
-        
-        # Cleanup
-        await client.disconnect()
-    
-    @pytest.mark.asyncio
-    async def test_live_forex_rates(self, live_client):
-        """Test getting actual forex rates from IBKR"""
-        rates = await live_client.get_forex_rates(["EURUSD", "GBPUSD"])
-        
-        # Verify structure
-        assert len(rates) == 2
-        for rate in rates:
-            assert 'pair' in rate
-            assert 'last' in rate
-            assert 'bid' in rate
-            assert 'ask' in rate
-            assert rate['bid'] < rate['ask']  # Spread validation
-            assert rate['last'] > 0
-    
-    @pytest.mark.asyncio
-    async def test_live_account_verification(self, live_client):
-        """Test account verification with live connection"""
-        accounts = await live_client.get_accounts()
-        
-        assert 'current_account' in accounts
-        current_account = accounts['current_account']
-        
-        # Verify paper account prefix
-        paper_prefixes = ["DU", "DUH"]
-        assert any(current_account.startswith(prefix) for prefix in paper_prefixes)
-    
-    @pytest.mark.asyncio
-    async def test_whatif_order_simulation(self, live_client):
-        """Test order simulation using whatIf to avoid actual orders"""
-        from ib_async import Stock, MarketOrder
-        
-        # Create test order
-        contract = Stock('AAPL', 'SMART', 'USD')
-        order = MarketOrder('BUY', 100)
-        
-        # Use whatIf to simulate order without placing
-        whatif_result = await live_client.ib.whatIfOrderAsync(contract, order)
-        
-        # Verify simulation worked
-        assert whatif_result is not None
-        # Should have commission and margin information
-```
+- **Long-lived connection patterns** (Client ID 5)
+- **Individual test debugging strategy**
+- **Consolidation into comprehensive test suite**
+- **Known issues and debugging procedures**
+- **Performance and timeout management**
+- **Gateway state management requirements**
 
-### 5.2 Order Lifecycle Tests
-
-#### Complete Order Lifecycle (test_order_lifecycle.py)
-```python
-@pytest.mark.paper
-class TestOrderLifecycle:
-    """Test complete order lifecycle in paper trading"""
-    
-    @pytest.mark.asyncio
-    async def test_stop_loss_lifecycle(self, live_client):
-        """Test complete stop loss order lifecycle"""
-        # This would only run with paper trading connection
-        # and proper safety overrides for testing
-        
-        # 1. Place stop loss order
-        # 2. Verify order status
-        # 3. Modify order if needed
-        # 4. Cancel order for cleanup
-        
-        # Implementation would require careful safety overrides
-        # to allow testing without affecting real trading
-        pass
-```
+**Current Status**: Basic paper tests implemented with ongoing consolidation work to create single comprehensive test suite with shared connection pattern.
 
 ## 6. Performance and Load Testing
 

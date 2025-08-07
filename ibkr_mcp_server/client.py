@@ -34,6 +34,7 @@ class IBKRClient:
         # Connection state
         self._connected = False
         self._connecting = False
+        self._reconnect_task = None
         
         # Trading managers (initialized after connection)
         self.forex_manager = None
@@ -126,6 +127,11 @@ class IBKRClient:
     
     async def disconnect(self):
         """Clean disconnection."""
+        # Cancel any pending reconnect task
+        if self._reconnect_task and not self._reconnect_task.done():
+            self._reconnect_task.cancel()
+            self._reconnect_task = None
+            
         if self.ib and self.ib.isConnected():
             self.ib.disconnect()
             self._connected = False
@@ -135,7 +141,8 @@ class IBKRClient:
         """Handle disconnection with automatic reconnection."""
         self._connected = False
         self.logger.warning("IBKR disconnected, scheduling reconnection...")
-        asyncio.create_task(self._reconnect())
+        if self._reconnect_task is None or self._reconnect_task.done():
+            self._reconnect_task = asyncio.create_task(self._reconnect())
     
     def _on_error(self, reqId, errorCode, errorString, contract):
         """Centralized error logging."""
@@ -150,6 +157,10 @@ class IBKRClient:
         try:
             await asyncio.sleep(self.reconnect_delay)
             await self.connect()
+        except asyncio.CancelledError:
+            # Task was cancelled, which is expected during shutdown
+            self.logger.debug("Reconnection task cancelled")
+            raise
         except Exception as e:
             self.logger.error(f"Reconnection failed: {e}")
     
@@ -159,24 +170,44 @@ class IBKRClient:
     
     @rate_limit(calls_per_second=1.0)
     async def get_portfolio(self, account: Optional[str] = None) -> List[Dict]:
-        """Get portfolio positions."""
+        """Get portfolio positions using subscription model (avoids hanging reqPositionsAsync)."""
         try:
             if not await self._ensure_connected():
                 raise ConnectionError("Not connected to IBKR")
             
             account = account or self.current_account
             
-            positions = await self.ib.reqPositionsAsync()
+            # Use subscription model instead of hanging reqPositionsAsync()
+            self.logger.debug(f"Subscribing to account updates for portfolio data: {account}")
             
+            # Use the client directly to avoid event loop conflicts
+            self.ib.client.reqAccountUpdates(True, account)
+            
+            # Wait for initial data to arrive
+            await asyncio.sleep(3.0)
+            
+            # Get portfolio from cached data
+            portfolio_items = self.ib.portfolio()
+            
+            # Unsubscribe to clean up
+            self.ib.client.reqAccountUpdates(False, account)
+            
+            # Convert to our format, filtering by account if needed
             portfolio = []
-            for pos in positions:
-                if not account or pos.account == account:
-                    portfolio.append(self._serialize_position(pos))
+            for item in portfolio_items:
+                if not account or item.account == account:
+                    portfolio.append(self._serialize_portfolio_item(item))
             
+            self.logger.debug(f"Retrieved {len(portfolio)} portfolio positions")
             return portfolio
             
         except Exception as e:
             self.logger.error(f"Portfolio request failed: {e}")
+            # Ensure we clean up subscription on error
+            try:
+                self.ib.client.reqAccountUpdates(False, account or self.current_account)
+            except:
+                pass
             raise RuntimeError(f"IBKR API error: {str(e)}")
     
     @rate_limit(calls_per_second=2.0)
@@ -193,25 +224,51 @@ class IBKRClient:
     
     @rate_limit(calls_per_second=1.0)
     async def get_account_summary(self, account: Optional[str] = None) -> List[Dict]:
-        """Get account summary."""
+        """Get account summary using subscription model (avoids hanging reqAccountSummaryAsync)."""
         try:
             if not await self._ensure_connected():
                 raise ConnectionError("Not connected to IBKR")
             
-            account = account or self.current_account or "All"
+            account = account or self.current_account
             
-            summary_tags = [
+            # Use subscription model instead of hanging reqAccountSummaryAsync()
+            self.logger.debug(f"Subscribing to account updates for summary data: {account}")
+            
+            # Use the client directly to avoid event loop conflicts
+            self.ib.client.reqAccountUpdates(True, account)
+            
+            # Wait for initial data to arrive
+            await asyncio.sleep(3.0)
+            
+            # Get account values from cached data
+            account_values = self.ib.accountValues()
+            
+            # Unsubscribe to clean up
+            self.ib.client.reqAccountUpdates(False, account)
+            
+            # Filter to desired tags for summary and convert to our format
+            summary_tags = {
                 'TotalCashValue', 'NetLiquidation', 'UnrealizedPnL', 'RealizedPnL',
                 'GrossPositionValue', 'BuyingPower', 'EquityWithLoanValue',
                 'PreviousDayEquityWithLoanValue', 'FullInitMarginReq', 'FullMaintMarginReq'
-            ]
+            }
             
-            account_values = await self.ib.reqAccountSummaryAsync()
+            summary_values = []
+            for av in account_values:
+                if not account or av.account == account:
+                    if av.tag in summary_tags:
+                        summary_values.append(self._serialize_account_value(av))
             
-            return [self._serialize_account_value(av) for av in account_values]
+            self.logger.debug(f"Retrieved {len(summary_values)} account summary values")
+            return summary_values
             
         except Exception as e:
             self.logger.error(f"Account summary request failed: {e}")
+            # Ensure we clean up subscription on error
+            try:
+                self.ib.client.reqAccountUpdates(False, account or self.current_account)
+            except:
+                pass
             raise RuntimeError(f"IBKR API error: {str(e)}")
     
     # Short selling method removed - reqShortableSharesAsync not available in ib-async 2.0.1
@@ -301,9 +358,9 @@ class IBKRClient:
             result = {
                 "connected": is_connected,
                 "paper_trading": self.is_paper,
-                "client_id": settings.ibkr_client_id,
-                "host": settings.ibkr_host,
-                "port": settings.ibkr_port
+                "client_id": self.client_id,
+                "host": self.host,
+                "port": self.port
             }
             
             if is_connected:
@@ -323,9 +380,9 @@ class IBKRClient:
                 "connected": False,
                 "error": str(e),
                 "paper_trading": self.is_paper,
-                "client_id": settings.ibkr_client_id,
-                "host": settings.ibkr_host,
-                "port": settings.ibkr_port
+                "client_id": self.client_id,
+                "host": self.host,
+                "port": self.port
             }
     
     def _serialize_position(self, position) -> Dict:
@@ -341,6 +398,21 @@ class IBKRClient:
             "unrealizedPNL": safe_float(getattr(position, 'unrealizedPNL', 0)),
             "realizedPNL": safe_float(getattr(position, 'realizedPNL', 0)),
             "account": position.account
+        }
+    
+    def _serialize_portfolio_item(self, item) -> Dict:
+        """Convert PortfolioItem to serializable dict (from subscription model)."""
+        return {
+            "symbol": item.contract.symbol,
+            "secType": item.contract.secType,
+            "exchange": item.contract.exchange,
+            "position": safe_float(item.position),
+            "avgCost": safe_float(item.averageCost),
+            "marketPrice": safe_float(item.marketPrice),
+            "marketValue": safe_float(item.marketValue),
+            "unrealizedPNL": safe_float(item.unrealizedPNL),
+            "realizedPNL": safe_float(item.realizedPNL),
+            "account": item.account
         }
     
     def _serialize_account_value(self, account_value) -> Dict:
@@ -487,7 +559,16 @@ class IBKRClient:
             if not await self._ensure_connected():
                 raise IBKRConnectionError("Not connected to IBKR")
 
-            completed_orders = await self.ib.reqCompletedOrdersAsync()
+            # Use timeout to handle IBKR API hanging issue with completed orders
+            # When there are no completed orders, the API may not send completion callback
+            try:
+                completed_orders = await asyncio.wait_for(
+                    self.ib.reqCompletedOrdersAsync(apiOnly=False),
+                    timeout=5.0  # 5 second timeout
+                )
+            except asyncio.TimeoutError:
+                self.logger.warning("reqCompletedOrdersAsync timed out - likely no completed orders")
+                completed_orders = []  # Return empty list when timeout occurs
             
             # Filter by account if specified
             if account:
