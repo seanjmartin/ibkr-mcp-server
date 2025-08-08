@@ -85,7 +85,7 @@ Add to your Claude Desktop configuration:
 ```
 ibkr_mcp_server/
 ├── client.py                 # Enhanced IBKR client with global trading
-├── tools.py                  # 25 MCP tools for Claude integration
+├── tools.py                  # 23 MCP tools for Claude integration
 ├── main.py                   # MCP server entry point
 ├── config.py                 # Configuration management
 ├── utils.py                  # Utilities and base exceptions
@@ -115,7 +115,7 @@ ibkr_mcp_server/
 - **EmergencyKillSwitch**: Instant trading halt capability
 - **RateLimiter**: API usage protection
 
-## 🛠️ Available Tools (25 Total)
+## 🛠️ Available Tools (23 Total)
 
 ### Portfolio & Account Management
 - `get_portfolio` - View current positions and P&L
@@ -242,7 +242,7 @@ max_daily_orders: int = 50              # Maximum orders per day
 - **[Basic Usage Examples](docs/examples/basic-usage.md)** - Real Claude conversations and workflows
 
 ### **🔧 API & Technical Reference**
-- **[MCP Tools Reference](docs/api/tools.md)** - Complete documentation for all 25 tools
+- **[MCP Tools Reference](docs/api/tools.md)** - Complete documentation for all 23 tools
 - **[System Architecture](docs/architecture/system-architecture.md)** - Comprehensive technical architecture
 - **[Supported Markets](docs/reference/markets.md)** - Complete global markets, exchanges, and currencies
 
