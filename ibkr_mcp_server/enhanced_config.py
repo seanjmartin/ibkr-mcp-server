@@ -192,7 +192,7 @@ class EnhancedSettings(BaseSettings):
         return v.upper()
     
     model_config = {
-        "env_file": ".env",
+        "env_file": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"),
         "env_file_encoding": "utf-8",
         "case_sensitive": False,
         "env_prefix": "IBKR_"  # Environment variables should be prefixed with IBKR_

@@ -18,7 +18,7 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 
 ### **API Reference**
 - [API Quick Reference](api/API_QUICK_REFERENCE.md) - Essential commands and examples ⭐
-- [MCP Tools Reference](api/tools.md) - Complete tool documentation (17 tools)
+- [MCP Tools Reference](api/tools.md) - Complete tool documentation (23 tools)
 
 ### **Examples & Tutorials**
 - [Basic Usage Examples](examples/basic-usage.md) - Common operations
@@ -47,6 +47,8 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 
 ### **Key Features**
 - **Real-time Market Data**: Live quotes with intelligent exchange detection
+- **Complete Trading Platform**: Market, limit, and bracket order execution
+- **Professional Order Management**: Place, modify, cancel, and monitor all order types
 - **Advanced Risk Management**: Stop losses, bracket orders, trailing stops
 - **Multi-currency Accounts**: Trade in multiple currencies seamlessly
 - **Paper Trading**: Full compatibility with IBKR paper accounts

@@ -8,8 +8,9 @@ from decimal import Decimal
 from ib_async import IB, Stock, util
 from .enhanced_config import EnhancedSettings
 settings = EnhancedSettings()
-from .utils import rate_limit, retry_on_failure, safe_float, safe_int, ValidationError, ConnectionError as IBKRConnectionError
+from .utils import rate_limit, retry_on_failure, safe_float, safe_int, ValidationError, ConnectionError
 from .trading import ForexManager, InternationalManager, StopLossManager
+from .trading.order_management import OrderManager
 
 
 class IBKRClient:
@@ -111,7 +112,7 @@ class IBKRClient:
             
         except Exception as e:
             self.logger.error(f"Failed to connect to IBKR: {e}")
-            raise IBKRConnectionError(f"Connection failed: {e}")
+            raise ConnectionError(f"Connection failed: {e}")
         finally:
             self._connecting = False
     
@@ -121,6 +122,7 @@ class IBKRClient:
             self.forex_manager = ForexManager(self.ib)
             self.international_manager = InternationalManager(self.ib)
             self.stop_loss_manager = StopLossManager(self.ib)
+            self.order_manager = OrderManager(self.ib)
             self.logger.info("Trading managers initialized successfully")
         except Exception as e:
             self.logger.error(f"Failed to initialize trading managers: {e}")
@@ -213,8 +215,8 @@ class IBKRClient:
     @rate_limit(calls_per_second=2.0)
     async def get_market_data(self, symbols: str, auto_detect: bool = True) -> List[Dict]:
         """Get real-time market quotes for US and international symbols with intelligent auto-detection."""
-        if not await self._ensure_connected():
-            raise IBKRConnectionError("Not connected to IBKR")
+        if not self.is_connected():
+            raise ConnectionError("Not connected to IBKR")
         
         # Use international manager for all symbols (handles US + international intelligently)
         if not self.international_manager:
@@ -228,6 +230,10 @@ class IBKRClient:
         try:
             if not await self._ensure_connected():
                 raise ConnectionError("Not connected to IBKR")
+            
+            # Additional safety check for client object
+            if not self.ib or not self.ib.client:
+                raise ConnectionError("IBKR client not properly initialized")
             
             account = account or self.current_account
             
@@ -266,7 +272,8 @@ class IBKRClient:
             self.logger.error(f"Account summary request failed: {e}")
             # Ensure we clean up subscription on error
             try:
-                self.ib.client.reqAccountUpdates(False, account or self.current_account)
+                if self.ib and self.ib.client:
+                    self.ib.client.reqAccountUpdates(False, account or self.current_account)
             except:
                 pass
             raise RuntimeError(f"IBKR API error: {str(e)}")
@@ -431,7 +438,12 @@ class IBKRClient:
     async def get_forex_rates(self, currency_pairs: str) -> List[Dict]:
         """Get real-time forex rates."""
         if not await self._ensure_connected():
-            raise IBKRConnectionError("Not connected to IBKR")
+            raise ConnectionError("Not connected to IBKR")
+        
+        # Check if forex trading is enabled
+        if not settings.enable_forex_trading:
+            from .enhanced_validators import ForexTradingDisabledError
+            raise ForexTradingDisabledError("Forex trading is disabled in configuration. Enable with enable_forex_trading=True")
         
         if not self.forex_manager:
             raise ValidationError("Forex manager not initialized")
@@ -441,7 +453,12 @@ class IBKRClient:
     async def convert_currency(self, amount: float, from_currency: str, to_currency: str) -> Dict:
         """Convert currency using live forex rates."""
         if not await self._ensure_connected():
-            raise IBKRConnectionError("Not connected to IBKR")
+            raise ConnectionError("Not connected to IBKR")
+        
+        # Check if forex trading is enabled
+        if not settings.enable_forex_trading:
+            from .enhanced_validators import ForexTradingDisabledError
+            raise ForexTradingDisabledError("Forex trading is disabled in configuration. Enable with enable_forex_trading=True")
         
         if not self.forex_manager:
             raise ValidationError("Forex manager not initialized")
@@ -467,7 +484,7 @@ class IBKRClient:
                              order_type: str = "STP", **kwargs) -> Dict:
         """Place stop loss order."""
         if not await self._ensure_connected():
-            raise IBKRConnectionError("Not connected to IBKR")
+            raise ConnectionError("Not connected to IBKR")
         
         if not self.stop_loss_manager:
             raise ValidationError("Stop loss manager not initialized")
@@ -480,7 +497,7 @@ class IBKRClient:
                              status: str = "active") -> List[Dict]:
         """Get existing stop loss orders."""
         if not await self._ensure_connected():
-            raise IBKRConnectionError("Not connected to IBKR")
+            raise ConnectionError("Not connected to IBKR")
         
         if not self.stop_loss_manager:
             raise ValidationError("Stop loss manager not initialized")
@@ -490,7 +507,7 @@ class IBKRClient:
     async def modify_stop_loss(self, order_id: int, **modifications) -> Dict:
         """Modify existing stop loss order."""
         if not await self._ensure_connected():
-            raise IBKRConnectionError("Not connected to IBKR")
+            raise ConnectionError("Not connected to IBKR")
         
         if not self.stop_loss_manager:
             raise ValidationError("Stop loss manager not initialized")
@@ -500,7 +517,7 @@ class IBKRClient:
     async def cancel_stop_loss(self, order_id: int) -> Dict:
         """Cancel existing stop loss order."""
         if not await self._ensure_connected():
-            raise IBKRConnectionError("Not connected to IBKR")
+            raise ConnectionError("Not connected to IBKR")
         
         if not self.stop_loss_manager:
             raise ValidationError("Stop loss manager not initialized")
@@ -510,7 +527,7 @@ class IBKRClient:
     async def get_open_orders(self, account: str = None) -> List[Dict]:
         """Get all open/pending orders from IBKR."""
         if not await self._ensure_connected():
-            raise IBKRConnectionError("Not connected to IBKR")
+            raise ConnectionError("Not connected to IBKR")
         
         try:
             # Get all open orders from IBKR
@@ -557,7 +574,7 @@ class IBKRClient:
         """Get completed orders from IBKR."""
         try:
             if not await self._ensure_connected():
-                raise IBKRConnectionError("Not connected to IBKR")
+                raise ConnectionError("Not connected to IBKR")
 
             # Use timeout to handle IBKR API hanging issue with completed orders
             # When there are no completed orders, the API may not send completion callback
@@ -575,23 +592,28 @@ class IBKRClient:
                 completed_orders = [order for order in completed_orders if hasattr(order, 'account') and order.account == account]
             
             results = []
-            for order in completed_orders:
+            for trade in completed_orders:
+                # Trade objects have different attributes than Order objects
+                order = trade.order if hasattr(trade, 'order') else trade
+                contract = trade.contract if hasattr(trade, 'contract') else None
+                order_state = trade.orderStatus if hasattr(trade, 'orderStatus') else None
+                
                 order_data = {
-                    "order_id": order.orderId,
-                    "symbol": getattr(order.contract, 'symbol', 'Unknown'),
-                    "exchange": getattr(order.contract, 'exchange', 'Unknown'),
-                    "currency": getattr(order.contract, 'currency', 'Unknown'),
-                    "action": order.action,
-                    "quantity": order.totalQuantity,
-                    "order_type": order.orderType,
+                    "order_id": getattr(order, 'orderId', getattr(trade, 'order_id', 'Unknown')),
+                    "symbol": getattr(contract, 'symbol', 'Unknown') if contract else 'Unknown',
+                    "exchange": getattr(contract, 'exchange', 'Unknown') if contract else 'Unknown',
+                    "currency": getattr(contract, 'currency', 'Unknown') if contract else 'Unknown',
+                    "action": getattr(order, 'action', 'Unknown'),
+                    "quantity": getattr(order, 'totalQuantity', 0),
+                    "order_type": getattr(order, 'orderType', 'Unknown'),
                     "limit_price": getattr(order, 'lmtPrice', None),
                     "aux_price": getattr(order, 'auxPrice', None),
-                    "time_in_force": order.tif,
-                    "status": getattr(order, 'orderState', {}).get('status', 'Unknown') if hasattr(order, 'orderState') else 'Unknown',
-                    "filled": getattr(order, 'filled', 0),
-                    "remaining": getattr(order, 'remaining', order.totalQuantity),
-                    "avg_fill_price": getattr(order, 'avgFillPrice', 0),
-                    "commission": getattr(order, 'commission', 0),
+                    "time_in_force": getattr(order, 'tif', 'Unknown'),
+                    "status": getattr(order_state, 'status', 'Unknown') if order_state else 'Unknown',
+                    "filled": getattr(order_state, 'filled', 0) if order_state else 0,
+                    "remaining": getattr(order_state, 'remaining', 0) if order_state else 0,
+                    "avg_fill_price": getattr(order_state, 'avgFillPrice', 0) if order_state else 0,
+                    "commission": getattr(trade, 'commission', 0) if hasattr(trade, 'commission') else 0,
                     "account": getattr(order, 'account', 'Unknown'),
                     "order_ref": getattr(order, 'orderRef', ''),
                     "client_id": getattr(order, 'clientId', self.client_id)
@@ -602,13 +624,13 @@ class IBKRClient:
             
         except Exception as e:
             self.logger.error(f"Error getting completed orders: {e}")
-            raise IBKRConnectionError(f"Failed to get completed orders: {str(e)}")
+            raise ConnectionError(f"Failed to get completed orders: {str(e)}")
 
     async def get_executions(self, account: str = None, symbol: str = None, days_back: int = 7) -> List[Dict]:
         """Get trade executions from IBKR."""
         try:
             if not await self._ensure_connected():
-                raise IBKRConnectionError("Not connected to IBKR")
+                raise ConnectionError("Not connected to IBKR")
 
             # Create execution filter
             from ib_async import ExecutionFilter
@@ -647,7 +669,7 @@ class IBKRClient:
                     "ev_multiplier": safe_float(execution.evMultiplier),
                     "model_code": execution.modelCode,
                     "last_liquidity": execution.lastLiquidity,
-                    "time": execution.time,
+                    "time": str(execution.time) if execution.time else None,  # Convert datetime to string
                     "account": execution.acctNumber
                 }
                 results.append(execution_data)
@@ -659,7 +681,85 @@ class IBKRClient:
             
         except Exception as e:
             self.logger.error(f"Error getting executions: {e}")
-            raise IBKRConnectionError(f"Failed to get executions: {str(e)}")
+            raise ConnectionError(f"Failed to get executions: {str(e)}")
+    
+    # ============ ORDER MANAGEMENT METHODS ============
+    
+    async def place_market_order(self, symbol: str, action: str, quantity: int,
+                               exchange: str = "SMART", currency: str = "USD",
+                               **kwargs) -> Dict:
+        """Place market order with immediate execution."""
+        if not await self._ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        return await self.order_manager.place_market_order(
+            symbol=symbol,
+            action=action,
+            quantity=quantity,
+            exchange=exchange,
+            currency=currency,
+            **kwargs
+        )
+    
+    async def place_limit_order(self, symbol: str, action: str, quantity: int,
+                              price: float, exchange: str = "SMART", 
+                              currency: str = "USD", time_in_force: str = "DAY",
+                              **kwargs) -> Dict:
+        """Place limit order with price control."""
+        if not await self._ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        return await self.order_manager.place_limit_order(
+            symbol=symbol,
+            action=action,
+            quantity=quantity,
+            price=price,
+            exchange=exchange,
+            currency=currency,
+            time_in_force=time_in_force,
+            **kwargs
+        )
+    
+    async def cancel_order(self, order_id: int) -> Dict:
+        """Cancel existing order."""
+        if not await self._ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        return await self.order_manager.cancel_order(order_id)
+    
+    async def modify_order(self, order_id: int, **modifications) -> Dict:
+        """Modify existing order parameters."""
+        if not await self._ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        return await self.order_manager.modify_order(order_id, **modifications)
+    
+    async def get_order_status(self, order_id: int) -> Dict:
+        """Get detailed order status and execution information."""
+        if not await self._ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        return await self.order_manager.get_order_status(order_id)
+    
+    async def place_bracket_order(self, symbol: str, action: str, quantity: int,
+                                entry_price: float, stop_price: float, 
+                                target_price: float, exchange: str = "SMART",
+                                currency: str = "USD", **kwargs) -> Dict:
+        """Place bracket order with entry, stop, and target."""
+        if not await self._ensure_connected():
+            raise ConnectionError("Not connected to IBKR")
+        
+        return await self.order_manager.place_bracket_order(
+            symbol=symbol,
+            action=action,
+            quantity=quantity,
+            entry_price=entry_price,
+            stop_price=stop_price,
+            target_price=target_price,
+            exchange=exchange,
+            currency=currency,
+            **kwargs
+        )
 
 
 # Global client instance

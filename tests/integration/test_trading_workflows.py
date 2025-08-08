@@ -6,12 +6,14 @@ simulating real-world usage scenarios.
 """
 
 import pytest
+import pytest_asyncio
 from unittest.mock import AsyncMock, Mock, patch
 from ibkr_mcp_server.client import IBKRClient
 from ibkr_mcp_server.enhanced_config import EnhancedSettings
 from ibkr_mcp_server.trading.forex import ForexManager
 from ibkr_mcp_server.trading.international import InternationalManager
 from ibkr_mcp_server.trading.stop_loss import StopLossManager
+from ibkr_mcp_server.safety_framework import TradingSafetyManager
 
 
 @pytest.fixture
@@ -28,7 +30,7 @@ def workflow_settings():
     return settings
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def workflow_client(workflow_settings, mock_ib):
     """Create fully configured client for workflow testing"""
     client = IBKRClient()
@@ -40,6 +42,7 @@ async def workflow_client(workflow_settings, mock_ib):
     client.forex_manager = ForexManager(mock_ib)
     client.international_manager = InternationalManager(mock_ib)
     client.stop_loss_manager = StopLossManager(mock_ib)
+    client.safety_manager = TradingSafetyManager()
     
     return client
 
@@ -527,37 +530,34 @@ class TestErrorRecoveryWorkflows:
     async def test_safety_violation_recovery_workflow(self, workflow_client):
         """Test workflow recovery after safety violations"""
         
-        # Step 1: Trigger safety violation (kill switch activation)
-        workflow_client.safety_manager.kill_switch.activate("Test violation")
+        # Step 1: Verify safety manager is working
+        assert workflow_client.safety_manager.kill_switch.is_active() is False
         
-        # Step 2: Attempt trading operation (should be blocked)
-        workflow_client.stop_loss_manager.place_stop_loss = AsyncMock(return_value={
-            'success': False,
-            'error': 'Emergency kill switch is active'
-        })
+        # Step 2: Trigger safety violation (kill switch activation)
+        activation_result = workflow_client.safety_manager.kill_switch.activate("Test violation")
+        assert activation_result['status'] == 'activated'
+        assert workflow_client.safety_manager.kill_switch.is_active() is True
         
-        # Step 3: Deactivate kill switch and retry
-        workflow_client.safety_manager.kill_switch.deactivate("EMERGENCY_OVERRIDE_2025")
-        workflow_client.stop_loss_manager.place_stop_loss = AsyncMock(return_value={
-            'success': True,
-            'order_id': 12345,
-            'symbol': 'AAPL'
-        })
-        
-        # Execute safety recovery workflow
-        # First attempt should fail
-        blocked_result = await workflow_client.stop_loss_manager.place_stop_loss(
-            symbol='AAPL', action='SELL', quantity=100, stop_price=180.0
+        # Step 3: Verify safety validation blocks operations
+        validation_result = workflow_client.safety_manager.validate_trading_operation(
+            'stop_loss_placement',
+            {'symbol': 'AAPL', 'action': 'SELL', 'quantity': 100, 'stop_price': 180.0}
         )
-        assert blocked_result['success'] is False
-        assert 'kill switch' in blocked_result['error'].lower()
+        assert validation_result['is_safe'] is False
+        assert 'kill switch' in validation_result['errors'][0].lower()
         
-        # After override, should succeed
-        success_result = await workflow_client.stop_loss_manager.place_stop_loss(
-            symbol='AAPL', action='SELL', quantity=100, stop_price=180.0
+        # Step 4: Deactivate kill switch
+        deactivation_result = workflow_client.safety_manager.kill_switch.deactivate("EMERGENCY_OVERRIDE_2024")
+        assert deactivation_result['status'] == 'deactivated'
+        assert workflow_client.safety_manager.kill_switch.is_active() is False
+        
+        # Step 5: Verify operations can proceed after recovery
+        recovered_validation = workflow_client.safety_manager.validate_trading_operation(
+            'stop_loss_placement',
+            {'symbol': 'AAPL', 'action': 'SELL', 'quantity': 100, 'stop_price': 180.0}
         )
-        assert success_result['success'] is True
-        assert success_result['order_id'] == 12345
+        # Note: May still fail due to other safety checks, but kill switch should be cleared
+        assert 'emergency kill switch is active' not in str(recovered_validation['errors']).lower()
 
 
 class TestPerformanceOptimizedWorkflows:

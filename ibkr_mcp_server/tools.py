@@ -80,7 +80,7 @@ SAFE_OPERATIONS = {
 server = Server("ibkr-mcp")
 
 
-# Define all tools (6 original + 8 new = 14 total)
+# Define all tools (6 original + 8 enhanced + 6 order placement + 3 order management + 1 documentation = 24 total)
 TOOLS = [
     # ============ ORIGINAL TOOLS ============
     Tool(
@@ -256,6 +256,100 @@ TOOLS = [
         }
     ),
     
+    # ============ ORDER PLACEMENT TOOLS ============
+    Tool(
+        name="place_market_order",
+        description="Execute market order for immediate execution at current market price",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "symbol": {"type": "string", "description": "Stock symbol (e.g., AAPL, MSFT)"},
+                "action": {"type": "string", "description": "Order action (BUY/SELL)", "enum": ["BUY", "SELL"]},
+                "quantity": {"type": "integer", "description": "Number of shares", "minimum": 1},
+                "exchange": {"type": "string", "description": "Exchange code", "default": "SMART"},
+                "currency": {"type": "string", "description": "Currency code", "default": "USD"}
+            },
+            "required": ["symbol", "action", "quantity"],
+            "additionalProperties": False
+        }
+    ),
+    Tool(
+        name="place_limit_order",
+        description="Place limit order with price control - only executes at specified price or better",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "symbol": {"type": "string", "description": "Stock symbol (e.g., AAPL, MSFT)"},
+                "action": {"type": "string", "description": "Order action (BUY/SELL)", "enum": ["BUY", "SELL"]},
+                "quantity": {"type": "integer", "description": "Number of shares", "minimum": 1},
+                "price": {"type": "number", "description": "Limit price", "minimum": 0.01},
+                "time_in_force": {"type": "string", "description": "Time in force", "enum": ["DAY", "GTC", "IOC", "FOK"], "default": "DAY"},
+                "exchange": {"type": "string", "description": "Exchange code", "default": "SMART"},
+                "currency": {"type": "string", "description": "Currency code", "default": "USD"}
+            },
+            "required": ["symbol", "action", "quantity", "price"],
+            "additionalProperties": False
+        }
+    ),
+    Tool(
+        name="cancel_order",
+        description="Cancel pending order by order ID",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "order_id": {"type": "integer", "description": "Order ID to cancel", "minimum": 1}
+            },
+            "required": ["order_id"],
+            "additionalProperties": False
+        }
+    ),
+    Tool(
+        name="modify_order",
+        description="Modify existing order parameters (quantity, price, time in force)",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "order_id": {"type": "integer", "description": "Order ID to modify", "minimum": 1},
+                "quantity": {"type": "integer", "description": "New quantity", "minimum": 1},
+                "price": {"type": "number", "description": "New price", "minimum": 0.01},
+                "time_in_force": {"type": "string", "description": "New time in force", "enum": ["DAY", "GTC", "IOC", "FOK"]}
+            },
+            "required": ["order_id"],
+            "additionalProperties": False
+        }
+    ),
+    Tool(
+        name="get_order_status",
+        description="Get detailed status and execution information for specific order",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "order_id": {"type": "integer", "description": "Order ID to check", "minimum": 1}
+            },
+            "required": ["order_id"],
+            "additionalProperties": False
+        }
+    ),
+    Tool(
+        name="place_bracket_order",
+        description="Place advanced bracket order with entry, stop loss, and profit target in one operation",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "symbol": {"type": "string", "description": "Stock symbol (e.g., AAPL, MSFT)"},
+                "action": {"type": "string", "description": "Order action (BUY/SELL)", "enum": ["BUY", "SELL"]},
+                "quantity": {"type": "integer", "description": "Number of shares", "minimum": 1},
+                "entry_price": {"type": "number", "description": "Entry limit price", "minimum": 0.01},
+                "stop_price": {"type": "number", "description": "Stop loss price", "minimum": 0.01},
+                "target_price": {"type": "number", "description": "Profit target price", "minimum": 0.01},
+                "exchange": {"type": "string", "description": "Exchange code", "default": "SMART"},
+                "currency": {"type": "string", "description": "Currency code", "default": "USD"}
+            },
+            "required": ["symbol", "action", "quantity", "entry_price", "stop_price", "target_price"],
+            "additionalProperties": False
+        }
+    ),
+    
     # ============ ORDER MANAGEMENT TOOLS ============
     Tool(
         name="get_open_orders",
@@ -286,7 +380,8 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "account": {"type": "string", "description": "Account ID filter (optional)"},
-                "symbol": {"type": "string", "description": "Symbol filter (optional)"}
+                "symbol": {"type": "string", "description": "Symbol filter (optional)"},
+                "days_back": {"type": "integer", "description": "Number of days back to search (default: 7)"}
             },
             "additionalProperties": False
         }
@@ -441,6 +536,36 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
                     type="text",
                     text=f"Error getting open orders: {str(e)}"
                 )]
+                
+        elif name == "get_completed_orders":
+            account = arguments.get("account")
+            try:
+                result = await ibkr_client.get_completed_orders(account)
+                return [TextContent(
+                    type="text",
+                    text=json.dumps(result, indent=2)
+                )]
+            except Exception as e:
+                return [TextContent(
+                    type="text",
+                    text=f"Error getting completed orders: {str(e)}"
+                )]
+                
+        elif name == "get_executions":
+            account = arguments.get("account")
+            symbol = arguments.get("symbol")
+            days_back = arguments.get("days_back", 7)
+            try:
+                result = await ibkr_client.get_executions(account, symbol, days_back)
+                return [TextContent(
+                    type="text",
+                    text=json.dumps(result, indent=2)
+                )]
+            except Exception as e:
+                return [TextContent(
+                    type="text",
+                    text=f"Error getting executions: {str(e)}"
+                )]
         
         # ============ FOREX TRADING TOOLS ============
         elif name == "get_forex_rates":
@@ -576,10 +701,17 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
                     text=f"Error cancelling stop loss: {str(e)}"
                 )]
         
-        elif name == "get_completed_orders":
-            account = arguments.get("account")
+
+        
+        # ============ ORDER PLACEMENT TOOLS ============
+        elif name == "place_market_order":
             try:
-                result = await ibkr_client.get_completed_orders(account)
+                # Use safety wrapper for market order placement
+                result = await safe_trading_operation(
+                    operation_type="order_placement",
+                    operation_data=arguments,
+                    operation_func=lambda: ibkr_client.place_market_order(**arguments)
+                )
                 return [TextContent(
                     type="text",
                     text=json.dumps(result, indent=2)
@@ -587,13 +719,17 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
             except Exception as e:
                 return [TextContent(
                     type="text",
-                    text=f"Error getting completed orders: {str(e)}"
+                    text=f"Error placing market order: {str(e)}"
                 )]
                 
-        elif name == "get_executions":
-            account = arguments.get("account")
+        elif name == "place_limit_order":
             try:
-                result = await ibkr_client.get_executions(account)
+                # Use safety wrapper for limit order placement
+                result = await safe_trading_operation(
+                    operation_type="order_placement",
+                    operation_data=arguments,
+                    operation_func=lambda: ibkr_client.place_limit_order(**arguments)
+                )
                 return [TextContent(
                     type="text",
                     text=json.dumps(result, indent=2)
@@ -601,7 +737,76 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
             except Exception as e:
                 return [TextContent(
                     type="text",
-                    text=f"Error getting trade executions: {str(e)}"
+                    text=f"Error placing limit order: {str(e)}"
+                )]
+                
+        elif name == "cancel_order":
+            try:
+                # Use safety wrapper for order cancellation
+                result = await safe_trading_operation(
+                    operation_type="order_cancellation",
+                    operation_data=arguments,
+                    operation_func=lambda: ibkr_client.cancel_order(arguments["order_id"])
+                )
+                return [TextContent(
+                    type="text",
+                    text=json.dumps(result, indent=2)
+                )]
+            except Exception as e:
+                return [TextContent(
+                    type="text",
+                    text=f"Error cancelling order: {str(e)}"
+                )]
+                
+        elif name == "modify_order":
+            order_id = arguments["order_id"]
+            modifications = {k: v for k, v in arguments.items() if k != "order_id"}
+            try:
+                # Use safety wrapper for order modification
+                result = await safe_trading_operation(
+                    operation_type="order_modification",
+                    operation_data=arguments,
+                    operation_func=lambda: ibkr_client.modify_order(order_id, **modifications)
+                )
+                return [TextContent(
+                    type="text",
+                    text=json.dumps(result, indent=2)
+                )]
+            except Exception as e:
+                return [TextContent(
+                    type="text",
+                    text=f"Error modifying order: {str(e)}"
+                )]
+                
+        elif name == "get_order_status":
+            try:
+                result = await ibkr_client.get_order_status(arguments["order_id"])
+                return [TextContent(
+                    type="text",
+                    text=json.dumps(result, indent=2)
+                )]
+            except Exception as e:
+                return [TextContent(
+                    type="text",
+                    text=f"Error getting order status: {str(e)}"
+                )]
+                
+        elif name == "place_bracket_order":
+            try:
+                # Use safety wrapper for bracket order placement
+                result = await safe_trading_operation(
+                    operation_type="bracket_order_placement",
+                    operation_data=arguments,
+                    operation_func=lambda: ibkr_client.place_bracket_order(**arguments)
+                )
+                return [TextContent(
+                    type="text",
+                    text=json.dumps(result, indent=2)
+                )]
+            except Exception as e:
+                return [TextContent(
+                    type="text",
+                    text=f"Error placing bracket order: {str(e)}"
                 )]
         
         # ============ DOCUMENTATION TOOL ============

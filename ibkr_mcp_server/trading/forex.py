@@ -10,8 +10,9 @@ from decimal import Decimal
 from ib_async import IB, Forex, MarketOrder, LimitOrder, StopOrder, StopLimitOrder
 
 from ..data import forex_manager as forex_db
-from ..utils import safe_float, safe_int, ValidationError
-from ..enhanced_validators import ForexValidator
+from ..utils import safe_float, safe_int, ValidationError, ConnectionError
+from ..enhanced_validators import ForexValidator, ForexTradingDisabledError
+from ..enhanced_config import enhanced_settings
 
 
 class ForexManager:
@@ -31,14 +32,23 @@ class ForexManager:
         self.request_count = 0
         self.last_request_time = 0
     
-    async def get_forex_rates(self, currency_pairs: str) -> List[Dict]:
+    async def get_forex_rates(self, currency_pairs) -> List[Dict]:
         """Get real-time forex rates with intelligent caching."""
         try:
             if not self.ib or not self.ib.isConnected():
                 raise ConnectionError("Not connected to IBKR")
             
-            # Parse and validate pairs
-            pairs = [p.strip().upper() for p in currency_pairs.split(',')]
+            # Check if forex trading is enabled
+            if not enhanced_settings.enable_forex_trading:
+                raise ForexTradingDisabledError("Forex trading is disabled in configuration")
+            
+            # Parse and validate pairs - handle both string and list inputs
+            if isinstance(currency_pairs, str):
+                pairs = [p.strip().upper() for p in currency_pairs.split(',')]
+            elif isinstance(currency_pairs, list):
+                pairs = [str(p).strip().upper() for p in currency_pairs]
+            else:
+                raise ValidationError(f"currency_pairs must be string or list, got {type(currency_pairs)}")
             
             # Validate all pairs
             invalid_pairs = []

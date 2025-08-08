@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the strategy for validating the IBKR MCP Server **MCP tool layer** with actual paper trading connections. Paper testing represents the critical bridge between unit tests and Claude Desktop integration, ensuring all **17 MCP tools work correctly** through the complete MCP protocol stack.
+This document outlines the strategy for validating the IBKR MCP Server **MCP tool layer** with actual paper trading connections. Paper testing represents the critical bridge between unit tests and Claude Desktop integration, ensuring all **23 MCP tools work correctly** through the complete MCP protocol stack.
 
 ## CRITICAL TESTING LAYER CORRECTION
 
@@ -72,7 +72,7 @@ C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_get_con
 timeout 10 C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_get_connection_status.py -v -s --tb=short
 ```
 
-### 17 MCP Tools to Test
+### 23 MCP Tools to Test
 **Portfolio & Account (5 tools):**
 1. `get_portfolio` - Portfolio positions and P&L
 2. `get_account_summary` - Account balances and metrics  
@@ -107,7 +107,7 @@ Each test must use the **call_tool()** interface:
 ```python
 @pytest.mark.paper
 class TestPaperTradingMCPTools:
-    """Test all 17 MCP tools with live paper trading connection"""
+    """Test all 23 MCP tools with live paper trading connection"""
     
     async def test_get_connection_status_tool(self):
         """Test get_connection_status MCP tool"""
@@ -159,7 +159,7 @@ Each test must verify:
 ```python
 @pytest.mark.paper
 class TestPaperTradingMCPTools:
-    """Test all 17 MCP tools with live paper trading"""
+    """Test all 23 MCP tools with live paper trading"""
     
     # Portfolio & Account Tools (5 tests)
     async def test_get_connection_status_tool(self):
@@ -321,7 +321,7 @@ class TestPaperTradingMCPTools:
 1. **Audit Current Tests** - Identify which tests bypass MCP layer
 2. **Convert Client Calls** - Replace client.method() with call_tool()
 3. **Add MCP Validation** - Verify proper MCP response structure
-4. **Test All 17 Tools** - Ensure complete MCP tool coverage
+4. **Test All 23 Tools** - Ensure complete MCP tool coverage
 
 ### Phase 2: Integration with Safety Framework
 Test safety framework integration through MCP layer:
@@ -414,7 +414,7 @@ pytest test_individual_get_connection_status.py -v -s --tb=long
 ### Phase 3: Consolidated Suite Creation
 1. **Graduate Working Tests** - Move proven individual tests to main suite
 2. **Shared Connection Pattern** - Implement single long-lived connection
-3. **Complete Integration** - All 17 MCP tools in consolidated test suite
+3. **Complete Integration** - All 23 MCP tools in consolidated test suite
 
 ### Phase 4: Safety Framework Integration
 Test safety framework integration through MCP layer:
@@ -431,7 +431,7 @@ Test safety framework integration through MCP layer:
 ## Success Criteria for Completion
 
 ### Technical Requirements - MCP Layer
-- ✅ All 17 MCP tools tested through call_tool() interface
+- ✅ All 23 MCP tools tested through call_tool() interface
 - ✅ Proper MCP response structure validation
 - ✅ Parameter validation testing for each tool
 - ✅ Safety framework integration verified
@@ -441,7 +441,7 @@ Test safety framework integration through MCP layer:
 - ✅ Each tool test works perfectly in isolation
 - ✅ Template system enables rapid test creation
 - ✅ Iterative debugging process proven effective
-- ✅ All 17 tools have individual test coverage
+- ✅ All 23 tools have individual test coverage
 - ✅ Working tests ready for graduation to main suite
 
 ### Operational Requirements
@@ -478,7 +478,7 @@ Confirm the individual testing methodology works:
 - Ensure MCP response structure validation
 - Debug any import or infrastructure issues
 
-### 4. Scale to All 17 MCP Tools
+### 4. Scale to All 23 MCP Tools
 Once individual testing approach proven:
 - Create individual tests for all remaining tools
 - Use template system for consistent structure

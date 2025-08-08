@@ -257,18 +257,18 @@ class TestIndividualResolveInternationalSymbol:
                         if "exchange" in parsed_result:
                             exchange = parsed_result["exchange"]
                             if exchange == "AEB":
-                                print(f"✅ Correct exchange specified and returned: {exchange}")
+                                print(f"[OK] Correct exchange specified and returned: {exchange}")
                             else:
-                                print(f"ℹ️ Different exchange returned: {exchange}")
+                                print(f"[INFO] Different exchange returned: {exchange}")
                     
                 except json.JSONDecodeError:
-                    print(f"ℹ️ Non-JSON exchange-specific response: {response_text}")
+                    print(f"[INFO] Non-JSON exchange-specific response: {response_text}")
             else:
                 print(f"Unexpected exchange-specific response format: {result}")
             
         except Exception as e:
             print(f"Exception during exchange-specific test: {e}")
-            print(f"ℹ️ Exception-based handling: {type(e).__name__}")
+            print(f"[INFO] Exception-based handling: {type(e).__name__}")
 
     async def test_resolve_international_symbol_error_handling(self):
         """Test resolve_international_symbol error handling with invalid symbol"""
@@ -297,19 +297,19 @@ class TestIndividualResolveInternationalSymbol:
                 
                 # Check if it indicates an error or empty result
                 if "error" in response_text.lower() or "not found" in response_text.lower():
-                    print(f"✅ Error handling working: {response_text}")
+                    print(f"[OK] Error handling working: {response_text}")
                 elif response_text.strip() == "[]" or response_text.strip() == "{}":
-                    print(f"✅ Empty result for invalid symbol: {response_text}")
+                    print(f"[OK] Empty result for invalid symbol: {response_text}")
                 else:
                     # Might have returned some default or fallback behavior
-                    print(f"ℹ️ Tool handled invalid symbol gracefully: {response_text}")
+                    print(f"[INFO] Tool handled invalid symbol gracefully: {response_text}")
             else:
                 print(f"Unexpected error response format: {result}")
             
         except Exception as e:
             print(f"Exception during error handling test: {e}")
             # This might be expected for some invalid symbols
-            print(f"✅ Exception-based error handling: {type(e).__name__}")
+            print(f"[OK] Exception-based error handling: {type(e).__name__}")
 
 # CRITICAL EXECUTION INSTRUCTIONS
 r"""

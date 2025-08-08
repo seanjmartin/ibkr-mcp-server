@@ -96,6 +96,225 @@ The system automatically detects the correct exchange and currency for internati
 "Show me rates for EUR/USD, GBP/USD, and USD/JPY"
 ```
 
+## Order Placement and Trading
+
+### Market Orders
+
+**Basic Buy Order:**
+```
+"Buy 100 shares of Apple at current market price"
+```
+
+**Basic Sell Order:**
+```
+"Sell 50 shares of Microsoft at market price"
+```
+
+**Response includes:**
+- Order confirmation with order ID
+- Estimated execution price
+- Order status and timing
+- Account impact
+
+### Limit Orders
+
+**Buy Limit Order:**
+```
+"Buy 100 shares of Apple at $180 limit"
+```
+
+**Sell Limit Order:**
+```
+"Sell 200 shares of Google at $175 limit, good till cancelled"
+```
+
+**Parameters:**
+- Symbol and quantity
+- Limit price
+- Time in force (DAY, GTC, IOC, FOK)
+- Order type specification
+
+### Bracket Orders
+
+**Complete Risk-Defined Trade:**
+```
+"Place bracket order: Buy 100 AAPL at $180, stop loss $170, profit target $195"
+```
+
+**Benefits:**
+- Entry, stop loss, and profit target in one order
+- Automatic risk management
+- Professional order flow management
+- Reduced emotional decision-making
+
+### Order Management
+
+**Check Order Status:**
+```
+"What's the status of my order #12345?"
+```
+
+**Modify Existing Order:**
+```
+"Change my Apple order #12345 to $175 limit price"
+```
+
+**Cancel Pending Order:**
+```
+"Cancel my Microsoft order #67890"
+```
+
+**View All Pending Orders:**
+```
+"Show me all my pending orders"
+```
+
+## Order Placement and Trading
+
+### Market Orders
+
+**Basic Buy Order:**
+```
+"Buy 100 shares of Apple at current market price"
+```
+
+**Basic Sell Order:**
+```
+"Sell 50 shares of Microsoft at market price"
+```
+
+**Response includes:**
+- Order confirmation with order ID
+- Estimated execution price
+- Order status and timing
+- Account impact
+
+### Limit Orders
+
+**Buy Limit Order:**
+```
+"Buy 100 shares of Apple at $180 limit"
+```
+
+**Sell Limit Order:**
+```
+"Sell 200 shares of Google at $175 limit, good till cancelled"
+```
+
+**Parameters:**
+- Symbol and quantity
+- Limit price
+- Time in force (DAY, GTC, IOC, FOK)
+- Order type specification
+
+### Bracket Orders
+
+**Complete Risk-Defined Trade:**
+```
+"Place bracket order: Buy 100 AAPL at $180, stop loss $170, profit target $195"
+```
+
+**Benefits:**
+- Entry, stop loss, and profit target in one order
+- Automatic risk management
+- Professional order flow management
+- Reduced emotional decision-making
+
+### Order Management
+
+**Check Order Status:**
+```
+"What's the status of my order #12345?"
+```
+
+**Modify Existing Order:**
+```
+"Change my Apple order #12345 to $175 limit price"
+```
+
+**Cancel Pending Order:**
+```
+"Cancel my Microsoft order #67890"
+```
+
+**View All Pending Orders:**
+```
+"Show me all my pending orders"
+```
+
+## Order Placement and Trading
+
+### Market Orders
+
+**Basic Buy Order:**
+```
+"Buy 100 shares of Apple at current market price"
+```
+
+**Basic Sell Order:**
+```
+"Sell 50 shares of Microsoft at market price"
+```
+
+**Response includes:**
+- Order confirmation with order ID
+- Estimated execution price
+- Order status and timing
+- Account impact
+
+### Limit Orders
+
+**Buy Limit Order:**
+```
+"Buy 100 shares of Apple at $180 limit"
+```
+
+**Sell Limit Order:**
+```
+"Sell 200 shares of Google at $175 limit, good till cancelled"
+```
+
+**Parameters:**
+- Symbol and quantity
+- Limit price
+- Time in force (DAY, GTC, IOC, FOK)
+- Order type specification
+
+### Bracket Orders
+
+**Complete Risk-Defined Trade:**
+```
+"Place bracket order: Buy 100 AAPL at $180, stop loss $170, profit target $195"
+```
+
+**Benefits:**
+- Entry, stop loss, and profit target in one order
+- Automatic risk management
+- Professional order flow management
+- Reduced emotional decision-making
+
+### Order Management
+
+**Check Order Status:**
+```
+"What's the status of my order #12345?"
+```
+
+**Modify Existing Order:**
+```
+"Change my Apple order #12345 to $175 limit price"
+```
+
+**Cancel Pending Order:**
+```
+"Cancel my Microsoft order #67890"
+```
+
+**View All Pending Orders:**
+```
+"Show me all my pending orders"
+```
+
 ## Risk Management
 
 ### Setting Stop Losses
@@ -280,27 +499,48 @@ When trading international stocks, understand currency exposure.
 
 ## Common Trading Scenarios
 
-### Scenario 1: US Stock with Stop Loss
+### Scenario 1: Complete Trading Workflow
 
 ```
 1. "Get a quote for Apple"
 2. "What's my buying power?"
-3. [Decision to buy - done outside the system]
+3. "Buy 100 shares of Apple at current market price"
 4. "Set a stop loss on my Apple position at $175"
-5. "Show me my stop loss orders"
+5. "Check the status of my Apple order"
+6. "Show me my stop loss orders"
 ```
 
-### Scenario 2: International Diversification
+### Scenario 2: Limit Order with Risk Management
+
+```
+1. "Get quotes for Microsoft and Google"
+2. "Buy 50 shares of Microsoft at $400 limit, good till cancelled"
+3. "What's the status of my Microsoft order?"
+4. "Place bracket order: Buy 100 GOOGL at $175, stop loss $165, profit target $190"
+5. "Show me all my pending orders"
+```
+
+### Scenario 3: Order Modification and Management
+
+```
+1. "Show me my pending orders"
+2. "Change my Microsoft order to $395 limit price"
+3. "Cancel my Google limit order"
+4. "Buy 200 shares of Tesla at market price"
+5. "Set a trailing stop on Tesla with 8% trail"
+```
+
+### Scenario 4: International Trading with Orders
 
 ```
 1. "Get quotes for ASML, SAP, and Toyota"
-2. "Convert €10,000 to USD for US trading"
-3. "Where do these international stocks trade?"
-4. [Make investment decisions]
+2. "Convert €10,000 to USD for trading"
+3. "Where does ASML trade and in what currency?"
+4. "Buy 50 shares of ASML at market price"
 5. "Set trailing stops on international positions with 10% trail"
 ```
 
-### Scenario 3: Forex Analysis
+### Scenario 5: Forex Analysis
 
 ```
 1. "Show me major forex pairs"

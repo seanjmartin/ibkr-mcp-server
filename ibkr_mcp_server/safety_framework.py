@@ -499,10 +499,15 @@ class TradingSafetyManager:
     def _validate_order_cancellation(self, order_data: Dict, validation_result: Dict):
         """Validate order cancellation safety requirements."""
         try:
+            from .enhanced_config import enhanced_settings
             from .enhanced_validators import StopLossValidator 
             
             # For stop loss cancellations, check if stop loss orders are enabled
-            # This allows cancelling existing stop losses even if new ones are disabled
+            # If stop loss orders are disabled, prevent both new orders AND cancellations
+            if not enhanced_settings.enable_stop_loss_orders:
+                validation_result["errors"].append("Stop loss orders are disabled")
+                return
+            
             validation_result["safety_checks"].append("Order cancellation validation OK")
             
         except Exception as e:

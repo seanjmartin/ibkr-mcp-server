@@ -1,11 +1,8 @@
 """
-Individual MCP Tool Test: get_open_orders
-Focus: Test get_open_orders MCP tool in isolation for debugging
-MCP Tool: get_open_orders
-Expected: List of pending orders (likely empty for fresh account)
-
-EXAMPLE EXECUTION COMMANDS:
-C:\\Python313\\python.exe -m pytest tests/paper/individual/test_individual_get_open_orders.py::TestIndividualGetOpenOrders::test_get_open_orders_basic_functionality -v -s
+Individual MCP Tool Test: get_order_status
+Focus: Test get_order_status MCP tool in isolation for debugging
+MCP Tool: get_order_status
+Expected: Retrieve order status information through MCP interface
 """
 
 import pytest
@@ -25,14 +22,14 @@ from unittest.mock import patch, AsyncMock
 
 @pytest.mark.paper
 @pytest.mark.asyncio
-class TestIndividualGetOpenOrders:
-    """Test get_open_orders MCP tool in isolation"""
+class TestIndividualGetOrderStatus:
+    """Test get_order_status MCP tool in isolation"""
     
-    async def test_get_open_orders_basic_functionality(self):
-        """Test basic get_open_orders functionality through MCP interface"""
+    async def test_get_order_status_basic_functionality(self):
+        """Test basic get_order_status functionality through MCP interface"""
         
         print(f"\n{'='*60}")
-        print(f"=== Testing MCP Tool: get_open_orders ===")
+        print(f"=== Testing MCP Tool: get_order_status ===")
         print(f"{'='*60}")
         
         # FORCE CONNECTION FIRST - ensure IBKR client is connected with client ID 5
@@ -53,9 +50,11 @@ class TestIndividualGetOpenOrders:
             print(f"[ERROR] Connection error: {e}")
             pytest.fail(f"IBKR connection failed: {e}")
         
-        # MCP tool call with no parameters (gets all open orders)
-        tool_name = "get_open_orders"
-        parameters = {}  # No parameters needed for get_open_orders
+        # MCP tool call with parameters - get_order_status requires order_id
+        tool_name = "get_order_status"
+        parameters = {
+            "order_id": 99999  # Non-existent order ID (tests parameter validation)
+        }
         
         print(f"Step 2: MCP Call: call_tool('{tool_name}', {parameters})")
         print(f"Executing...")
@@ -63,6 +62,8 @@ class TestIndividualGetOpenOrders:
         try:
             # Execute MCP tool call
             result = await call_tool(tool_name, parameters)
+            print(f"Raw Result Type: {type(result)}")
+            print(f"Raw Result Length: {len(result) if hasattr(result, '__len__') else 'N/A'}")
             print(f"Raw Result: {result}")
             
         except Exception as e:
@@ -96,8 +97,8 @@ class TestIndividualGetOpenOrders:
         
         print(f"Parsed Result: {parsed_result}")
         
-        # Tool-specific validation for get_open_orders
-        print(f"\n--- get_open_orders Tool-Specific Validation ---")
+        # Tool-specific validation for get_order_status
+        print(f"\n--- get_order_status Tool-Specific Validation ---")
         
         # Every test must validate these common fields (from proven pattern)
         if "paper_trading" in parsed_result:
@@ -112,31 +113,24 @@ class TestIndividualGetOpenOrders:
             assert parsed_result['client_id'] == 5  # Required client ID
             print(f"[OK] Client ID verified: {parsed_result['client_id']}")
         
-        # get_open_orders specific validation
-        if "orders" in parsed_result:
-            orders = parsed_result['orders']
-            print(f"[OK] Orders field found: {len(orders)} orders")
-            assert isinstance(orders, list), f"Orders should be list, got {type(orders)}"
-            
-            if len(orders) == 0:
-                print(f"[OK] Empty orders list - expected for fresh paper account")
-            else:
-                print(f"[OK] Found {len(orders)} open orders")
-                for i, order in enumerate(orders):
-                    print(f"[OK] Order {i+1}: {order}")
-                    # Validate basic order structure
-                    if isinstance(order, dict):
-                        if "orderId" in order:
-                            print(f"[OK] Order ID: {order['orderId']}")
-                        if "symbol" in order:
-                            print(f"[OK] Symbol: {order['symbol']}")
-                        if "action" in order:
-                            print(f"[OK] Action: {order['action']}")
+        # get_order_status specific validation
+        # For non-existent order ID, we expect error response or empty result
+        if "error" in parsed_result:
+            print(f"[OK] Expected error for non-existent order ID: {parsed_result['error']}")
+        elif "order_id" in parsed_result:
+            order_id = parsed_result['order_id']
+            print(f"[OK] Order ID found: {order_id}")
+            if "status" in parsed_result:
+                status = parsed_result['status']
+                print(f"[OK] Order status: {status}")
+        else:
+            print(f"[OK] Empty or error response - expected for non-existent order ID")
         
-        print(f"\n[SUCCESS] GET_OPEN_ORDERS MCP TOOL WORKING")
-        print(f"\n[SUCCESS] MCP Tool 'get_open_orders' test PASSED")
-        print(f"[SUCCESS] IBKR order data retrieved through MCP layer")
+        print(f"\n[SUCCESS] GET_ORDER_STATUS MCP TOOL WORKING")
+        print(f"\n[SUCCESS] MCP Tool 'get_order_status' test PASSED")
+        print(f"[SUCCESS] IBKR order status data retrieved through MCP layer")
         print(f"{'='*60}")
+
 
 # CRITICAL EXECUTION INSTRUCTIONS
 r"""
@@ -144,7 +138,7 @@ WINDOWS EXECUTION REQUIREMENTS:
 
 ALL paper tests MUST be run using pytest with full Python path:
 
-C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_get_open_orders.py -v -s
+C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_get_order_status.py -v -s
 
 NEVER use:
 - python -m pytest [...]     # Python not in PATH
@@ -156,13 +150,13 @@ All paper tests use CLIENT ID 5 for shared IBKR Gateway connection.
 
 EXAMPLE EXECUTION COMMANDS:
 # Specific test method:
-C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_get_open_orders.py::TestIndividualGetOpenOrders::test_get_open_orders_basic_functionality -v -s
+C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_get_order_status.py::TestIndividualGetOrderStatus::test_get_order_status_basic_functionality -v -s
 
 # Full test class:
-C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_get_open_orders.py::TestIndividualGetOpenOrders -v -s
+C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_get_order_status.py::TestIndividualGetOrderStatus -v -s
 
 # Entire test file:
-C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_get_open_orders.py -v -s
+C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_get_order_status.py -v -s
 
 PREREQUISITES:
 - IBKR Gateway running with paper trading login

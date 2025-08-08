@@ -11,6 +11,17 @@ from datetime import datetime, timezone
 
 from ibkr_mcp_server.trading.stop_loss import StopLossManager
 from ibkr_mcp_server.utils import ValidationError
+from ibkr_mcp_server.enhanced_validators import TradingDisabledError, StopLossDisabledError
+
+
+@pytest.fixture
+def enabled_trading_settings():
+    """Fixture to enable trading in enhanced_validators"""
+    with patch('ibkr_mcp_server.enhanced_validators.enhanced_settings') as mock_settings:
+        mock_settings.enable_trading = True
+        mock_settings.enable_stop_loss_orders = True
+        mock_settings.ibkr_is_paper = True
+        yield mock_settings
 
 
 @pytest.mark.unit

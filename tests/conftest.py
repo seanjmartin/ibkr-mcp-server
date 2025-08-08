@@ -54,7 +54,16 @@ def mock_ib():
     ib.connectAsync = AsyncMock(return_value=True)
     ib.isConnected = Mock(return_value=True)
     ib.disconnectAsync = AsyncMock()
-    ib.qualifyContractsAsync = AsyncMock()
+    
+    # Create a proper mock contract for testing
+    mock_contract = Mock()
+    mock_contract.minSize = None  # No minimum size constraint
+    mock_contract.secType = 'STK'  # Stock type
+    mock_contract.symbol = 'AAPL'
+    mock_contract.exchange = 'SMART'
+    mock_contract.currency = 'USD'
+    
+    ib.qualifyContractsAsync = AsyncMock(return_value=[mock_contract])
     ib.reqTickersAsync = AsyncMock()
     ib.placeOrder = Mock()
     ib.reqOpenOrdersAsync = AsyncMock(return_value=[])

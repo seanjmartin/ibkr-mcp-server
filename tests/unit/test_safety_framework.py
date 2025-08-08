@@ -347,7 +347,7 @@ class TestTradingSafetyManager:
         assert hasattr(manager, 'safety_violations')
     
     def test_trading_operation_validation_success(self):
-        """Test successful trading operation validation"""
+        """Test successful trading operation validation when trading is enabled"""
         manager = TradingSafetyManager()
         
         operation_data = {
@@ -357,14 +357,51 @@ class TestTradingSafetyManager:
             "order_type": "MKT"
         }
         
-        result = manager.validate_trading_operation("order_placement", operation_data)
+        # Mock trading enabled for this test
+        with patch('ibkr_mcp_server.enhanced_validators.enhanced_settings') as mock_settings:
+            mock_settings.enable_trading = True
+            mock_settings.max_order_size = 1000
+            mock_settings.max_order_value_usd = 10000.0
+            
+            result = manager.validate_trading_operation("order_placement", operation_data)
+            
+            # Should pass all checks when trading is enabled
+            assert result["is_safe"] is True
+            assert "warnings" in result
+            assert "errors" in result
+            assert "safety_checks" in result
+            assert len(result["errors"]) == 0
+    
+    def test_trading_operation_validation_disabled(self):
+        """Test trading operation validation when trading is disabled (default behavior)"""
+        manager = TradingSafetyManager()
         
-        # Should pass all checks
-        assert result["is_safe"] is True
-        assert "warnings" in result
-        assert "errors" in result
-        assert "safety_checks" in result
-        assert len(result["errors"]) == 0
+        operation_data = {
+            "symbol": "AAPL",
+            "action": "BUY",
+            "quantity": 100,
+            "order_type": "MKT"
+        }
+        
+        # Explicitly mock trading as disabled to ensure test isolation
+        with patch('ibkr_mcp_server.enhanced_validators.enhanced_settings') as mock_settings:
+            mock_settings.enable_trading = False
+            
+            result = manager.validate_trading_operation("order_placement", operation_data)
+            
+            # Should be blocked when trading is disabled (default safety behavior)
+            assert result["is_safe"] is False
+            assert "warnings" in result
+            assert "errors" in result
+            assert "safety_checks" in result
+            assert len(result["errors"]) > 0
+            
+            # Check for trading disabled error
+            trading_errors = [
+                error for error in result["errors"]
+                if "trading is disabled" in error.lower()
+            ]
+            assert len(trading_errors) > 0
     
     def test_kill_switch_blocks_operations(self):
         """Test that active kill switch blocks all operations"""
@@ -428,21 +465,27 @@ class TestTradingSafetyManager:
             "quantity": 100
         }
         
-        # Exhaust rate limit (5 order placements per minute)
-        for i in range(5):
+        # Mock trading enabled for this test to focus on rate limiting
+        with patch('ibkr_mcp_server.enhanced_validators.enhanced_settings') as mock_settings:
+            mock_settings.enable_trading = True
+            mock_settings.max_order_size = 1000
+            mock_settings.max_order_value_usd = 10000.0
+            
+            # Exhaust rate limit (5 order placements per minute)
+            for i in range(5):
+                result = manager.validate_trading_operation("order_placement", operation_data)
+                assert result["is_safe"] is True
+            
+            # Next attempt should be rate limited
             result = manager.validate_trading_operation("order_placement", operation_data)
-            assert result["is_safe"] is True
-        
-        # Next attempt should be rate limited
-        result = manager.validate_trading_operation("order_placement", operation_data)
-        assert not result["is_safe"]
-        
-        # Should have rate limit error
-        rate_errors = [
-            error for error in result["errors"]
-            if "rate limit" in error.lower()
-        ]
-        assert len(rate_errors) > 0
+            assert not result["is_safe"]
+            
+            # Should have rate limit error
+            rate_errors = [
+                error for error in result["errors"]
+                if "rate limit" in error.lower()
+            ]
+            assert len(rate_errors) > 0
     
     def test_market_data_operation_validation(self):
         """Test market data operation validation"""

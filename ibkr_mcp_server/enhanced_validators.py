@@ -299,8 +299,21 @@ class StopLossValidator(BaseValidator):
         quantity = order_data.get('quantity', 0)
         StopLossValidator.validate_positive_number(quantity, "Quantity")
         
+        # Check order size limits
+        if quantity > enhanced_settings.max_order_size:
+            raise ValidationError(
+                f"Order quantity {quantity} exceeds maximum allowed {enhanced_settings.max_order_size}"
+            )
+        
         stop_price = order_data.get('stop_price', 0)
         StopLossValidator.validate_positive_number(stop_price, "Stop price")
+        
+        # Check order value limits
+        order_value = quantity * stop_price
+        if order_value > enhanced_settings.max_order_value_usd:
+            raise ValidationError(
+                f"Order value ${order_value:,.2f} exceeds maximum allowed ${enhanced_settings.max_order_value_usd:,.2f}"
+            )
         
         order_type = order_data.get('order_type', 'STP')
         StopLossValidator.validate_choice(
@@ -422,6 +435,129 @@ class StopLossDisabledError(ValidationError):
 
 class StopLossValidationError(ValidationError):
     """Stop loss validation error."""
+    pass
+
+class OrderValidator(BaseValidator):
+    """Validates order placement requests and parameters."""
+    
+    def validate_order_data(self, order_data: Dict[str, Any]) -> None:
+        """Validate order data with comprehensive checks."""
+        validate_order_common_fields(order_data)
+        
+        # Validate symbol
+        symbol = order_data['symbol']
+        if not isinstance(symbol, str) or not symbol.strip():
+            raise ValidationError("Symbol must be a non-empty string")
+        
+        # Validate action
+        action = order_data['action'].upper()
+        if action not in ['BUY', 'SELL']:
+            raise ValidationError(f"Action must be BUY or SELL, got: {action}")
+        
+        # Validate quantity
+        quantity = order_data['quantity']
+        if not isinstance(quantity, int) or quantity <= 0:
+            raise ValidationError(f"Quantity must be a positive integer, got: {quantity}")
+        
+        # Validate order type specific fields
+        order_type = order_data.get('order_type', 'MKT')
+        if order_type == 'LMT':
+            self._validate_limit_order_fields(order_data)
+        elif order_type == 'STP':
+            self._validate_stop_order_fields(order_data)
+        elif order_type == 'BRACKET':
+            self._validate_bracket_order_fields(order_data)
+    
+    def _validate_limit_order_fields(self, order_data: Dict[str, Any]) -> None:
+        """Validate limit order specific fields."""
+        price = order_data.get('price')
+        if price is None:
+            raise ValidationError("Price is required for limit orders")
+        
+        if not isinstance(price, (int, float)) or price <= 0:
+            raise ValidationError(f"Price must be a positive number, got: {price}")
+        
+        # Validate time in force
+        tif = order_data.get('time_in_force', 'DAY')
+        valid_tifs = ['DAY', 'GTC', 'IOC', 'FOK']
+        if tif not in valid_tifs:
+            raise ValidationError(f"Invalid time in force: {tif}. Valid options: {valid_tifs}")
+    
+    def _validate_stop_order_fields(self, order_data: Dict[str, Any]) -> None:
+        """Validate stop order specific fields."""
+        stop_price = order_data.get('stop_price')
+        if stop_price is None:
+            raise ValidationError("Stop price is required for stop orders")
+        
+        if not isinstance(stop_price, (int, float)) or stop_price <= 0:
+            raise ValidationError(f"Stop price must be a positive number, got: {stop_price}")
+    
+    def _validate_bracket_order_fields(self, order_data: Dict[str, Any]) -> None:
+        """Validate bracket order specific fields."""
+        entry_price = order_data.get('entry_price')
+        stop_price = order_data.get('stop_price')
+        target_price = order_data.get('target_price')
+        action = order_data.get('action', '').upper()
+        
+        # All prices required
+        if entry_price is None:
+            raise ValidationError("Entry price is required for bracket orders")
+        if stop_price is None:
+            raise ValidationError("Stop price is required for bracket orders")
+        if target_price is None:
+            raise ValidationError("Target price is required for bracket orders")
+        
+        # Validate price types
+        for price_name, price_value in [
+            ('entry_price', entry_price),
+            ('stop_price', stop_price), 
+            ('target_price', target_price)
+        ]:
+            if not isinstance(price_value, (int, float)) or price_value <= 0:
+                raise ValidationError(f"{price_name} must be a positive number, got: {price_value}")
+        
+        # Validate price relationships based on action
+        if action == 'BUY':
+            if stop_price >= entry_price:
+                raise ValidationError(f"For BUY orders, stop price ({stop_price}) must be below entry price ({entry_price})")
+            if target_price <= entry_price:
+                raise ValidationError(f"For BUY orders, target price ({target_price}) must be above entry price ({entry_price})")
+        elif action == 'SELL':
+            if stop_price <= entry_price:
+                raise ValidationError(f"For SELL orders, stop price ({stop_price}) must be above entry price ({entry_price})")
+            if target_price >= entry_price:
+                raise ValidationError(f"For SELL orders, target price ({target_price}) must be below entry price ({entry_price})")
+    
+    def validate_order_modification(self, order_id: int, modifications: Dict[str, Any]) -> None:
+        """Validate order modification parameters."""
+        if not isinstance(order_id, int) or order_id <= 0:
+            raise ValidationError(f"Order ID must be a positive integer, got: {order_id}")
+        
+        if not modifications:
+            raise ValidationError("No modifications specified")
+        
+        # Validate modification fields
+        for field, value in modifications.items():
+            if field == 'price':
+                if not isinstance(value, (int, float)) or value <= 0:
+                    raise ValidationError(f"Price must be a positive number, got: {value}")
+            elif field == 'quantity':
+                if not isinstance(value, int) or value <= 0:
+                    raise ValidationError(f"Quantity must be a positive integer, got: {value}")
+            elif field == 'time_in_force':
+                valid_tifs = ['DAY', 'GTC', 'IOC', 'FOK']
+                if value not in valid_tifs:
+                    raise ValidationError(f"Invalid time in force: {value}. Valid options: {valid_tifs}")
+            else:
+                # Allow other fields but log warning
+                self.logger.warning(f"Unknown modification field: {field}")
+
+class OrderPlacementDisabledError(ValidationError):
+    """Order placement is disabled in configuration."""
+    pass
+
+class OrderValidationError(ValidationError):
+    """Order validation error."""
     pass
 
 

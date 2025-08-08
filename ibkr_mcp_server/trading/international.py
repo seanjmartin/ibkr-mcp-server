@@ -83,8 +83,17 @@ class InternationalManager:
         """Parse international symbol specifications with auto-detection."""
         results = []
         
-        for symbol_spec in symbols.split(','):
-            symbol_spec = symbol_spec.strip().upper()
+        # Handle both string and list inputs for backward compatibility
+        if isinstance(symbols, list):
+            symbol_list = symbols
+        else:
+            symbol_list = symbols.split(',')
+        
+        for symbol_spec in symbol_list:
+            if isinstance(symbol_spec, str):
+                symbol_spec = symbol_spec.strip().upper()
+            else:
+                symbol_spec = str(symbol_spec).strip().upper()
             
             if not symbol_spec:
                 continue

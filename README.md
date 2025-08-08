@@ -79,7 +79,43 @@ Add to your Claude Desktop configuration:
 }
 ```
 
-## 🛠️ Available Tools (17 Total)
+## 🏗️ Architecture
+
+### Modular Design
+```
+ibkr_mcp_server/
+├── client.py                 # Enhanced IBKR client with global trading
+├── tools.py                  # 25 MCP tools for Claude integration
+├── main.py                   # MCP server entry point
+├── config.py                 # Configuration management
+├── utils.py                  # Utilities and base exceptions
+├── data/                     # Reference data for global markets
+│   ├── forex_pairs.py        # 21+ forex pairs with metadata
+│   ├── international_symbols.py # 23+ international stocks
+│   └── exchange_info.py      # Global exchange information
+├── trading/                  # Specialized trading managers
+│   ├── forex.py              # Forex trading and conversion
+│   ├── international.py      # Global market symbol resolution
+│   ├── stop_loss.py          # Advanced order management
+│   └── order_management.py   # Order placement and lifecycle
+├── documentation/            # Comprehensive tool documentation
+├── enhanced_config.py        # Safety and trading configuration
+├── enhanced_validators.py    # Input validation framework
+└── safety_framework.py      # Audit logging and protection
+```
+
+### Trading Managers
+- **ForexManager**: Real-time rates, currency conversion, forex trading
+- **InternationalManager**: Global symbol resolution, multi-currency market data
+- **StopLossManager**: Order lifecycle management, bracket orders, trailing stops
+
+### Safety Framework Components
+- **TradingSafetyManager**: Unified safety orchestration
+- **TradingAuditLogger**: Complete operation audit trail
+- **EmergencyKillSwitch**: Instant trading halt capability
+- **RateLimiter**: API usage protection
+
+## 🛠️ Available Tools (25 Total)
 
 ### Portfolio & Account Management
 - `get_portfolio` - View current positions and P&L
@@ -102,7 +138,15 @@ Add to your Claude Desktop configuration:
 - `modify_stop_loss` - Adjust stop prices or quantities
 - `cancel_stop_loss` - Remove stop loss orders
 
-### Order Management
+### Order Placement & Management 🆕
+- `place_market_order` - Execute immediate market orders
+- `place_limit_order` - Place orders with price control
+- `place_bracket_order` - Advanced orders with entry/stop/target
+- `cancel_order` - Cancel pending orders
+- `modify_order` - Modify existing orders
+- `get_order_status` - Check order status and execution
+
+### Order History & Tracking
 - `get_open_orders` - View pending orders
 - `get_completed_orders` - View recent trades
 - `get_executions` - Detailed execution information
@@ -132,13 +176,28 @@ Add to your Claude Desktop configuration:
 - **SMART** (IBKR Routing) - USD: All US stocks
 - **IDEALPRO** (Forex) - Multiple: 21 currency pairs, 13 currencies
 
-### Auto-Detection Examples
+### Intelligent Symbol Detection
 ```python
-# These work automatically:
-get_market_data("AAPL")      # US stock → SMART/USD
-get_market_data("ASML")      # Dutch stock → AEB/EUR  
-get_market_data("7203")      # Japanese stock → TSE/JPY
-get_market_data("AAPL,ASML") # Mixed markets handled seamlessly
+# These all work automatically:
+get_market_data("AAPL")        # US stock → SMART/USD
+get_market_data("ASML")        # Dutch stock → AEB/EUR  
+get_market_data("7203")        # Japanese stock → TSE/JPY
+get_market_data("AAPL,ASML,7203") # Mixed query handled seamlessly
+```
+
+### Advanced Risk Management
+```python
+# Basic stop loss
+place_stop_loss(symbol="AAPL", action="SELL", quantity=100, 
+                stop_price=180.00, order_type="STP")
+                
+# Trailing stops for dynamic protection
+place_stop_loss(symbol="TSLA", action="SELL", quantity=50,
+                order_type="TRAIL", trail_percent=5.0)
+                
+# Stop-limit orders for price control
+place_stop_loss(symbol="MSFT", action="SELL", quantity=75,
+                stop_price=400.00, limit_price=395.00, order_type="STP LMT")
 ```
 
 ## 💱 Forex & Currency Features
@@ -183,12 +242,11 @@ max_daily_orders: int = 50              # Maximum orders per day
 - **[Basic Usage Examples](docs/examples/basic-usage.md)** - Real Claude conversations and workflows
 
 ### **🔧 API & Technical Reference**
-- **[MCP Tools Reference](docs/api/tools.md)** - Complete documentation for all 17 tools
+- **[MCP Tools Reference](docs/api/tools.md)** - Complete documentation for all 25 tools
 - **[System Architecture](docs/architecture/system-architecture.md)** - Comprehensive technical architecture
 - **[Supported Markets](docs/reference/markets.md)** - Complete global markets, exchanges, and currencies
 
 ### **🏢 System Information** 
-- **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** - High-level system overview
 - **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Production deployment guide
 - **[CHANGELOG.md](CHANGELOG.md)** - Complete implementation history
 
@@ -199,11 +257,26 @@ max_daily_orders: int = 50              # Maximum orders per day
 
 ## 🧪 Paper Trading
 
-Perfect for testing and learning:
-- Virtual $1,000,000 account
-- All markets accessible
-- No real money at risk
-- Mock data systems for API limitations
+Perfect for testing and learning with full feature compatibility:
+
+### Paper Trading Features
+- **Virtual $1,000,000 account** - Start with substantial virtual funds
+- **All markets accessible** - Full global market access
+- **No real money at risk** - Complete safety for learning
+- **Real market data** - Live quotes and actual market conditions
+
+### Paper Trading Enhancements
+- **Mock Rate System**: Provides realistic forex rates when paper trading returns invalid data
+- **Subscription Handling**: Graceful degradation for unavailable market data
+- **Contract Qualification**: Handles limited international access in paper accounts
+- **Safety Compliance**: All operations respect paper trading limitations
+
+### Integration with Claude Desktop
+The server integrates seamlessly with Claude Desktop through the MCP protocol:
+1. **Automatic Tool Discovery**: All 23 tools automatically available to Claude
+2. **Natural Language Interface**: Claude can use tools through natural conversation
+3. **Error Handling**: Structured error messages for troubleshooting
+4. **Documentation**: Built-in help system accessible through Claude
 
 ## 🔧 Usage Examples
 
@@ -241,14 +314,25 @@ Perfect for testing and learning:
 - **21 Forex Pairs**: Complete trading specifications and metadata
 - **10+ Global Exchanges**: Trading hours, currencies, settlement rules
 
-## 🚨 Safety Features
+## 🚨 Safety & Security
 
-- **Multiple Validation Layers**: Prevent unsafe operations
-- **Complete Audit Trail**: Every operation logged
-- **Emergency Kill Switch**: Instant trading halt
-- **Paper Trading Mode**: Safe testing environment
-- **Order Size Limits**: Configurable restrictions
-- **Account Protection**: Prevent accidental live trading
+### Defense in Depth
+- **Multiple Validation Layers**: Prevent unsafe operations at every level
+- **Fail-Safe Defaults**: Everything disabled until explicitly enabled
+- **Account Verification**: Prevent accidental live trading
+- **Order Limits**: Configurable size and value restrictions
+
+### Audit & Monitoring
+- **Complete Audit Trail**: Every operation logged with context
+- **Session Tracking**: Operational correlation and analysis
+- **Safety Violations**: Pattern analysis and alerting
+- **Emergency Controls**: Kill switch for crisis situations
+
+### Safety Framework Components
+- **Emergency Kill Switch**: Instant trading halt capability
+- **Rate Limiting**: API usage protection with intelligent throttling
+- **Order Validation**: Size, value, and daily count restrictions
+- **Paper Trading Mode**: Safe testing environment with virtual funds
 
 ## 📈 Performance
 

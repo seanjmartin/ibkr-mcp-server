@@ -12,7 +12,7 @@ Comprehensive technical architecture for the IBKR MCP Server - a professional gl
 ┌─────────────────────▼───────────────────────────────────────────┐
 │                 IBKR MCP Server                                 │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   17 MCP    │  │  Enhanced   │  │    Safety Framework    │  │
+│  │   23 MCP    │  │  Enhanced   │  │    Safety Framework    │  │
 │  │    Tools    │  │   Client    │  │   Audit & Protection   │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
@@ -85,7 +85,7 @@ The central orchestrator with **29 methods** managing all IBKR interactions:
 
 ### **✅ What's Current:**
 - **29 methods** in IBKRClient (was incorrectly documented as 17)
-- **17 MCP tools** providing Claude Desktop interface
+- **23 MCP tools** providing Claude Desktop interface
 - **3 Trading Managers**: Forex, International, Stop Loss
 - **Complete Reference Data**: 21 forex pairs, 23 international symbols, 12 exchanges
 - **Safety Framework**: Multi-layer protection with audit logging

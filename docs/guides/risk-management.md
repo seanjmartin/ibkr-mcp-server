@@ -184,6 +184,118 @@ Stop level automatically adjusts as price moves favorably.
 - Letting winners run
 - Automatic profit protection
 
+## Bracket Order Risk Management
+
+### Pre-Defined Risk with Bracket Orders
+
+Bracket orders allow you to define your complete risk profile before entering a position.
+
+**Complete Risk-Defined Trade:**
+```
+"Place a bracket order for AAPL: buy 100 shares at $180, stop at $170, target at $200"
+```
+
+**Benefits:**
+- Risk and reward defined upfront
+- No emotional decision-making after entry
+- Automatic execution of exit strategy
+- Professional risk management approach
+
+### Position Sizing with Bracket Orders
+
+**Risk-Based Position Sizing:**
+```
+"Calculate position size for AAPL bracket order: $1000 risk, entry $180, stop $170"
+```
+
+**Calculation:**
+- Risk per share: $180 - $170 = $10
+- Position size: $1,000 risk ÷ $10 per share = 100 shares
+- Maximum loss: Exactly $1,000 if stop triggers
+
+**Dynamic Position Sizing:**
+```
+1. "Determine 2% portfolio risk for this trade"
+2. "Calculate AAPL entry and stop levels"  
+3. "Place bracket order with calculated position size"
+4. "Verify total risk stays within limits"
+```
+
+### Risk-Reward Optimization
+
+**Optimal Risk-Reward Ratios:**
+```
+"Place bracket order with 1:3 risk-reward ratio:
+Entry: $180, Stop: $170 (risk $10), Target: $210 (reward $30)"
+```
+
+**Portfolio-Level Risk Management:**
+```
+1. "Never risk more than 2% of portfolio per trade"
+2. "Target minimum 2:1 reward-to-risk ratio"
+3. "Use bracket orders to enforce discipline"
+4. "Review risk-reward performance monthly"
+```
+
+## Order Modification for Risk Adjustment
+
+### Dynamic Stop Loss Management
+
+**Trailing Stop Adjustment:**
+```
+"Modify my AAPL stop loss to trail by 8% as price moves up"
+```
+
+**Manual Stop Adjustment:**
+```
+"Move my AAPL stop loss from $170 to $175 to lock in profits"
+```
+
+**Break-Even Stop Management:**
+```
+1. "When AAPL reaches $185, move stop to $180 (break-even)"
+2. "When AAPL reaches $190, move stop to $185"
+3. "Continue raising stops to lock in profits"
+```
+
+### Profit Target Adjustment Strategies
+
+**Market Condition Adjustments:**
+```
+"If AAPL shows strong momentum, modify profit target from $200 to $210"
+```
+
+**Volatility-Based Adjustments:**
+```
+1. "During high volatility: Set closer profit targets"
+2. "During low volatility: Set more aggressive targets"
+3. "Adjust based on VIX levels and market conditions"
+```
+
+**Partial Profit Taking:**
+```
+1. "At first target: Close 50% of position, move stop to break-even"
+2. "At second target: Close 25% more, trail remaining position"
+3. "Let final 25% run with trailing stop"
+```
+
+### Position Size Modification Techniques
+
+**Scale-In Strategies:**
+```
+"If AAPL drops to $175, add 50 more shares with same stop loss level"
+```
+
+**Scale-Out Strategies:**
+```
+"Close 30% of AAPL position at current levels, keep remaining with trailing stop"
+```
+
+**Risk Reduction:**
+```
+"Reduce AAPL position size from 100 to 50 shares due to increased market volatility"
+```
+
 ## Advanced Risk Management
 
 ### Position Sizing with Stop Losses
@@ -284,11 +396,20 @@ Stop level automatically adjusts as price moves favorably.
 
 ## Common Risk Management Scenarios
 
-### Scenario 1: New Position Protection
+### Scenario 1: New Position Protection with Bracket Orders
 
 ```
-1. "Buy 100 shares of Apple at current market price"
-2. "Set a stop loss at 8% below my purchase price"
+1. "Get quote for Apple to determine entry level"
+2. "Place bracket order: buy 100 AAPL at $180, stop $170, target $200"
+3. "Verify order status and risk profile"
+4. "Monitor position until one exit order triggers"
+```
+
+### Scenario 1b: Traditional Stop Loss Approach
+
+```
+1. "Place market order: buy 100 shares of Apple"
+2. "Set stop loss at 8% below purchase price"
 3. "Show me my new risk profile"
 ```
 
@@ -386,13 +507,15 @@ Stop level automatically adjusts as price moves favorably.
 
 ## Integration with Trading Workflows
 
-### With Market Analysis
+### With Market Analysis and Order Management
 
 ```
-1. "Analyze potential Apple entry point"
-2. "Calculate stop loss level before buying"
-3. "Determine position size based on risk"
-4. "Execute trade with stop loss protection"
+1. "Get quote for Apple to analyze entry point"
+2. "Calculate stop loss and profit target levels"
+3. "Determine position size based on 2% portfolio risk"
+4. "Place bracket order with entry, stop, and target prices"
+5. "Monitor order status and modify if needed"
+6. "Review execution quality after fills"
 ```
 
 ### With Portfolio Management

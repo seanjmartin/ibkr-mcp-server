@@ -124,9 +124,21 @@ Add to your Claude Desktop configuration file:
    
    "Get quotes for Apple, ASML, and Toyota"
    → Should show mixed US/European/Japanese stocks
+   
+   "Buy 1 share of Apple at current market price"
+   → Should place test market order
+   
+   "Set a limit order for Microsoft at $400"
+   → Should place test limit order
+   
+   "Show me my pending orders"
+   → Should display active orders
+   
+   "Cancel my test orders"
+   → Should cancel pending orders
    ```
 
-## Available Tools (17 Total)
+## Available Tools (23 Total)
 
 Once connected, you have access to:
 
@@ -140,6 +152,13 @@ Once connected, you have access to:
 - Get live quotes for any stock worldwide
 - Resolve international symbols to exchanges
 - Real-time forex rates for 21 currency pairs
+
+### **Order Placement & Trading**
+- Place market orders for immediate execution
+- Place limit orders with price control
+- Place bracket orders (entry + stop + target)
+- Cancel and modify existing orders
+- Check order status and execution details
 
 ### **Currency & Forex**
 - Convert between 13 supported currencies

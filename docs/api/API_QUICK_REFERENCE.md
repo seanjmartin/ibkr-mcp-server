@@ -1,6 +1,5 @@
 # IBKR MCP Server - API Quick Reference
 
-**Version**: 2.0.0 | **Status**: Development Complete | **Test Coverage**: 100% (140/140 tests)
 
 ## 🚀 **Quick Start Commands**
 
@@ -41,7 +40,17 @@
 "Cancel my Tesla stop loss order"
 ```
 
-## 📊 **17 MCP Tools Reference**
+### **Order Placement & Management** 🆕
+```
+"Buy 100 shares of Apple at market price"
+"Place a limit order to buy Tesla at $240"
+"Place a bracket order: buy ASML at €640, stop €620, target €680"
+"Cancel my pending order #12345"
+"Modify my GOOGL order to 200 shares at $2750"
+"Check the status of my order #12345"
+```
+
+## 📊 **23 MCP Tools Reference**
 
 ### **Portfolio & Account (5 tools)**
 | Tool | Purpose | Example |
@@ -72,12 +81,22 @@
 | `modify_stop_loss` | Change stop order | "Move AAPL stop to $185" |
 | `cancel_stop_loss` | Remove stop order | "Cancel TSLA stop" |
 
-### **Order Management (3 tools)**
+### **Order Placement (6 tools)** 🆕
+| Tool | Purpose | Example |
+|------|---------|---------|
+| `place_market_order` | Execute market orders | "Buy 100 AAPL at market" |
+| `place_limit_order` | Place limit orders | "Buy Tesla at $240 limit" |
+| `place_bracket_order` | Advanced bracket orders | "Bracket ASML €640/€620/€680" |
+| `cancel_order` | Cancel pending orders | "Cancel order #12345" |
+| `modify_order` | Modify existing orders | "Change order to 200 shares" |
+| `get_order_status` | Check order status | "Status of order #12345" |
+
+### **Order History (3 tools)**
 | Tool | Purpose | Example |
 |------|---------|---------|
 | `get_open_orders` | View pending orders | "Show pending orders" |
-| `get_completed_orders` | View recent trades | "Show recent trades" |
-| `get_executions` | Detailed trade info | "AAPL execution details" |
+| `get_completed_orders` | View recent completed orders | "Show my recent completed orders" |
+| `get_executions` | Detailed execution info | "Get execution details for my Apple trades" |
 
 ### **Documentation (1 tool)**
 | Tool | Purpose | Example |
@@ -127,6 +146,7 @@ All trading features **OFF by default**:
 - `ENABLE_FOREX_TRADING=false` 
 - `ENABLE_INTERNATIONAL_TRADING=false`
 - `ENABLE_STOP_LOSS_ORDERS=false`
+- `ENABLE_ORDER_PLACEMENT=false` 🆕
 
 ## 💡 **Common Workflows**
 
@@ -146,6 +166,14 @@ All trading features **OFF by default**:
 4. "Place trailing stops on growth stocks"
 ```
 
+### **Order History Analysis**
+```
+1. "Show me my recent completed orders"
+2. "Get execution details for my Apple trades"
+3. "Show me all executions from the last 30 days"
+4. "Get executions for TSLA from my DU account"
+```
+
 ### **Global Trading**
 ```
 1. "Get quotes for ASML, SAP, Toyota"
@@ -160,6 +188,25 @@ All trading features **OFF by default**:
 2. "What's driving EUR/USD today?"
 3. "Convert my EUR balance to USD"
 4. "Get GBPJPY and EURJPY rates"
+```
+
+### **Order Placement & Management** 🆕
+```
+1. "Get quote for AAPL" → Research
+2. "Buy 100 shares of AAPL at market price" → Execute
+3. "Check status of order #12345" → Monitor
+4. "Modify order to 150 shares at $185" → Adjust
+5. "Set stop loss at $180" → Protect
+```
+
+### **Complete Trading Workflow** 🆕
+```
+1. "Check my buying power"
+2. "Get quotes for AAPL, TSLA, MSFT"
+3. "Buy 100 AAPL at market price"
+4. "Place bracket order: buy Tesla at $240, stop $220, target $260"
+5. "Set trailing stop on Microsoft with 8% trail"
+6. "Show all my orders and positions"
 ```
 
 ## 🚨 **Emergency Procedures**
@@ -187,6 +234,9 @@ All trading features **OFF by default**:
 - **Real-time Conversion**: Live forex rates for all calculations
 
 ### **Order Types**
+- **Market Orders (MKT)**: Immediate execution at current market price 🆕
+- **Limit Orders (LMT)**: Execute only at specified price or better 🆕
+- **Bracket Orders**: Entry order with automatic stop loss and profit target 🆕
 - **Stop Market (STP)**: Basic stop loss protection  
 - **Stop Limit (STP LMT)**: Stop with limit price control
 - **Trailing Stop (TRAIL)**: Dynamic stop that follows price
@@ -232,7 +282,3 @@ IBKR_MAX_STOP_LOSS_ORDERS=25
 
 ---
 
-**Status**: ✅ **Development Complete**  
-**Last Updated**: August 1, 2025  
-**Version**: 2.0.0 - Enhanced Global Trading Platform  
-**Next Phase**: Paper trading validation required

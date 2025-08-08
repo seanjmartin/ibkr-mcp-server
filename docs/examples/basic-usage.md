@@ -203,6 +203,212 @@ Claude:
    • Rate Timestamp: 2025-08-01 14:35:22 UTC
 ```
 
+## 💰 Basic Trading Workflow Examples
+
+### Market Order Placement
+
+```
+User: "Buy 100 shares of Apple at current market price"
+Claude:
+📝 Market Order Placed:
+
+📋 Order Details:
+   • Symbol: AAPL (Apple Inc.)
+   • Action: BUY
+   • Quantity: 100 shares
+   • Order Type: MKT (Market Order)
+   • Order ID: 98765432
+   • Time in Force: DAY
+
+💹 Execution Summary:
+   • Estimated Price: $180.25
+   • Estimated Value: $18,025.00
+   • Commission: $1.00
+   • Available Cash After: $30,424.00
+
+✅ Order Status: Submitted and Working
+```
+
+```
+User: "Sell 50 shares of Microsoft at market price"
+Claude:
+📝 Market Order Placed:
+
+📋 Order Details:
+   • Symbol: MSFT (Microsoft Corp.)
+   • Action: SELL
+   • Quantity: 50 shares
+   • Order Type: MKT (Market Order)
+   • Order ID: 98765433
+   • Time in Force: DAY
+
+💹 Execution Summary:
+   • Estimated Price: $415.75
+   • Estimated Value: $20,787.50
+   • Commission: $1.00
+   • Available Cash After: $51,210.50
+
+✅ Order Status: Submitted and Working
+```
+
+### Limit Order Placement
+
+```
+User: "Buy 100 shares of Apple at $180 limit, good till cancelled"
+Claude:
+📝 Limit Order Placed:
+
+📋 Order Details:
+   • Symbol: AAPL (Apple Inc.)
+   • Action: BUY
+   • Quantity: 100 shares
+   • Order Type: LMT (Limit Order)
+   • Limit Price: $180.00
+   • Order ID: 98765434
+   • Time in Force: GTC (Good Till Cancelled)
+
+💹 Order Analysis:
+   • Current Price: $180.25
+   • Limit Distance: -$0.25 (-0.14%)
+   • Total Value if Filled: $18,000.00
+   • Reserved Cash: $18,000.00
+
+✅ Order Status: Working (below market)
+```
+
+### Bracket Order Strategy
+
+```
+User: "Place bracket order: Buy 100 GOOGL at $175, stop loss $165, profit target $190"
+Claude:
+📝 Bracket Order Placed:
+
+📋 Parent Order (Entry):
+   • Symbol: GOOGL (Alphabet Inc.)
+   • Action: BUY
+   • Quantity: 100 shares
+   • Entry Price: $175.00 (Limit)
+   • Order ID: 98765435
+
+🛡️ Stop Loss Order:
+   • Trigger Price: $165.00
+   • Max Loss: -$1,000.00 (-5.71%)
+   • Order ID: 98765436
+
+🎯 Profit Target:
+   • Target Price: $190.00
+   • Potential Profit: +$1,500.00 (+8.57%)
+   • Order ID: 98765437
+
+📊 Risk/Reward Analysis:
+   • Risk: $1,000 | Reward: $1,500
+   • Risk/Reward Ratio: 1:1.5
+   • Breakeven: $175.00
+
+✅ All Orders: Submitted and Linked
+```
+
+### Order Management Examples
+
+```
+User: "What's the status of my order #98765434?"
+Claude:
+📊 Order Status Report:
+
+📋 Order Details:
+   • Order ID: 98765434
+   • Symbol: AAPL (Apple Inc.)
+   • Type: BUY 100 @ $180.00 LMT
+   • Status: Working
+   • Time in Force: GTC
+   • Submitted: 2025-08-01 14:32:15
+
+📈 Market Context:
+   • Current Price: $180.25
+   • Order vs Market: -$0.25 (-0.14%)
+   • Estimated Fill Probability: 75%
+
+⏰ Order Timeline:
+   • Submitted: 14:32:15
+   • Last Update: 14:32:15
+   • Age: 2 minutes
+```
+
+```
+User: "Change my Apple order #98765434 to $179 limit price"
+Claude:
+🔄 Order Modified Successfully:
+
+📋 Updated Order Details:
+   • Order ID: 98765434
+   • Symbol: AAPL (Apple Inc.)
+   • NEW Price: $179.00 (was $180.00)
+   • Quantity: 100 shares (unchanged)
+   • Time in Force: GTC (unchanged)
+
+📈 New Market Position:
+   • Current Price: $180.25
+   • New Limit Distance: -$1.25 (-0.69%)
+   • Estimated Fill Probability: 85%
+
+✅ Modification Status: Active and Working
+```
+
+```
+User: "Cancel my Microsoft order #98765433"
+Claude:
+❌ Order Cancelled Successfully:
+
+📋 Cancelled Order:
+   • Order ID: 98765433
+   • Symbol: MSFT (Microsoft Corp.)
+   • Type: SELL 50 @ MKT
+   • Previous Status: Working
+   • Cancelled At: 2025-08-01 14:35:42
+
+💰 Account Impact:
+   • No execution occurred
+   • No commission charged
+   • Available Cash: Unchanged
+   • Position: 50 shares MSFT (unchanged)
+
+✅ Cancellation: Confirmed and Complete
+```
+
+### Complete Trading Workflow
+
+```
+User: "Show me a complete trading example from research to execution"
+Claude:
+🔄 Complete Trading Workflow Example:
+
+Step 1: Research Phase
+"Get quotes for AAPL, MSFT, GOOGL"
+→ AAPL: $180.25, MSFT: $415.75, GOOGL: $174.80
+
+Step 2: Account Check
+"What's my buying power?"
+→ Available: $30,425.00
+
+Step 3: Order Placement
+"Buy 100 shares of Apple at $179 limit"
+→ Order placed, ID: 98765438
+
+Step 4: Order Monitoring
+"What's the status of my Apple order?"
+→ Working, 85% fill probability
+
+Step 5: Risk Management
+"Set stop loss on Apple position at $170"
+→ Stop loss placed, ID: 98765439
+
+Step 6: Order Management
+"Show me all my pending orders"
+→ 2 active orders (entry + stop loss)
+
+✅ Workflow Complete: Research → Order → Risk Management
+```
+
 ## 🛡️ Risk Management Examples
 
 ### Basic Stop Loss

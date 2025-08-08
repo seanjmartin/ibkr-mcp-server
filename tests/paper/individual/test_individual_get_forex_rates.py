@@ -275,7 +275,7 @@ class TestIndividualGetForexRates:
                     print(f"Parsed multi-pair result: {parsed_result}")
                     
                     if isinstance(parsed_result, list):
-                        print(f"✅ Returned {len(parsed_result)} forex rate entries")
+                        print(f"[OK] Returned {len(parsed_result)} forex rate entries")
                         
                         # Look for requested pairs
                         pairs_found = set()
@@ -290,20 +290,20 @@ class TestIndividualGetForexRates:
                         expected_pairs = ["EURUSD", "GBPUSD", "USDJPY"]
                         found_expected = pairs_found.intersection(expected_pairs)
                         if found_expected:
-                            print(f"✅ Found expected pairs: {found_expected}")
+                            print(f"[OK] Found expected pairs: {found_expected}")
                         else:
-                            print(f"ℹ️ Pairs found: {pairs_found}")
+                            print(f"[INFO] Pairs found: {pairs_found}")
                     else:
-                        print(f"ℹ️ Multi-pair response format: {type(parsed_result)}")
+                        print(f"[INFO] Multi-pair response format: {type(parsed_result)}")
                         
                 except json.JSONDecodeError:
-                    print(f"ℹ️ Non-JSON multi-pair response: {response_text}")
+                    print(f"[INFO] Non-JSON multi-pair response: {response_text}")
             else:
                 print(f"Unexpected multi-pair response format: {result}")
             
         except Exception as e:
             print(f"Exception during multi-pair test: {e}")
-            print(f"ℹ️ Exception-based handling: {type(e).__name__}")
+            print(f"[INFO] Exception-based handling: {type(e).__name__}")
 
     async def test_get_forex_rates_error_handling(self):
         """Test get_forex_rates error handling with invalid currency pair"""
@@ -332,19 +332,19 @@ class TestIndividualGetForexRates:
                 
                 # Check if it indicates an error or empty result
                 if "error" in response_text.lower() or "invalid" in response_text.lower():
-                    print(f"✅ Error handling working: {response_text}")
+                    print(f"[OK] Error handling working: {response_text}")
                 elif response_text.strip() == "[]" or response_text.strip() == "{}":
-                    print(f"✅ Empty result for invalid currency pair: {response_text}")
+                    print(f"[OK] Empty result for invalid currency pair: {response_text}")
                 else:
                     # Might have returned some default or fallback behavior
-                    print(f"ℹ️ Tool handled invalid pair gracefully: {response_text}")
+                    print(f"[INFO] Tool handled invalid pair gracefully: {response_text}")
             else:
                 print(f"Unexpected error response format: {result}")
             
         except Exception as e:
             print(f"Exception during error handling test: {e}")
             # This might be expected for invalid currency pairs
-            print(f"✅ Exception-based error handling: {type(e).__name__}")
+            print(f"[OK] Exception-based error handling: {type(e).__name__}")
 
 # CRITICAL EXECUTION INSTRUCTIONS
 r"""

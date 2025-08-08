@@ -28,34 +28,59 @@ Shows completed orders for a specific account.
 
 ## Response Format
 
-The tool returns a list of completed order objects, each containing:
+The tool returns a list of completed order objects with comprehensive details:
 
-- **Order ID**: Unique identifier for the order
-- **Symbol**: Stock, forex pair, or instrument traded
-- **Action**: BUY or SELL
-- **Quantity**: Number of shares/units
-- **Fill Price**: Average execution price
-- **Order Type**: MKT, LMT, STP, etc.
-- **Status**: Filled, PartiallyFilled, Cancelled
-- **Fill Time**: When the order was executed
-- **Commission**: Trading fees charged
-- **Currency**: Currency of the transaction
+### Order Identification
+- **order_id**: Unique IBKR order identifier
+- **client_id**: API client ID that placed the order
+- **order_ref**: Custom order reference string
+
+### Contract Information
+- **symbol**: Stock, forex pair, or instrument symbol
+- **exchange**: Trading exchange (SMART, NYSE, AEB, etc.)
+- **currency**: Base currency of the instrument
+
+### Order Details
+- **action**: BUY or SELL
+- **quantity**: Total order quantity (shares/units)
+- **order_type**: Order type (MKT, LMT, STP, STP LMT, TRAIL)
+- **limit_price**: Limit price (if applicable)
+- **aux_price**: Auxiliary price for stop orders
+- **time_in_force**: Order duration (DAY, GTC, IOC, FOK)
+
+### Execution Status
+- **status**: Current order status
+- **filled**: Number of shares filled
+- **remaining**: Number of shares remaining
+- **avg_fill_price**: Average execution price
+- **commission**: Trading commission charged
+
+### Account Information
+- **account**: Account ID that placed the order
 
 ## Example Response
 
 ```json
 [
   {
-    "orderId": 12345,
+    "order_id": 12345,
     "symbol": "AAPL",
+    "exchange": "SMART",
+    "currency": "USD",
     "action": "BUY",
     "quantity": 100,
-    "avgFillPrice": 150.25,
-    "orderType": "MKT",
+    "order_type": "MKT",
+    "limit_price": null,
+    "aux_price": null,
+    "time_in_force": "DAY",
     "status": "Filled",
-    "fillTime": "2024-01-15T14:30:25Z",
+    "filled": 100,
+    "remaining": 0,
+    "avg_fill_price": 150.25,
     "commission": 1.50,
-    "currency": "USD"
+    "account": "DUH905195",
+    "order_ref": "",
+    "client_id": 5
   }
 ]
 ```

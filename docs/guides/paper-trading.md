@@ -166,6 +166,112 @@ ENABLE_STOP_LOSS_ORDERS=true
 "Practice risk limit responses"
 ```
 
+## Order Placement Testing
+
+### Safe Market Order Testing
+
+**Basic Market Order Practice:**
+```
+1. "Get quote for Apple to check current price"
+2. "Check my buying power for potential purchase"
+3. "Place market order: buy 10 shares of AAPL"
+4. "Check order status and execution details"
+5. "Review filled order in completed orders"
+```
+
+**Market Order Safety:**
+- Start with small quantities (10-50 shares)
+- Use liquid stocks like AAPL, MSFT, GOOGL
+- Practice during market hours for best fills
+- Monitor execution price vs quoted price
+
+### Limit Order Experimentation
+
+**Limit Order Strategy Testing:**
+```
+1. "Get current quote for Microsoft"
+2. "Place limit order: buy 25 MSFT shares at $5 below current price"
+3. "Monitor order status - should remain pending"
+4. "Modify order price closer to market if desired"
+5. "Cancel order to practice cancellation"
+```
+
+**Limit Order Learning:**
+- Practice setting realistic limit prices
+- Understand order queue positioning
+- Learn when orders fill vs remain pending
+- Test modification and cancellation procedures
+
+### Bracket Order Practice
+
+**Complete Risk Management Testing:**
+```
+1. "Get quote for Tesla to analyze entry point"
+2. "Place bracket order: buy 20 TSLA at $250, stop $240, target $270"
+3. "Monitor all three orders in open orders"
+4. "Understand how bracket orders execute automatically"
+5. "Practice modifying stop or target levels"
+```
+
+**Bracket Order Benefits:**
+- Complete risk profile defined upfront
+- Automatic profit taking and loss limiting
+- Professional order management approach
+- Eliminates emotional exit decisions
+
+## Order Management Practice
+
+### Order Modification Practice
+
+**Dynamic Order Adjustment:**
+```
+1. "Place limit order for 50 shares of Apple at $180"
+2. "Check order status - should be pending"
+3. "Modify order price to $182 to increase fill probability"
+4. "Practice changing quantity from 50 to 30 shares"
+5. "Modify time in force from DAY to GTC"
+```
+
+**Modification Scenarios:**
+- Price adjustments to improve fill probability
+- Quantity changes based on market conditions
+- Time in force modifications
+- Stop loss level adjustments
+
+### Cancellation Procedures
+
+**Order Cancellation Training:**
+```
+1. "Place several limit orders at unrealistic prices"
+2. "Show pending orders to see all active orders"
+3. "Cancel specific order by order ID"
+4. "Cancel all orders for a particular symbol"
+5. "Verify cancellations in order status"
+```
+
+**Cancellation Best Practices:**
+- Always verify cancellation confirmation
+- Understand timing of cancellation vs fill
+- Practice bulk cancellation procedures
+- Learn emergency order cancellation
+
+### Order Status Monitoring
+
+**Order Lifecycle Understanding:**
+```
+1. "Place various order types with different parameters"
+2. "Check order status immediately after placement"
+3. "Monitor orders throughout trading session"
+4. "Understand partial fills vs complete fills"
+5. "Review execution details for filled orders"
+```
+
+**Status Monitoring Skills:**
+- Understanding order states (pending, filled, cancelled)
+- Tracking partial fill progress
+- Analyzing execution quality
+- Recognizing when orders need attention
+
 ## Paper Trading Limitations
 
 ### Market Data Considerations
@@ -198,9 +304,11 @@ ENABLE_STOP_LOSS_ORDERS=true
 **Progressive Learning:**
 ```
 Week 1: Market data and basic quotes
-Week 2: Simple stop loss orders
-Week 3: International markets and forex
-Week 4: Advanced risk management
+Week 2: Basic order placement (market and limit orders)
+Week 3: Order management (modification, cancellation, status monitoring)
+Week 4: Advanced orders (stop losses, bracket orders)
+Week 5: International markets and forex
+Week 6: Complete risk management and emergency procedures
 ```
 
 ### 3. Focus on Process, Not Profits
@@ -229,14 +337,25 @@ Week 4: Advanced risk management
 
 ## Common Paper Trading Scenarios
 
-### Scenario 1: Basic Stock Trading
+### Scenario 1: Basic Stock Trading with Order Management
 
 ```
 1. "Get quote for Apple"
 2. "Check my buying power"
-3. [Simulate buying 100 shares]
-4. "Set stop loss at 10% below purchase price"
-5. "Monitor position and risk"
+3. "Place market order: buy 100 shares of AAPL"
+4. "Check order status and execution details"
+5. "Set stop loss at 10% below purchase price"
+6. "Monitor position and modify stop if needed"
+```
+
+### Scenario 1b: Limit Order Strategy
+
+```
+1. "Get quote for Apple"
+2. "Place limit order: buy 100 AAPL at $2 below current price"
+3. "Monitor order status throughout session"
+4. "If not filled, modify price closer to market"
+5. "If filled, set appropriate stop loss protection"
 ```
 
 ### Scenario 2: International Diversification

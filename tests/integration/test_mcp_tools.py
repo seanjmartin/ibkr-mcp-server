@@ -441,3 +441,88 @@ class TestMCPToolsIntegrationWorkflows:
         assert portfolio_data['success'] is True
         assert stop_loss_data['success'] is True
         assert stop_loss_data['order']['symbol'] == 'AAPL'
+
+
+@pytest.mark.integration
+class TestOrderHistoryMCPIntegration:
+    """Test order history MCP tools integration"""
+    
+    @pytest.mark.asyncio
+    async def test_get_completed_orders_mcp_tool(self, enabled_ibkr_client):
+        """Test get_completed_orders MCP tool end-to-end"""
+        # Mock completed orders response
+        enabled_ibkr_client.get_completed_orders = AsyncMock(return_value=[
+            {
+                'order_id': 12345,
+                'symbol': 'AAPL',
+                'action': 'BUY',
+                'quantity': 100,
+                'status': 'Filled'
+            }
+        ])
+        
+        with patch('ibkr_mcp_server.tools.ibkr_client', enabled_ibkr_client):
+            result = await call_tool("get_completed_orders", {})
+        
+        # Verify MCP tool response
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert isinstance(result[0], TextContent)
+        
+        # Parse and validate response data
+        response_data = json.loads(result[0].text)
+        assert isinstance(response_data, list)
+        assert len(response_data) == 1
+        assert response_data[0]['order_id'] == 12345
+        assert response_data[0]['symbol'] == 'AAPL'
+    
+    @pytest.mark.asyncio  
+    async def test_get_executions_mcp_tool(self, enabled_ibkr_client):
+        """Test get_executions MCP tool end-to-end"""
+        # Mock executions response
+        enabled_ibkr_client.get_executions = AsyncMock(return_value=[
+            {
+                'execution_id': 'E123456',
+                'order_id': 12345,
+                'symbol': 'AAPL',
+                'side': 'BOT',
+                'shares': 100,
+                'price': 180.50
+            }
+        ])
+        
+        with patch('ibkr_mcp_server.tools.ibkr_client', enabled_ibkr_client):
+            result = await call_tool("get_executions", {"symbol": "AAPL"})
+        
+        # Verify MCP tool response
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert isinstance(result[0], TextContent)
+        
+        # Parse and validate response data
+        response_data = json.loads(result[0].text)
+        assert isinstance(response_data, list)
+        assert len(response_data) == 1
+        assert response_data[0]['execution_id'] == 'E123456'
+        assert response_data[0]['symbol'] == 'AAPL'
+        assert response_data[0]['shares'] == 100
+        
+    @pytest.mark.asyncio
+    async def test_order_history_tools_error_handling(self, enabled_ibkr_client):
+        """Test error handling when IBKR connection fails"""
+        # Mock connection errors
+        enabled_ibkr_client.get_completed_orders = AsyncMock(side_effect=Exception("Connection failed"))
+        enabled_ibkr_client.get_executions = AsyncMock(side_effect=Exception("Connection failed"))
+        
+        with patch('ibkr_mcp_server.tools.ibkr_client', enabled_ibkr_client):
+            # Test get_completed_orders error handling
+            orders_result = await call_tool("get_completed_orders", {})
+            assert isinstance(orders_result, list)
+            assert len(orders_result) == 1
+            assert "Error getting completed orders" in orders_result[0].text
+            
+            # Test get_executions error handling
+            executions_result = await call_tool("get_executions", {"symbol": "AAPL"})
+            assert isinstance(executions_result, list)
+            assert len(executions_result) == 1
+            assert "Error getting executions" in executions_result[0].text

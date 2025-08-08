@@ -551,7 +551,7 @@ The IBKR MCP Server implements a comprehensive, multi-layered safety framework t
 
 **✅ FULLY OPERATIONAL STATUS:**
 - **Complete Safety Framework**: All 4 core components implemented and tested (29/29 unit tests passing)
-- **MCP Integration**: All 17 trading tools protected by safety validation wrapper
+- **MCP Integration**: All 23 trading tools protected by safety validation wrapper
 - **Comprehensive Testing**: 74 unit tests with 100% pass rate, 8/11 integration tests passing
 - **Production Deployment**: Real-time safety monitoring, complete audit trails, emergency controls
 - **Proven Reliability**: Extensive validation under various scenarios and edge cases

@@ -12,14 +12,21 @@ The `get_executions` tool provides comprehensive details about how your orders w
 |-----------|------|----------|-------------|
 | `account` | string | No | Specific account ID to query. If not provided, uses your current active account |
 | `symbol` | string | No | Filter executions by specific symbol (e.g., "AAPL", "EURUSD") |
+| `days_back` | integer | No | Number of days back to search (default: 7, maximum depends on account type) |
 
 ## Usage Examples
 
-### All Executions
+### All Recent Executions
 ```
 get_executions()
 ```
-Shows all recent executions for your current account.
+Shows all executions from the last 7 days for your current account.
+
+### Extended History
+```
+get_executions(days_back=30)
+```
+Shows executions from the last 30 days.
 
 ### Account-Specific
 ```
@@ -35,55 +42,71 @@ Shows only executions for Apple stock.
 
 ### Combined Filters
 ```
-get_executions(account="DUH905195", symbol="TSLA")
+get_executions(account="DUH905195", symbol="TSLA", days_back=14)
 ```
-Shows Tesla executions for a specific account.
+Shows Tesla executions for a specific account from the last 14 days.
 
 ## Response Format
 
-Each execution contains detailed information:
+Each execution contains comprehensive execution details:
 
-- **Execution ID**: Unique identifier for this execution
-- **Order ID**: Parent order that generated this execution
-- **Symbol**: Instrument traded
-- **Side**: BUY or SELL
-- **Shares**: Quantity executed in this fill
-- **Price**: Exact execution price
-- **Time**: Precise execution timestamp
-- **Exchange**: Where the execution occurred
-- **Commission**: Fees for this specific execution
-- **Realized PnL**: Profit/loss realized from this execution
-- **Client Order ID**: Your internal order reference
+### Execution Identifiers
+- **execution_id**: Unique IBKR execution identifier
+- **order_id**: Parent order that generated this execution
+- **client_id**: API client ID that placed the order
+- **perm_id**: Permanent ID for the execution
+
+### Contract Information
+- **symbol**: Instrument symbol
+- **exchange**: Execution exchange
+- **currency**: Instrument currency
+- **security_type**: Type of security (STK, CASH, OPT, etc.)
+
+### Execution Details
+- **side**: BUY or SELL
+- **shares**: Quantity executed in this fill
+- **price**: Exact execution price
+- **average_price**: Average price for cumulative executions
+- **cumulative_quantity**: Total quantity executed up to this point
+
+### Market Data
+- **liquidation**: Whether this was a liquidation
+- **ev_rule**: Exchange venue rule
+- **ev_multiplier**: Exchange venue multiplier
+- **last_liquidity**: Liquidity provision details
+
+### Metadata
+- **time**: Precise execution timestamp (sorted most recent first)
+- **account**: Account number
+- **order_ref**: Custom order reference
+- **model_code**: Model code if applicable
 
 ## Example Response
 
 ```json
 [
   {
-    "execId": "0001f4e5.65f0b2c1.01.01",
-    "orderId": 12345,
+    "execution_id": "0001f4e5.65f0b2c1.01.01",
+    "order_id": 12345,
+    "client_id": 5,
     "symbol": "AAPL",
+    "exchange": "SMART",
+    "currency": "USD",
+    "security_type": "STK",
     "side": "BUY",
     "shares": 50,
     "price": 150.23,
+    "perm_id": 987654321,
+    "liquidation": 0,
+    "cumulative_quantity": 50,
+    "average_price": 150.23,
+    "order_ref": "",
+    "ev_rule": "ISLAND",
+    "ev_multiplier": 1.0,
+    "model_code": "",
+    "last_liquidity": 1,
     "time": "2024-01-15T14:30:25.123Z",
-    "exchange": "NASDAQ",
-    "commission": 0.75,
-    "realizedPnL": 0.0,
-    "clientOrderId": "MyOrder_001"
-  },
-  {
-    "execId": "0001f4e5.65f0b2c2.01.01", 
-    "orderId": 12345,
-    "symbol": "AAPL",
-    "side": "BUY",
-    "shares": 50,
-    "price": 150.27,
-    "time": "2024-01-15T14:30:26.456Z",
-    "exchange": "NASDAQ",
-    "commission": 0.75,
-    "realizedPnL": 0.0,
-    "clientOrderId": "MyOrder_001"
+    "account": "DUH905195"
   }
 ]
 ```

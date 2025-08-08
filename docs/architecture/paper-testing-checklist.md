@@ -17,10 +17,10 @@ Test → IBKR Client → IBKR API  ❌ (Bypasses MCP layer completely)
 
 ## Reset Status - Individual Test Development Strategy
 
-**Total MCP Tools to Test:** 17  
+**Total MCP Tools to Test:** 23  
 **Individual Tests Created:** 1 (get_connection_status template example)  
 **Individual Tests Completed:** 0  
-**Remaining:** 17 (All need individual test development)  
+**Remaining:** 23 (All need individual test development)  
 **Success Rate:** 0% (Starting with individual testing approach)
 
 ## Individual Test Development Approach
@@ -33,7 +33,7 @@ Test → IBKR Client → IBKR API  ❌ (Bypasses MCP layer completely)
 - ✅ Execution scripts created (`run_individual_test.bat/.sh`)
 - ✅ Complete documentation (`README.md`)
 
-## Phase 1: MCP Tool Testing (17 Tools)
+## Phase 1: MCP Tool Testing (23 Tools)
 
 ### Portfolio & Account Tools (5 tools)
 **Purpose:** Test account management through MCP interface  
@@ -286,7 +286,7 @@ else:
 1. **Audit Current Tests** - Identify all tests using client layer
 2. **Convert to call_tool()** - Replace client calls with MCP calls
 3. **Add MCP Validation** - Validate response structure
-4. **Test All 17 Tools** - Ensure complete coverage
+4. **Test All 23 Tools** - Ensure complete coverage
 
 ### Phase 2: Safety Framework Integration
 5. **Test Safety Features** - Trading controls through MCP
@@ -338,7 +338,7 @@ timeout 300 C:\Python313\python.exe -m pytest tests/paper/test_mcp_tools_correct
 ## Success Criteria
 
 ### Technical Requirements
-- ✅ All 17 MCP tools tested through call_tool() interface
+- ✅ All 23 MCP tools tested through call_tool() interface
 - ✅ Proper MCP response structure validation for each tool
 - ✅ Parameter validation tested through MCP layer
 - ✅ Error handling verified through MCP interface
@@ -374,7 +374,7 @@ result = await call_tool("get_accounts", {})
 ### 3. Add MCP Response Validation
 Every test must validate MCP response structure before checking data
 
-### 4. Test All 17 Tools
+### 4. Test All 23 Tools
 Ensure complete coverage of all MCP tools through proper interface
 
 ---
