@@ -513,6 +513,203 @@ class TestStopLossManagerUtilities:
         assert hasattr(stop_manager, 'order_states')
         assert hasattr(stop_manager.order_states, 'default_factory')  # defaultdict
 
+    @pytest.mark.asyncio
+    async def test_stop_loss_manager_concurrent_orders(self, mock_ib):
+        """Test concurrent order management functionality"""
+        stop_manager = StopLossManager(mock_ib)
+        
+        # Setup mocks for multiple contracts
+        mock_contracts = {}
+        for symbol in ['AAPL', 'MSFT', 'GOOGL']:
+            mock_contract = Mock()
+            mock_contract.symbol = symbol
+            mock_contract.exchange = 'SMART'
+            mock_contract.currency = 'USD'
+            mock_contract.minSize = None
+            mock_contract.multiplier = 1
+            mock_contracts[symbol] = mock_contract
+        
+        # Mock qualifyContractsAsync to return appropriate contract
+        # Note: qualifyContractsAsync is called with a single contract, not a list
+        def mock_qualify_contracts(contract):
+            # Get the symbol from the contract to return the right mock
+            symbol = getattr(contract, 'symbol', 'AAPL')
+            return [mock_contracts.get(symbol, mock_contracts['AAPL'])]
+        
+        mock_ib.qualifyContractsAsync.side_effect = mock_qualify_contracts
+        
+        # Setup order mocks
+        order_id_counter = 10001
+        placed_orders = []
+        
+        def mock_place_order(contract, order):
+            nonlocal order_id_counter
+            order.orderId = order_id_counter
+            order_id_counter += 1
+            mock_trade = Mock()
+            mock_trade.order = order
+            mock_trade.contract = contract
+            placed_orders.append((contract.symbol, order.orderId))
+            return mock_trade
+        
+        mock_ib.placeOrder.side_effect = mock_place_order
+        
+        # Create concurrent stop loss orders with smaller values to avoid validation limits
+        with patch('ib_async.StopOrder') as mock_stop_order:
+            mock_stop_order.side_effect = lambda *args, **kwargs: Mock(orderId=None, orderType='STP')
+            
+            # Create tasks for concurrent order placement
+            tasks = []
+            # Use smaller quantities and prices to stay under $50,000 limit
+            order_params = [
+                ('AAPL', 10, 180.00),    # $1,800 value
+                ('MSFT', 5, 400.00),     # $2,000 value  
+                ('GOOGL', 2, 2750.00)    # $5,500 value
+            ]
+            
+            for symbol, quantity, stop_price in order_params:
+                task = stop_manager.place_stop_loss(
+                    symbol=symbol,
+                    action="SELL",
+                    quantity=quantity,
+                    stop_price=stop_price,
+                    order_type="STP"
+                )
+                tasks.append(task)
+            
+            # Execute all orders concurrently
+            results = await asyncio.gather(*tasks)
+        
+        # Verify all orders were placed successfully
+        assert len(results) == 3
+        for i, result in enumerate(results):
+            expected_symbol = order_params[i][0]
+            assert result['symbol'] == expected_symbol
+            assert result['order_type'] == 'STP'
+            assert result['status'] == 'Submitted'
+            assert 'order_id' in result
+        
+        # Verify all orders have unique order IDs
+        order_ids = [result['order_id'] for result in results]
+        assert len(set(order_ids)) == 3  # All unique
+        
+        # Verify placed_orders tracking
+        assert len(placed_orders) == 3
+        placed_symbols = [order[0] for order in placed_orders]
+        assert 'AAPL' in placed_symbols
+        assert 'MSFT' in placed_symbols
+        assert 'GOOGL' in placed_symbols
+        
+        # Verify stop_manager tracking state is consistent
+        assert hasattr(stop_manager, 'active_stops')
+        assert len(stop_manager.active_stops) == 3  # Should track all placed orders
+
+    @pytest.mark.asyncio
+    async def test_stop_loss_manager_order_tracking(self, mock_ib):
+        """Test advanced order tracking functionality"""
+        stop_manager = StopLossManager(mock_ib)
+        
+        # Setup mock contract
+        mock_contract = Mock()
+        mock_contract.symbol = 'AAPL'
+        mock_contract.exchange = 'SMART'
+        mock_contract.currency = 'USD'
+        mock_contract.minSize = None
+        mock_contract.multiplier = 1
+        mock_ib.qualifyContractsAsync.return_value = [mock_contract]
+        
+        # Setup order placement mock
+        mock_order = Mock()
+        mock_order.orderId = 12345
+        mock_order.orderType = 'STP'
+        
+        def mock_place_order(contract, order):
+            order.orderId = 12345
+            mock_trade = Mock()
+            mock_trade.order = order
+            mock_trade.contract = contract
+            return mock_trade
+        
+        mock_ib.placeOrder.side_effect = mock_place_order
+        
+        # Place a stop loss order
+        with patch('ib_async.StopOrder') as mock_stop_order:
+            mock_stop_order.return_value = mock_order
+            result = await stop_manager.place_stop_loss(
+                symbol="AAPL",
+                action="SELL", 
+                quantity=10,
+                stop_price=180.00,
+                order_type="STP"
+            )
+        
+        order_id = result['order_id']
+        
+        # Verify order is tracked in active_stops
+        assert order_id in stop_manager.active_stops
+        order_info = stop_manager.active_stops[order_id]
+        
+        # Test order tracking structure
+        assert 'order_id' in order_info
+        assert 'symbol' in order_info
+        assert 'contract' in order_info
+        assert 'order' in order_info
+        assert 'trade' in order_info
+        assert 'created_time' in order_info
+        assert 'status' in order_info
+        assert 'fills' in order_info
+        
+        # Test order info values
+        assert order_info['order_id'] == order_id
+        assert order_info['symbol'] == 'AAPL'
+        assert order_info['status'] == 'Submitted'
+        assert isinstance(order_info['fills'], list)
+        
+        # Test order state tracking
+        assert hasattr(stop_manager, 'order_states')
+        assert hasattr(stop_manager.order_states, 'default_factory')
+        
+        # Simulate order state change tracking
+        # Add a state change to the order
+        stop_manager.order_states[order_id].append({
+            'timestamp': datetime.now(timezone.utc),
+            'old_status': 'Submitted',
+            'new_status': 'Working',
+            'message': 'Order is now working'
+        })
+        
+        # Verify state tracking
+        assert order_id in stop_manager.order_states
+        state_changes = stop_manager.order_states[order_id]
+        assert len(state_changes) == 1
+        assert state_changes[0]['old_status'] == 'Submitted'
+        assert state_changes[0]['new_status'] == 'Working'
+        
+        # Test fill tracking
+        # Simulate a partial fill
+        fill_info = {
+            'execution_id': 'exec_123',
+            'quantity': 5,
+            'price': 179.95,
+            'timestamp': datetime.now(timezone.utc),
+            'commission': 1.0
+        }
+        order_info['fills'].append(fill_info)
+        
+        # Verify fill tracking
+        assert len(order_info['fills']) == 1
+        assert order_info['fills'][0]['quantity'] == 5
+        assert order_info['fills'][0]['price'] == 179.95
+        
+        # Test monitoring status
+        monitoring_status = stop_manager.get_monitoring_status()
+        assert isinstance(monitoring_status, dict)
+        
+        # Verify order can be retrieved by get_stop_losses
+        # Mock the get_stop_losses functionality
+        stop_losses = await stop_manager.get_stop_losses()
+        # Should return some structure - exact format depends on implementation
+
 
 if __name__ == "__main__":
     # Run stop loss manager tests

@@ -35,6 +35,10 @@ class ForexManager:
     async def get_forex_rates(self, currency_pairs) -> List[Dict]:
         """Get real-time forex rates with intelligent caching."""
         try:
+            # Increment request count for all requests to this method
+            self.request_count += 1
+            self.last_request_time = time.time()
+            
             if not self.ib or not self.ib.isConnected():
                 raise ConnectionError("Not connected to IBKR")
             
@@ -113,8 +117,8 @@ class ForexManager:
                     result = self._format_forex_ticker(ticker)
                     results.append(result)
             
-            self.request_count += 1
-            self.last_request_time = time.time()
+            # Note: request_count is now incremented in get_forex_rates() 
+            # to count ALL requests, not just those that reach the API
             
             return results
             

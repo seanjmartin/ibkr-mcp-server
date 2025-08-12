@@ -227,6 +227,161 @@ class TestForexManagerErrorHandling:
             # If it passes through, the converted amount should be 0
             assert result is not None
 
+    @pytest.mark.asyncio
+    async def test_forex_manager_caching(self, mock_ib, sample_forex_ticker):
+        """Test forex rate caching mechanism"""
+        with patch('ibkr_mcp_server.trading.forex.enhanced_settings') as mock_settings:
+            mock_settings.enable_forex_trading = True
+            
+            forex_manager = ForexManager(mock_ib)
+            
+            # Setup mock responses
+            mock_contract = Mock()
+            mock_contract.symbol = 'EURUSD'
+            mock_contract.conId = 12087792
+            mock_ib.qualifyContractsAsync.return_value = [mock_contract]
+            mock_ib.reqTickersAsync.return_value = [sample_forex_ticker]
+            
+            # First call - should hit the API
+            rates1 = await forex_manager.get_forex_rates("EURUSD")
+            assert len(rates1) == 1
+            assert rates1[0]['pair'] == 'EURUSD'
+            
+            # Second call immediately - should use cache
+            rates2 = await forex_manager.get_forex_rates("EURUSD")
+            assert len(rates2) == 1
+            assert rates2[0]['pair'] == 'EURUSD'
+            
+            # Verify cache was used (API should only be called once)
+            assert mock_ib.reqTickersAsync.call_count == 1
+            
+            # Verify cache content
+            cached_rate = forex_manager._get_cached_rate("EURUSD")
+            assert cached_rate is not None
+            assert cached_rate['pair'] == 'EURUSD'
+            
+            # Test cache expiry simulation
+            import time
+            # Manually expire cache by setting old timestamp
+            forex_manager.rate_cache["EURUSD"]['timestamp'] = time.time() - 10  # 10 seconds ago
+            
+            # Next call should hit API again
+            rates3 = await forex_manager.get_forex_rates("EURUSD")
+            assert len(rates3) == 1
+            assert mock_ib.reqTickersAsync.call_count == 2  # Called twice now
+            
+            # Test cache stats
+            stats = forex_manager.get_cache_stats()
+            assert 'cached_pairs' in stats
+            assert 'cache_duration_seconds' in stats
+            assert stats['cache_duration_seconds'] == 5  # Default 5 seconds
+            
+            # Test cache clearing
+            forex_manager.clear_cache()
+            assert len(forex_manager.rate_cache) == 0
+
+    @pytest.mark.asyncio
+    async def test_forex_manager_performance(self, mock_ib):
+        """Test forex manager performance with multiple requests"""
+        import asyncio
+        import time
+        
+        with patch('ibkr_mcp_server.trading.forex.enhanced_settings') as mock_settings:
+            mock_settings.enable_forex_trading = True
+            
+            forex_manager = ForexManager(mock_ib)
+            
+            # Setup mock responses for multiple pairs
+            mock_contracts = []
+            mock_tickers = []
+            
+            pairs = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD"]
+            
+            for i, pair in enumerate(pairs):
+                mock_contract = Mock()
+                mock_contract.symbol = pair
+                mock_contract.conId = 12087792 + i
+                mock_contracts.append(mock_contract)
+                
+                mock_ticker = Mock()
+                mock_ticker.contract = mock_contract
+                mock_ticker.last = 1.0 + (i * 0.1)  # Different rates
+                mock_ticker.bid = mock_ticker.last - 0.0001
+                mock_ticker.ask = mock_ticker.last + 0.0001
+                mock_ticker.close = mock_ticker.last - 0.0005
+                mock_ticker.high = mock_ticker.last + 0.002
+                mock_ticker.low = mock_ticker.last - 0.002
+                mock_ticker.volume = 100000 + (i * 10000)
+                mock_tickers.append(mock_ticker)
+            
+            mock_ib.qualifyContractsAsync.return_value = mock_contracts
+            mock_ib.reqTickersAsync.return_value = mock_tickers
+            
+            # Test 1: Single request performance
+            start_time = time.time()
+            rates = await forex_manager.get_forex_rates(",".join(pairs))
+            single_request_time = time.time() - start_time
+            
+            assert len(rates) == 5
+            assert single_request_time < 1.0  # Should complete within 1 second
+            
+            # Test 2: Multiple concurrent requests (should use cache efficiently)
+            forex_manager.clear_cache()  # Start fresh
+            
+            async def single_request(pair):
+                start = time.time()
+                result = await forex_manager.get_forex_rates(pair)
+                end = time.time()
+                return result, end - start
+            
+            # First, populate cache with sequential requests
+            for pair in pairs:
+                await forex_manager.get_forex_rates(pair)
+            
+            # Now test concurrent cached requests
+            start_time = time.time()
+            tasks = [single_request(pair) for pair in pairs]
+            results = await asyncio.gather(*tasks)
+            total_concurrent_time = time.time() - start_time
+            
+            # Verify results
+            for result, request_time in results:
+                assert len(result) == 1
+                assert request_time < 0.1  # Cached requests should be very fast
+            
+            # Concurrent cached requests should complete within reasonable time
+            # Note: Since we're using mocks, timing comparison is unreliable at microsecond scale
+            assert total_concurrent_time < 1.0  # Should complete within 1 second
+            
+            # Test 3: Performance metrics tracking
+            stats = forex_manager.get_cache_stats()
+            assert stats['total_requests'] > len(pairs)  # Multiple requests made
+            assert stats['cached_pairs'] > 0  # Some pairs should be cached
+            
+            # Test 4: Memory usage verification (cache shouldn't grow indefinitely)
+            initial_cache_size = len(forex_manager.rate_cache)
+            
+            # Make many requests for same pairs
+            for _ in range(10):
+                await forex_manager.get_forex_rates("EURUSD,GBPUSD")
+            
+            # Cache size shouldn't grow much (should reuse cached entries)
+            final_cache_size = len(forex_manager.rate_cache)
+            assert final_cache_size <= initial_cache_size + 2  # At most 2 new pairs
+            
+            # Test 5: Rate limiting behavior simulation
+            # Reset request tracking
+            forex_manager.request_count = 0
+            forex_manager.last_request_time = 0
+            
+            # Make rapid requests and verify tracking
+            for i in range(5):
+                await forex_manager.get_forex_rates("EURUSD")
+            
+            final_stats = forex_manager.get_cache_stats()
+            assert final_stats['total_requests'] >= 5
+            assert final_stats['last_request_time'] > 0
+
 
 if __name__ == "__main__":
     # Run forex manager tests

@@ -662,5 +662,159 @@ class TestOrderValidation:
         assert 'error' in result
 
 
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_order_manager_complex_scenarios():
+    """Test complex multi-order scenarios and interactions"""
+    # Setup comprehensive test environment
+    mock_ib = Mock()
+    mock_ib.isConnected.return_value = True
+    mock_ib.nextOrderId.return_value = 10001
+    
+    order_manager = OrderManager(mock_ib)
+    
+    # Setup mock contract
+    mock_contract = Mock()
+    mock_contract.symbol = 'AAPL'
+    mock_contract.exchange = 'SMART'
+    mock_contract.currency = 'USD'
+    mock_contract.minSize = None
+    mock_contract.multiplier = 1
+    
+    # Fix: Make qualifyContractsAsync return an awaitable (AsyncMock)
+    async def mock_qualify_contracts_async(contract):
+        return [mock_contract]
+    
+    mock_ib.qualifyContractsAsync = AsyncMock(side_effect=mock_qualify_contracts_async)
+    
+    # Setup order tracking
+    placed_orders = []
+    order_id_counter = 10001
+    
+    def mock_place_order(contract, order):
+        nonlocal order_id_counter
+        order.orderId = order_id_counter
+        order_id_counter += 1
+        mock_trade = Mock()
+        mock_trade.order = order
+        mock_trade.contract = contract
+        placed_orders.append({
+            'order_id': order.orderId,
+            'symbol': contract.symbol,
+            'action': order.action,
+            'quantity': order.totalQuantity,
+            'order_type': order.orderType
+        })
+        return mock_trade
+    
+    mock_ib.placeOrder.side_effect = mock_place_order
+    
+    # Test complex scenario: Multiple related orders
+    with patch('ib_async.MarketOrder') as mock_market_order, \
+         patch('ib_async.LimitOrder') as mock_limit_order:
+        
+        # Configure order mocks
+        mock_market_order.side_effect = lambda action, quantity: Mock(
+            action=action, 
+            totalQuantity=quantity, 
+            orderType='MKT', 
+            orderId=None
+        )
+        mock_limit_order.side_effect = lambda action, quantity, price: Mock(
+            action=action, 
+            totalQuantity=quantity, 
+            lmtPrice=price,
+            orderType='LMT', 
+            orderId=None
+        )
+        
+        # Scenario 1: Place initial market order
+        result1 = await order_manager.place_market_order(
+            symbol="AAPL",
+            action="BUY",
+            quantity=100
+        )
+        
+        # Scenario 2: Place limit order as follow-up
+        result2 = await order_manager.place_limit_order(
+            symbol="AAPL", 
+            action="SELL",
+            quantity=50,
+            price=185.0
+        )
+        
+        # Scenario 3: Place another limit order with different parameters
+        result3 = await order_manager.place_limit_order(
+            symbol="AAPL",
+            action="SELL", 
+            quantity=25,
+            price=190.0,
+            time_in_force="GTC"
+        )
+    
+    # Verify all orders were successful
+    assert result1['success'] == True
+    assert result2['success'] == True  
+    assert result3['success'] == True
+    
+    # Verify order sequencing and tracking
+    assert len(placed_orders) == 3
+    
+    # Verify first order (market buy)
+    order1 = placed_orders[0]
+    assert order1['symbol'] == 'AAPL'
+    assert order1['action'] == 'BUY'
+    assert order1['quantity'] == 100
+    assert order1['order_type'] == 'MKT'
+    
+    # Verify second order (limit sell partial)
+    order2 = placed_orders[1]
+    assert order2['symbol'] == 'AAPL'
+    assert order2['action'] == 'SELL'
+    assert order2['quantity'] == 50
+    assert order2['order_type'] == 'LMT'
+    
+    # Verify third order (limit sell with GTC)
+    order3 = placed_orders[2]
+    assert order3['symbol'] == 'AAPL'
+    assert order3['action'] == 'SELL'
+    assert order3['quantity'] == 25
+    assert order3['order_type'] == 'LMT'
+    
+    # Verify order IDs are unique and sequential
+    order_ids = [order['order_id'] for order in placed_orders]
+    assert len(set(order_ids)) == 3  # All unique
+    assert order_ids == [10001, 10002, 10003]  # Sequential
+    
+    # Test order management scenarios
+    # Scenario 4: Modify an existing order
+    modify_result = await order_manager.modify_order(
+        order_id=10002,
+        quantity=75,  # Increase quantity
+        price=187.0   # Adjust price
+    )
+    assert modify_result['success'] == True
+    assert modify_result['order_id'] == 10002
+    
+    # Scenario 5: Cancel an order
+    cancel_result = await order_manager.cancel_order(order_id=10003)
+    assert cancel_result['success'] == True
+    assert cancel_result['order_id'] == 10003
+    
+    # Scenario 6: Get order status
+    status_result = await order_manager.get_order_status(order_id=10001)
+    assert status_result['success'] == True
+    assert status_result['order_id'] == 10001
+    
+    # Test error handling in complex scenarios
+    # Scenario 7: Try to modify non-existent order
+    error_result = await order_manager.modify_order(
+        order_id=99999,  # Non-existent
+        quantity=100
+    )
+    assert error_result['success'] == False
+    assert 'error' in error_result
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

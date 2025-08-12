@@ -16,8 +16,8 @@ Comprehensive technical architecture for the IBKR MCP Server - a professional gl
 │  │    Tools    │  │   Client    │  │   Audit & Protection   │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   Trading   │  │ Reference   │  │      Validation        │  │
-│  │  Managers   │  │    Data     │  │      Framework         │  │
+│  │   Trading   │  │ API Cache   │  │      Validation        │  │
+│  │  Managers   │  │  & Helpers  │  │      Framework         │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 └─────────────────────┬───────────────────────────────────────────┘
                       │ ib-async 2.0.1
@@ -87,7 +87,7 @@ The central orchestrator with **29 methods** managing all IBKR interactions:
 - **29 methods** in IBKRClient (was incorrectly documented as 17)
 - **23 MCP tools** providing Claude Desktop interface
 - **3 Trading Managers**: Forex, International, Stop Loss
-- **Complete Reference Data**: 21 forex pairs, 23 international symbols, 12 exchanges
+- **Live API Integration**: 21 forex pairs, 23 international symbols, 12 exchanges
 - **Safety Framework**: Multi-layer protection with audit logging
 - **Documentation System**: Self-documenting help system
 

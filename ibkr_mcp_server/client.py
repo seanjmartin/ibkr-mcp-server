@@ -474,7 +474,7 @@ class IBKRClient:
         if not self.international_manager:
             raise ValidationError("International manager not initialized")
         
-        return self.international_manager.resolve_symbol(symbol, exchange, currency)
+        return await self.international_manager.resolve_symbol(symbol, exchange, currency)
 
     # ============ STOP LOSS MANAGEMENT METHODS ============
     

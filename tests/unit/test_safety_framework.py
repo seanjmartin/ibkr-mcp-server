@@ -598,6 +598,125 @@ class TestSafetyFrameworkIntegration:
         
         # Should complete quickly (allow 1 second for 100 validations)
         assert execution_time < 1.0
+    
+    def test_safety_framework_concurrent_access(self):
+        """Test thread safety of safety framework components"""
+        import threading
+        import time
+        
+        manager = TradingSafetyManager()
+        results = []
+        errors = []
+        
+        def worker_thread(thread_id):
+            """Worker function for concurrent testing"""
+            try:
+                for i in range(10):
+                    operation_data = {
+                        "symbol": f"STOCK{thread_id}_{i}",
+                        "action": "BUY",
+                        "quantity": 100
+                    }
+                    result = manager.validate_trading_operation("market_data", operation_data)
+                    results.append((thread_id, i, result))
+            except Exception as e:
+                errors.append((thread_id, str(e)))
+        
+        # Create and start multiple threads
+        threads = []
+        num_threads = 5
+        
+        for thread_id in range(num_threads):
+            thread = threading.Thread(target=worker_thread, args=(thread_id,))
+            threads.append(thread)
+            thread.start()
+        
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
+        
+        # Verify all operations completed without errors
+        assert len(errors) == 0, f"Thread safety errors: {errors}"
+        
+        # Should have results from all threads
+        expected_results = num_threads * 10
+        assert len(results) == expected_results
+        
+        # All results should be valid
+        for thread_id, operation_id, result in results:
+            assert result is not None
+            assert "is_safe" in result
+            assert isinstance(result["is_safe"], bool)
+    
+    def test_safety_framework_persistence(self):
+        """Test persistent state management in safety framework"""
+        from datetime import date, timedelta
+        
+        manager = TradingSafetyManager()
+        
+        # Test daily limits persistence
+        daily_tracker = manager.daily_limits
+        
+        # Simulate some activity
+        operation_data = {"symbol": "AAPL", "action": "BUY", "quantity": 100}
+        for i in range(5):
+            result = manager.validate_trading_operation("order_placement", operation_data)
+        
+        # Check that state is maintained
+        stats = daily_tracker.get_daily_stats()
+        assert stats["order_count"] == 5  # Order placement operations increment the counter
+        assert "reset_date" in stats
+        assert stats["reset_date"] == date.today().isoformat()
+        
+        # Test kill switch persistence
+        kill_switch = manager.kill_switch
+        
+        # Activate kill switch
+        activation_result = kill_switch.activate("Persistence test")
+        assert activation_result["status"] == "activated"
+        assert kill_switch.is_active()
+        
+        # State should persist across multiple checks
+        for _ in range(3):
+            assert kill_switch.is_active()
+        
+        # Deactivate and verify persistence
+        deactivation_result = kill_switch.deactivate("EMERGENCY_OVERRIDE_2024")
+        assert deactivation_result["status"] == "deactivated"
+        assert not kill_switch.is_active()
+        
+        # State should remain deactivated
+        for _ in range(3):
+            assert not kill_switch.is_active()
+        
+        # Test rate limiter persistence
+        rate_limiter = manager.rate_limiter
+        
+        # Use market_data operation type which has higher limit (30 vs 5)
+        # to avoid conflicts with the order_placement calls made earlier
+        for i in range(3):
+            allowed = rate_limiter.check_rate_limit("market_data")
+            assert allowed  # Should be allowed initially
+        
+        # State should be maintained within the rate window
+        # (Testing the internal state persistence is challenging without access to private members,
+        #  but we can verify the component continues to function correctly)
+        
+        # Test audit logger state
+        audit_logger = manager.audit_logger
+        
+        # Generate some audit entries
+        test_order_data = {"symbol": "MSFT", "quantity": 50}
+        test_validation = {"is_safe": True, "warnings": [], "errors": []}
+        
+        # This should not raise exceptions (indicating internal state is maintained)
+        audit_logger.log_order_attempt(test_order_data, test_validation)
+        audit_logger.log_safety_violation("test_violation", {"test": "data"})
+        
+        # Verify the manager continues to work correctly after all these operations
+        final_result = manager.validate_trading_operation("market_data", {"symbols": ["TEST"]})
+        assert final_result is not None
+        assert "is_safe" in final_result
 
 
 if __name__ == "__main__":

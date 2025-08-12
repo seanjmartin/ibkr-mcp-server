@@ -78,11 +78,37 @@ def retry_on_failure(max_attempts: int = 3, delay: float = 1.0, backoff: float =
 def format_currency(value: Union[float, Decimal, str], currency: str = "USD") -> str:
     """Format currency values for display."""
     try:
-        num_value = float(value) if value else 0.0
+        # Check for None values explicitly - these should show as N/A
+        if value is None:
+            return f"N/A {currency}"
+        
+        # Check for invalid types (lists, dicts, sets, etc.) - these should show as N/A
+        if isinstance(value, (list, dict, set, tuple)):
+            return f"N/A {currency}"
+        
+        # Check for empty or whitespace-only strings - these should show as N/A
+        if isinstance(value, str) and not value.strip():
+            return f"N/A {currency}"
+        
+        # For non-empty string inputs, try direct conversion first to detect truly invalid strings
+        if isinstance(value, str):
+            try:
+                float(value)  # Just test conversion, don't use result
+            except (ValueError, TypeError):
+                return f"N/A {currency}"
+        
+        num_value = safe_float(value, 0.0)
+        
+        # Round to 2 decimal places first, then check if it's effectively zero
+        # This prevents displaying "-0.00" for very small negative numbers
+        rounded_value = round(num_value, 2)
+        if rounded_value == 0.0:
+            rounded_value = 0.0  # Ensure it's positive zero
+        
         if currency == "USD":
-            return f"${num_value:,.2f}"
+            return f"${rounded_value:,.2f}"
         else:
-            return f"{num_value:,.2f} {currency}"
+            return f"{rounded_value:,.2f} {currency}"
     except (ValueError, TypeError):
         return f"N/A {currency}"
 
@@ -90,8 +116,34 @@ def format_currency(value: Union[float, Decimal, str], currency: str = "USD") ->
 def format_percentage(value: Union[float, Decimal, str]) -> str:
     """Format percentage values for display."""
     try:
-        num_value = float(value) if value else 0.0
-        return f"{num_value:.2f}%"
+        # Check for None values explicitly - these should show as N/A
+        if value is None:
+            return "N/A%"
+        
+        # Check for invalid types (lists, dicts, sets, etc.) - these should show as N/A
+        if isinstance(value, (list, dict, set, tuple)):
+            return "N/A%"
+        
+        # Check for empty or whitespace-only strings - these should show as N/A
+        if isinstance(value, str) and not value.strip():
+            return "N/A%"
+        
+        # For non-empty string inputs, try direct conversion first to detect truly invalid strings
+        if isinstance(value, str):
+            try:
+                float(value)  # Just test conversion, don't use result
+            except (ValueError, TypeError):
+                return "N/A%"
+        
+        num_value = safe_float(value, 0.0)
+        
+        # Round to 2 decimal places first, then check if it's effectively zero
+        # This prevents displaying "-0.00%" for very small negative numbers
+        rounded_value = round(num_value, 2)
+        if rounded_value == 0.0:
+            rounded_value = 0.0  # Ensure it's positive zero
+        
+        return f"{rounded_value:.2f}%"
     except (ValueError, TypeError):
         return "N/A%"
 
@@ -99,14 +151,21 @@ def format_percentage(value: Union[float, Decimal, str]) -> str:
 def validate_symbol(symbol: str) -> str:
     """Validate and clean stock symbol."""
     if not symbol or not isinstance(symbol, str):
-        raise ValueError("Symbol must be a non-empty string")
+        raise ValidationError("Symbol must be a non-empty string")
     
     cleaned = symbol.strip().upper()
-    if not cleaned.isalnum():
-        raise ValueError("Symbol must contain only alphanumeric characters")
+    
+    # Check if symbol becomes empty after stripping whitespace
+    if not cleaned:
+        raise ValidationError("Symbol must be a non-empty string")
     
     if len(cleaned) > 12:  # IBKR symbol length limit
-        raise ValueError("Symbol too long (max 12 characters)")
+        raise ValidationError("Symbol too long (max 12 characters)")
+    
+    # Allow alphanumeric characters plus common symbol characters
+    import re
+    if not re.match(r'^[A-Z0-9.\-/]+$', cleaned):
+        raise ValidationError("Symbol must contain only alphanumeric characters, dots, dashes, or slashes")
     
     return cleaned
 
@@ -114,37 +173,56 @@ def validate_symbol(symbol: str) -> str:
 def validate_symbols(symbols_str: str) -> list[str]:
     """Validate and clean a comma-separated list of symbols."""
     if not symbols_str:
-        raise ValueError("Symbols string cannot be empty")
+        raise ValidationError("Symbols string cannot be empty")
+    
+    # Check if symbols_str becomes empty after stripping whitespace
+    if not symbols_str.strip():
+        raise ValidationError("Symbols string cannot be empty")
     
     symbols = []
     for symbol in symbols_str.split(','):
+        # Skip empty symbols (from double commas, etc.)
+        if not symbol.strip():
+            continue
+        
         cleaned = validate_symbol(symbol)
         if cleaned not in symbols:  # Avoid duplicates
             symbols.append(cleaned)
     
     if len(symbols) > 50:  # Reasonable limit to avoid API overload
-        raise ValueError("Too many symbols (max 50)")
+        raise ValidationError("Too many symbols (max 50)")
     
     return symbols
 
 
 def safe_float(value: Any, default: float = 0.0) -> float:
     """Safely convert value to float."""
+    import math
     try:
         if value is None or value == '':
             return default
-        return float(value)
+        result = float(value)
+        # Check for infinity and NaN values - these are unsafe for financial calculations
+        if math.isinf(result) or math.isnan(result):
+            return default
+        return result
     except (ValueError, TypeError):
         return default
 
 
 def safe_int(value: Any, default: int = 0) -> int:
     """Safely convert value to int."""
+    import math
     try:
         if value is None or value == '':
             return default
-        return int(float(value))  # Handle string floats like "100.0"
-    except (ValueError, TypeError):
+        # First convert to float to handle string floats like "100.0"
+        float_value = float(value)
+        # Check for infinity and NaN values - these are unsafe for integer conversion
+        if math.isinf(float_value) or math.isnan(float_value):
+            return default
+        return int(float_value)
+    except (ValueError, TypeError, OverflowError):
         return default
 
 

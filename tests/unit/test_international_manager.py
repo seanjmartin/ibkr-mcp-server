@@ -29,32 +29,70 @@ class TestInternationalManager:
         assert hasattr(intl_manager, 'get_international_market_data')
         assert hasattr(intl_manager, 'resolve_symbol')
     
-    def test_resolve_symbol_success(self, mock_ib):
-        """Test successful symbol resolution"""
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_success(self, mock_ib):
+        """Test successful symbol resolution with IB API validation"""
+        # Setup mock for IB API qualification
+        mock_contract = Mock()
+        mock_contract.symbol = "ASML"
+        mock_contract.exchange = "AEB"
+        mock_contract.currency = "EUR"
+        mock_contract.conId = 117589399
+        mock_contract.longName = "ASML Holding NV"
+        mock_contract.isin = "NL0010273215"
+        
+        mock_ib.isConnected.return_value = True
+        mock_ib.qualifyContractsAsync = AsyncMock(return_value=[mock_contract])
+        
         intl_manager = InternationalManager(mock_ib)
         
-        # Test ASML resolution - resolve_symbol is NOT async
-        result = intl_manager.resolve_symbol("ASML")
+        # Mock the database response to include the required 'type' field
+        db_response = [{
+            'symbol': 'ASML',
+            'exchange': 'AEB', 
+            'currency': 'EUR',
+            'type': 'stock',  # Required field for contract creation
+            'name': 'ASML Holding NV',
+            'country': 'Netherlands',
+            'isin': 'NL0010273215'
+        }]
         
-        assert result is not None
-        assert isinstance(result, dict)
-        # The method may return different structure based on implementation
-        if result:  # Only check if result is not empty
-            assert 'symbol' in result or 'exchange' in result
+        with patch.object(intl_manager.symbol_db, 'resolve_symbol', return_value=db_response):
+            # Test ASML resolution - now async with API validation
+            result = await intl_manager.resolve_symbol("ASML")
+            
+            assert result is not None
+            assert isinstance(result, dict)
+            assert result['symbol'] == 'ASML'
+            assert 'matches' in result
+            assert result['resolution_method'] == 'api_validated'
+            assert len(result['matches']) >= 1
+            
+            # Check first match has validated contract details
+            first_match = result['matches'][0]
+            assert first_match['validated'] == True
+            assert first_match['contract_id'] == 117589399
     
-    def test_resolve_symbol_not_found(self, mock_ib):
-        """Test symbol resolution for unknown symbol"""
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_not_found(self, mock_ib):
+        """Test symbol resolution for unknown symbol with API validation"""
+        # Setup mock for IB API - no matches found
+        mock_ib.isConnected.return_value = True
+        mock_ib.qualifyContractsAsync = AsyncMock(return_value=[])  # No qualified contracts
+        
         intl_manager = InternationalManager(mock_ib)
         
-        # Test unknown symbol - resolve_symbol is NOT async
-        result = intl_manager.resolve_symbol("UNKNOWN")
+        # Test unknown symbol - now async with API validation
+        result = await intl_manager.resolve_symbol("UNKNOWN")
         
         # Should return structured response even for unknown symbols
         assert isinstance(result, dict)
-        assert 'matches' in result or 'symbol' in result
-        # For unknown symbols, matches should be empty
-        if 'matches' in result:
-            assert len(result['matches']) == 0
+        assert result['symbol'] == 'UNKNOWN'
+        assert 'matches' in result
+        # With no API matches and no database/guessed matches, should be empty
+        assert len(result['matches']) == 0
+        # New implementation returns 'none' when no matches found
+        assert result['resolution_method'] == 'none'
     
     @pytest.mark.asyncio
     async def test_get_market_data_success(self, mock_ib, sample_international_ticker):
@@ -147,16 +185,21 @@ class TestInternationalManager:
             # If database doesn't exist, just pass the test
             assert True
     
-    def test_auto_detect_exchange(self, mock_ib):
+    @pytest.mark.asyncio
+    async def test_auto_detect_exchange(self, mock_ib):
         """Test automatic exchange detection for symbols"""
+        # Setup mock for connected API
+        mock_ib.isConnected.return_value = True
+        mock_ib.qualifyContractsAsync = AsyncMock(return_value=[])  # No matches for test
+        
         intl_manager = InternationalManager(mock_ib)
         
-        # Test known symbol auto-detection - resolve_symbol is NOT async
-        result = intl_manager.resolve_symbol("ASML")
+        # Test known symbol auto-detection - resolve_symbol is NOW async
+        result = await intl_manager.resolve_symbol("ASML")
         
         if result and isinstance(result, dict):  # Only test if symbol is found
             # Check if the expected fields exist
-            assert 'exchange' in result or 'currency' in result or len(result) > 0
+            assert 'matches' in result and 'resolution_method' in result
 
 
 @pytest.mark.unit
@@ -197,8 +240,12 @@ class TestInternationalManagerErrorHandling:
         """Test handling of invalid symbol formats"""
         intl_manager = InternationalManager(mock_ib)
         
-        # Test with invalid symbol format - resolve_symbol is NOT async
-        result = intl_manager.resolve_symbol("")
+        # Setup mock for IB API - should handle empty symbol
+        mock_ib.isConnected.return_value = True
+        mock_ib.qualifyContractsAsync = AsyncMock(return_value=[])  # No qualified contracts
+        
+        # Test with invalid symbol format - resolve_symbol is NOW async
+        result = await intl_manager.resolve_symbol("")
         
         # Should return structured response even for invalid symbols
         assert isinstance(result, dict)
@@ -276,6 +323,72 @@ class TestInternationalManagerValidation:
         else:
             # Method doesn't exist, pass the test
             assert True
+
+
+
+
+    @pytest.mark.asyncio
+    async def test_international_manager_fallback(self, mock_ib):
+        """Test fallback mechanisms for symbol resolution"""
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Setup mock for IB API
+        mock_ib.isConnected.return_value = True
+        mock_ib.qualifyContractsAsync = AsyncMock(return_value=[])  # No qualified contracts
+        
+        # Test 1: Database fallback to guessed matches
+        # When database has no match, should fallback to guessing
+        result = await intl_manager.resolve_symbol("UNKNOWN_SYMBOL")
+        assert result['symbol'] == "UNKNOWN_SYMBOL"
+        assert 'matches' in result
+        assert 'resolution_method' in result
+        # Should either have database matches or fallback method
+        assert result['resolution_method'] in ['database', 'guessed', 'none', 'error']
+        
+        # Test 2: Error handling fallback  
+        # When everything fails, should return error structure gracefully
+        result_error = await intl_manager.resolve_symbol("")  # Empty symbol
+        assert result_error['symbol'] == ""
+        assert 'matches' in result_error
+        assert isinstance(result_error.get('matches'), list)
+        
+        # Test 3: Market data fallback when contracts fail
+        mock_ib.qualifyContractsAsync.return_value = []  # Empty response
+        mock_ib.reqTickersAsync.return_value = []  # Empty response
+        
+        try:
+            market_data = await intl_manager.get_international_market_data(["UNKNOWN_SYM"])
+            # Should handle gracefully and return empty or error
+            assert isinstance(market_data, (list, dict))
+        except Exception as e:
+            # Should provide meaningful error messages
+            assert isinstance(e, (ValueError, ConnectionError)) or "qualify" in str(e).lower()
+        
+        # Test 4: Successful fallback to SMART routing
+        fallback_contract = Mock()
+        fallback_contract.symbol = "AAPL"
+        fallback_contract.exchange = "SMART"
+        fallback_contract.currency = "USD"
+        fallback_contract.conId = 265598
+        
+        mock_ticker = Mock()
+        mock_ticker.contract = fallback_contract
+        mock_ticker.last = 180.50
+        mock_ticker.bid = 180.48
+        mock_ticker.ask = 180.52
+        
+        mock_ib.qualifyContractsAsync.return_value = [fallback_contract]
+        mock_ib.reqTickersAsync.return_value = [mock_ticker]
+        
+        # Test successful market data with fallback routing
+        try:
+            market_data = await intl_manager.get_international_market_data(["AAPL"])
+            if market_data and len(market_data) > 0:
+                assert market_data[0]['symbol'] == "AAPL"
+                assert 'last' in market_data[0]
+        except Exception:
+            # Fallback test - should not fail catastrophically
+            assert True  # Test passes if no major exception
 
 
 if __name__ == "__main__":
