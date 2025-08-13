@@ -22,11 +22,17 @@ def run_git_command(command_args, capture_output=False):
                 command_args, 
                 capture_output=True, 
                 text=True, 
-                encoding='utf-8'
+                encoding='utf-8',
+                errors='replace'
             )
             return result.returncode == 0, result.stdout, result.stderr
         else:
-            result = subprocess.run(command_args, text=True, encoding='utf-8')
+            result = subprocess.run(
+                command_args, 
+                text=True, 
+                encoding='utf-8',
+                errors='replace'
+            )
             return result.returncode == 0, "", ""
     except Exception as e:
         print(f"Error executing git command: {e}")
