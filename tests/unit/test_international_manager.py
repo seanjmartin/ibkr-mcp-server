@@ -236,6 +236,43 @@ class TestInternationalManagerErrorHandling:
         assert "qualify" in str(exc_info.value).lower()
     
     @pytest.mark.asyncio
+    async def test_market_data_subscription_error(self, mock_ib):
+        """Test handling of IBKR subscription errors (error 10089)"""
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Setup valid contract but no market data subscription
+        from ib_async import Stock, Ticker
+        mock_contract = Mock(spec=Stock)
+        mock_contract.symbol = "AAPL"
+        mock_contract.exchange = "SMART"
+        mock_contract.currency = "USD"
+        mock_contract.conId = 265598
+        
+        # Create ticker with zero prices (subscription issue)
+        mock_ticker = Mock(spec=Ticker)
+        mock_ticker.contract = mock_contract
+        mock_ticker.last = 0.0
+        mock_ticker.bid = 0.0
+        mock_ticker.ask = 0.0
+        mock_ticker.close = 0.0
+        mock_ticker.high = 0.0
+        mock_ticker.low = 0.0
+        mock_ticker.volume = 0
+        
+        mock_ib.qualifyContractsAsync.return_value = [mock_contract]
+        mock_ib.reqTickersAsync.return_value = [mock_ticker]
+        
+        # Should trigger fallback handling
+        result = await intl_manager.get_international_market_data("AAPL")
+        
+        # Should include metadata about data quality
+        assert isinstance(result, list) and len(result) > 0
+        ticker_data = result[0]
+        assert "data_status" in ticker_data
+        assert ticker_data["data_status"] in ["delayed", "unavailable"]
+        assert "data_message" in ticker_data
+    
+    @pytest.mark.asyncio
     async def test_invalid_symbol_format(self, mock_ib):
         """Test handling of invalid symbol formats"""
         intl_manager = InternationalManager(mock_ib)

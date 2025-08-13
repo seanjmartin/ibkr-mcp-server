@@ -44,7 +44,7 @@ class InternationalManager:
         self._last_connection_state = False
     
     async def get_international_market_data(self, symbols: str, auto_detect: bool = True) -> List[Dict]:
-        """Get market data for international stocks with auto-detection."""
+        """Get market data for international stocks with auto-detection and delayed data fallback."""
         try:
             if not self.ib or not self.ib.isConnected():
                 raise ConnectionError("Not connected to IBKR")
@@ -79,8 +79,8 @@ class InternationalManager:
             if not qualified:
                 raise ValidationError("Could not qualify any international contracts")
             
-            # Get market data
-            tickers = await self.ib.reqTickersAsync(*qualified)
+            # Try to get market data with enhanced error handling and delayed data fallback
+            tickers = await self._get_market_data_with_fallback(qualified)
             
             # Format results
             results = []
@@ -95,6 +95,93 @@ class InternationalManager:
         except Exception as e:
             self.logger.error(f"International market data request failed: {e}")
             raise
+    
+    async def _get_market_data_with_fallback(self, qualified_contracts):
+        """Get market data with fallback to delayed data on subscription errors."""
+        import asyncio
+        
+        try:
+            # First attempt: Try to get real-time market data
+            tickers = await self.ib.reqTickersAsync(*qualified_contracts)
+            
+            # Check if we received valid price data
+            has_valid_data = any(
+                hasattr(ticker, 'last') and ticker.last and ticker.last > 0 
+                for ticker in tickers
+            )
+            
+            if has_valid_data:
+                self.logger.info(f"Successfully retrieved real-time market data for {len(tickers)} symbols")
+                return tickers
+            else:
+                self.logger.warning("Real-time market data returned zero prices, attempting delayed data fallback")
+                
+        except Exception as e:
+            error_msg = str(e).lower()
+            if "10089" in error_msg or "subscription" in error_msg or "market data" in error_msg:
+                self.logger.warning(f"Market data subscription error detected: {e}")
+                self.logger.info("Attempting to request delayed market data as fallback")
+            else:
+                # Re-raise non-subscription related errors
+                raise
+        
+        # Fallback: Try to request delayed market data
+        try:
+            # Switch to delayed market data mode (market data type 3 = delayed)
+            for contract in qualified_contracts:
+                self.ib.reqMarketDataType(3)  # 3 = delayed frozen data
+                
+            # Wait a moment for the market data type to be set
+            await asyncio.sleep(0.5)
+            
+            # Request tickers again with delayed data mode
+            delayed_tickers = await self.ib.reqTickersAsync(*qualified_contracts)
+            
+            # Check if delayed data has better results
+            has_delayed_data = any(
+                hasattr(ticker, 'last') and ticker.last and ticker.last > 0 
+                for ticker in delayed_tickers
+            )
+            
+            if has_delayed_data:
+                self.logger.info(f"Successfully retrieved delayed market data for {len(delayed_tickers)} symbols")
+                # Add data type indicator to the tickers
+                for ticker in delayed_tickers:
+                    ticker._data_type = "delayed"
+                return delayed_tickers
+            else:
+                self.logger.warning("Both real-time and delayed data returned zero prices")
+                
+        except Exception as delayed_error:
+            self.logger.error(f"Delayed market data request also failed: {delayed_error}")
+        
+        # Final fallback: Return the original tickers with metadata about the issue
+        if 'tickers' in locals():
+            for ticker in tickers:
+                ticker._data_type = "unavailable"
+                ticker._data_issue = "Market data subscription required for live prices"
+            return tickers
+        else:
+            # If we can't get any tickers, create placeholder ones
+            placeholder_tickers = []
+            for contract in qualified_contracts:
+                # Create a minimal ticker object with contract info but no prices
+                class PlaceholderTicker:
+                    def __init__(self, contract):
+                        self.contract = contract
+                        self.last = 0.0
+                        self.bid = 0.0
+                        self.ask = 0.0
+                        self.close = 0.0
+                        self.high = 0.0
+                        self.low = 0.0
+                        self.volume = 0
+                        self._data_type = "unavailable"
+                        self._data_issue = "Market data subscription required"
+                
+                placeholder_tickers.append(PlaceholderTicker(contract))
+            
+            return placeholder_tickers
     
     def _parse_international_symbols(self, symbols: str, auto_detect: bool) -> List[Dict]:
         """Parse international symbol specifications with auto-detection."""
@@ -215,6 +302,56 @@ class InternationalManager:
         # Get exchange info
         exchange_info = self.exchange_mgr.get_exchange_info(contract.exchange)
         
+        # Add diagnostic information for zero price issue debugging
+        # Helper function to safely serialize datetime objects and other non-serializable types
+        def safe_serialize(obj):
+            if obj is None:
+                return None
+            if hasattr(obj, 'isoformat'):  # datetime objects
+                return obj.isoformat()
+            if hasattr(obj, '__dict__'):  # Complex objects - convert to string
+                return str(obj)
+            return obj
+        
+        raw_price_data = {
+            "raw_last": safe_serialize(ticker.last),
+            "raw_bid": safe_serialize(ticker.bid),
+            "raw_ask": safe_serialize(ticker.ask),
+            "raw_close": safe_serialize(ticker.close),
+            "raw_high": safe_serialize(ticker.high),
+            "raw_low": safe_serialize(ticker.low),
+            "raw_volume": safe_serialize(ticker.volume),
+            "raw_last_type": type(ticker.last).__name__,
+            "raw_bid_type": type(ticker.bid).__name__,
+            "market_data_type": ticker.marketDataType if hasattr(ticker, 'marketDataType') else 'unknown',
+            "time": safe_serialize(ticker.time) if hasattr(ticker, 'time') else None,
+            "halted": ticker.halted if hasattr(ticker, 'halted') else None,
+            "delayed": ticker.delayed if hasattr(ticker, 'delayed') else None
+        }
+        
+        # Determine data availability status
+        data_status = "real-time"
+        data_message = None
+        
+        if hasattr(ticker, '_data_type'):
+            data_status = ticker._data_type
+            if hasattr(ticker, '_data_issue'):
+                data_message = ticker._data_issue
+        elif hasattr(ticker, 'delayed') and ticker.delayed:
+            data_status = "delayed"
+        
+        # Check if we have zero price data and provide explanation
+        has_price_data = (safe_float(ticker.last) > 0 or 
+                         safe_float(ticker.bid) > 0 or 
+                         safe_float(ticker.ask) > 0)
+        
+        if not has_price_data:
+            data_status = "unavailable"
+            if not data_message:
+                data_message = "Market data subscription required for live prices. " \
+                             "Paper trading accounts may have limited real-time data access. " \
+                             "Consider enabling delayed data in IB Gateway or upgrading to live account with market data subscriptions."
+        
         result = {
             "symbol": contract.symbol,
             "exchange": contract.exchange,
@@ -235,8 +372,15 @@ class InternationalManager:
             "market_status": market_status,
             "exchange_timezone": exchange_info.get('timezone', '') if exchange_info else '',
             "settlement": exchange_info.get('settlement', '') if exchange_info else '',
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "data_status": data_status,
+            "data_message": data_message,
+            "has_price_data": has_price_data,
+            "debug_raw_data": raw_price_data  # Temporary diagnostic data
         }
+        
+        # Log diagnostic information for troubleshooting
+        self.logger.info(f"Market data debug for {contract.symbol}: {raw_price_data}")
         
         return result
     

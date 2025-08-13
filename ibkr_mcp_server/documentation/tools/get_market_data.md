@@ -89,6 +89,12 @@ Gets Tencent price from Hong Kong Stock Exchange in HKD
 • Use resolve_international_symbol to find correct exchange
 • Some exotic stocks may require live trading account access
 
+### "Zero prices returned" (All price fields show 0.0)
+• IBKR Error 10089: Real-time data subscription required
+• Paper accounts often lack real-time market data subscriptions  
+• System automatically falls back to delayed data when available
+• Look for "data_type": "delayed" in response metadata
+
 ### "Last price shows NaN" or empty
 • Common in paper trading for international stocks
 • IBKR may not provide real-time data for all international symbols

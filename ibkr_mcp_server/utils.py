@@ -198,15 +198,28 @@ def validate_symbols(symbols_str: str) -> list[str]:
 def safe_float(value: Any, default: float = 0.0) -> float:
     """Safely convert value to float."""
     import math
+    import logging
+    
+    # Add diagnostic logging for zero price issue
+    logger = logging.getLogger(__name__)
+    
     try:
         if value is None or value == '':
+            logger.debug(f"safe_float: None/empty value, returning default {default}")
             return default
         result = float(value)
         # Check for infinity and NaN values - these are unsafe for financial calculations
         if math.isinf(result) or math.isnan(result):
+            logger.warning(f"safe_float: Invalid float value {value} (inf/nan), returning default {default}")
             return default
+        
+        # Log when we get zero values for price data - this might indicate IBKR API issues
+        if result == 0.0 and default == 0.0:
+            logger.warning(f"safe_float: Zero price value detected - input: {value} (type: {type(value)})")
+        
         return result
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as e:
+        logger.debug(f"safe_float: Conversion failed for {value} (type: {type(value)}): {e}, returning default {default}")
         return default
 
 
