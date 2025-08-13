@@ -86,11 +86,14 @@ def main():
         print(f"Error: Commit failed - {stderr}")
         sys.exit(1)
     
-    print("\n✅ Commit successful!")
+    print("\nCommit successful!")
     
     # Show recent commits
     print("\nRecent commits:")
-    run_git_command(['git', 'log', '--oneline', '-3'])
+    try:
+        run_git_command(['git', 'log', '--oneline', '-3'])
+    except Exception as e:
+        print(f"Note: Could not display recent commits - {e}")
     print()
 
 
