@@ -14,6 +14,7 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 - [International Markets](guides/international.md) - Global stock trading
 - [Risk Management](guides/risk-management.md) - Stop losses and portfolio protection
 - [Paper Trading](guides/paper-trading.md) - Safe testing and learning
+- [Claude Desktop User Testing](guides/claude-desktop-user-testing.md) - Real user experience testing ⭐
 - [Deployment Guide](guides/deployment.md) - Production deployment and configuration
 
 ### **API Reference**

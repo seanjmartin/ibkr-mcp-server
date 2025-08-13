@@ -277,10 +277,10 @@ class TestPortfolioToolsIntegration:
                 {
                     'symbol': 'AAPL',
                     'quantity': 100,
-                    'market_value': 18550.0,
-                    'avg_cost': 180.00,
-                    'unrealized_pnl': 550.0,
-                    'unrealized_pnl_percent': 3.06
+                    'marketValue': 18550.0,
+                    'avgCost': 180.00,
+                    'unrealizedPNL': 550.0,
+                    'unrealizedPnlPercent': 3.06
                 }
             ],
             'total_value': 98450.75,
@@ -414,7 +414,7 @@ class TestMCPToolsIntegrationWorkflows:
         enabled_ibkr_client.get_portfolio = AsyncMock(return_value={
             'success': True,
             'positions': [
-                {'symbol': 'AAPL', 'quantity': 100, 'avg_cost': 180.00}
+                {'symbol': 'AAPL', 'quantity': 100, 'avgCost': 180.00}
             ]
         })
         

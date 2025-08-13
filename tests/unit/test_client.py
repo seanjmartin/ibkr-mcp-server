@@ -1117,6 +1117,142 @@ class TestClientOrderHistory:
         # Client returns List[Dict] directly
         assert isinstance(result, list)
         assert len(result) == 0
+
+    @pytest.mark.asyncio
+    async def test_get_completed_orders_with_real_data(self, ibkr_client):
+        """Test get_completed_orders with realistic data structure - verifies the bug fix"""
+        from unittest.mock import Mock
+        
+        # Create mock Trade object with realistic IBKR structure that was causing the bug
+        mock_trade = Mock()
+        
+        # Mock Order object with the CORRECT data (this is where real data lives)
+        mock_order = Mock()
+        mock_order.filledQuantity = 2.0  # REAL filled quantity (was being ignored)
+        mock_order.totalQuantity = 0    # IBKR sets this to 0 for completed orders (this was the problem!)
+        mock_order.permId = 928753150   # Real order ID
+        mock_order.orderId = 12345      # Alternative order ID
+        mock_order.action = "BUY"
+        mock_order.orderType = "MKT"
+        mock_order.account = "DU123456"
+        mock_order.tif = "DAY"
+        mock_order.clientId = 5
+        mock_order.orderRef = ""
+        mock_order.lmtPrice = None
+        mock_order.auxPrice = None
+        mock_order.avgFillPrice = 0     # Often zero in completed orders
+        
+        # Mock Contract object  
+        mock_contract = Mock()
+        mock_contract.symbol = "AAPL"
+        mock_contract.exchange = "SMART"
+        mock_contract.currency = "USD"
+        
+        # Mock OrderStatus object (this was the source of the bug - all zeros!)
+        mock_order_status = Mock()
+        mock_order_status.filled = 0.0      # BUG: This is always 0 for completed orders!
+        mock_order_status.avgFillPrice = 0.0  # BUG: This is always 0 for completed orders!
+        mock_order_status.orderId = 0       # BUG: This is always 0 for completed orders!
+        mock_order_status.status = "Filled"
+        
+        # Wire up the Trade object structure
+        mock_trade.order = mock_order
+        mock_trade.contract = mock_contract  
+        mock_trade.orderStatus = mock_order_status
+        mock_trade.commission = 1.0
+        mock_trade.fills = []  # No fill details for completed orders (IBKR limitation)
+        
+        # Mock IBKR API response with the problematic structure
+        ibkr_client.ib.reqCompletedOrdersAsync.return_value = [mock_trade]
+        
+        # Execute the function
+        result = await ibkr_client.get_completed_orders()
+        
+        # Verify the fix works - should extract real data from order object, not orderStatus
+        assert isinstance(result, list)
+        assert len(result) == 1
+        
+        order_data = result[0]
+        
+        # VERIFICATION: These should be REAL values, not zeros (the bug fix)
+        assert order_data["order_id"] == 928753150  # Should use permId, not the zero orderId from orderStatus
+        assert order_data["filled"] == 2.0          # Should use order.filledQuantity, not orderStatus.filled (which is 0)
+        assert order_data["quantity"] == 2.0        # Should use filledQuantity as fallback when totalQuantity is 0
+        assert order_data["remaining"] == 0         # Should be calculated: max(0, total - filled)
+        
+        # Standard fields should work correctly
+        assert order_data["symbol"] == "AAPL"
+        assert order_data["exchange"] == "SMART"
+        assert order_data["currency"] == "USD"
+        assert order_data["action"] == "BUY"
+        assert order_data["order_type"] == "MKT"
+        assert order_data["status"] == "Filled"
+        assert order_data["account"] == "DU123456"
+        assert order_data["client_id"] == 5
+        
+        # Price data - validates the IBKR API limitation documentation
+        # avg_fill_price may be 0 due to IBKR API limitation for completed orders
+        # This is expected behavior, not a bug
+        assert "avg_fill_price" in order_data
+        # Note: avg_fill_price may be 0 for completed orders - this is an IBKR API limitation
+        
+    @pytest.mark.asyncio
+    async def test_get_completed_orders_with_fill_data(self, ibkr_client):
+        """Test get_completed_orders when fill data is available (best case scenario)"""
+        from unittest.mock import Mock
+        
+        # Create mock Trade object with fills data available
+        mock_trade = Mock()
+        
+        # Mock Order object
+        mock_order = Mock()
+        mock_order.filledQuantity = 100.0
+        mock_order.totalQuantity = 100.0  # Complete fill
+        mock_order.permId = 999888777
+        mock_order.action = "SELL"
+        mock_order.orderType = "LMT"
+        mock_order.account = "DU123456"
+        
+        # Mock Contract object
+        mock_contract = Mock()
+        mock_contract.symbol = "TSLA"
+        mock_contract.exchange = "SMART"
+        mock_contract.currency = "USD"
+        
+        # Mock OrderStatus object
+        mock_order_status = Mock()
+        mock_order_status.status = "Filled"
+        
+        # Mock Fill data (when available, this provides accurate pricing)
+        mock_execution = Mock()
+        mock_execution.price = 245.50
+        mock_execution.shares = 100.0
+        
+        mock_fill = Mock()
+        mock_fill.execution = mock_execution
+        
+        # Wire up Trade object with fills
+        mock_trade.order = mock_order
+        mock_trade.contract = mock_contract
+        mock_trade.orderStatus = mock_order_status
+        mock_trade.fills = [mock_fill]  # When available, provides real pricing
+        mock_trade.commission = 2.5
+        
+        # Mock IBKR API response
+        ibkr_client.ib.reqCompletedOrdersAsync.return_value = [mock_trade]
+        
+        # Execute the function
+        result = await ibkr_client.get_completed_orders()
+        
+        # Verify fill data is used correctly
+        assert len(result) == 1
+        order_data = result[0]
+        
+        assert order_data["filled"] == 100.0
+        assert order_data["quantity"] == 100.0
+        assert order_data["remaining"] == 0
+        assert order_data["avg_fill_price"] == 245.50  # Should calculate from fills when available
+        assert order_data["symbol"] == "TSLA"
         
     @pytest.mark.asyncio
     async def test_get_completed_orders_timeout_handling(self, ibkr_client):

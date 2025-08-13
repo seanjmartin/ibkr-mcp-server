@@ -9,6 +9,11 @@ Instructions:
 3. Update parameters dict with tool-specific parameters
 4. Add tool-specific validation logic
 5. Test iteratively until working perfectly
+
+CRITICAL: IBKR API Field Names
+When validating IBKR API responses, use CAMELCASE field names:
+[OK] CORRECT: marketValue, unrealizedPNL, realizedPNL, avgCost
+[ERROR] WRONG: market_value, unrealized_pnl, realized_pnl, avg_cost
 """
 
 import pytest
@@ -121,14 +126,35 @@ class TestIndividual_TOOL_NAME_:
             #     print(f"[OK] Client ID: {client_id}")
             #     assert client_id == 5  # Required client ID for paper tests
             
-            print(f"✅ TOOL-SPECIFIC VALIDATION PASSED")
+            # Portfolio/position field validation (USE CORRECT CAMELCASE):
+            # if "marketValue" in parsed_result:  # [OK] CORRECT (not market_value)
+            #     market_value = parsed_result['marketValue']
+            #     print(f"[OK] Market Value: ${market_value:,.2f}")
+            #     assert isinstance(market_value, (int, float))
+            
+            # if "unrealizedPNL" in parsed_result:  # [OK] CORRECT (not unrealized_pnl)  
+            #     pnl = parsed_result['unrealizedPNL']
+            #     print(f"[OK] Unrealized P&L: ${pnl:,.2f}")
+            #     assert isinstance(pnl, (int, float))
+            
+            # if "avgCost" in parsed_result:  # [OK] CORRECT (not avg_cost)
+            #     avg_cost = parsed_result['avgCost']
+            #     print(f"[OK] Average Cost: ${avg_cost:.2f}")
+            #     assert isinstance(avg_cost, (int, float))
+            
+            # if "realizedPNL" in parsed_result:  # [OK] CORRECT (not realized_pnl)
+            #     realized_pnl = parsed_result['realizedPNL']
+            #     print(f"[OK] Realized P&L: ${realized_pnl:,.2f}")
+            #     assert isinstance(realized_pnl, (int, float))
+            
+            print(f"[OK] TOOL-SPECIFIC VALIDATION PASSED")
             
         else:
             print(f"Unexpected response format: {type(parsed_result)}")
             print(f"Response content: {parsed_result}")
             pytest.fail(f"Unexpected response format from MCP tool [tool_name]")
         
-        print(f"\\n✅ MCP Tool '{tool_name}' test PASSED")
+        print(f"\\n[OK] MCP Tool '{tool_name}' test PASSED")
         print(f"{'='*60}")
         
     async def test_TOOL_NAME_error_handling(self):
@@ -161,17 +187,17 @@ class TestIndividual_TOOL_NAME_:
                 
                 # Check if it indicates an error
                 if "error" in response_text.lower() or "invalid" in response_text.lower():
-                    print(f"✅ Error handling working: {response_text}")
+                    print(f"[OK] Error handling working: {response_text}")
                 else:
                     # Might have succeeded despite invalid params - that's also valid behavior
-                    print(f"ℹ️ Tool handled invalid params gracefully: {response_text}")
+                    print(f"[INFO] Tool handled invalid params gracefully: {response_text}")
             else:
                 print(f"Unexpected error response format: {result}")
             
         except Exception as e:
             print(f"Exception during error handling test: {e}")
             # This might be expected for some tools
-            print(f"✅ Exception-based error handling: {type(e).__name__}")
+            print(f"[OK] Exception-based error handling: {type(e).__name__}")
 
 # CRITICAL EXECUTION INSTRUCTIONS
 """
@@ -182,9 +208,9 @@ ALL paper tests MUST be run using pytest with full Python path:
 C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_[tool_name].py -v -s
 
 NEVER use:
-- python -m pytest [...]     # ❌ Python not in PATH
-- pytest [...]               # ❌ Pytest not in PATH  
-- python tests/paper/...     # ❌ Direct execution bypasses pytest framework
+- python -m pytest [...]     # [ERROR] Python not in PATH
+- pytest [...]               # [ERROR] Pytest not in PATH  
+- python tests/paper/...     # [ERROR] Direct execution bypasses pytest framework
 
 CLIENT ID REQUIREMENT:
 All paper tests use CLIENT ID 5 for shared IBKR Gateway connection.
@@ -207,9 +233,9 @@ PREREQUISITES:
 
 # Standalone execution for debugging (NOT RECOMMENDED - Use pytest commands above)
 if __name__ == "__main__":
-    print("⚠️  STANDALONE EXECUTION DETECTED")
-    print("⚠️  RECOMMENDED: Use pytest execution commands shown above")
-    print("⚠️  Standalone mode may not work correctly with MCP interface")
+    print("[WARNING]  STANDALONE EXECUTION DETECTED")
+    print("[WARNING]  RECOMMENDED: Use pytest execution commands shown above")
+    print("[WARNING]  Standalone mode may not work correctly with MCP interface")
     print()
     print("IBKR Gateway must be running with paper trading login and API enabled!")
     print("Port 7497 for paper trading, Client ID 5")

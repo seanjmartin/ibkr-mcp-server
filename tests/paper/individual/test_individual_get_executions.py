@@ -151,7 +151,7 @@ class TestIndividualGetExecutions:
             "time": "2024-01-15 14:30:00",
             "exchange": "SMART",
             "commission": 1.00,
-            "realized_pnl": 0.0,
+            "realizedPNL": 0.0,
             "account": "DUH905195"
         }
         
@@ -234,9 +234,9 @@ THIS TEST DEMONSTRATES:
 
 # Standalone execution for debugging (NOT RECOMMENDED - Use pytest commands above)
 if __name__ == "__main__":
-    print("⚠️  STANDALONE EXECUTION DETECTED")
-    print("⚠️  RECOMMENDED: Use pytest execution commands shown above")
-    print("⚠️  Standalone mode may not work correctly with MCP interface")
+    print("[WARNING]  STANDALONE EXECUTION DETECTED")
+    print("[WARNING]  RECOMMENDED: Use pytest execution commands shown above")
+    print("[WARNING]  Standalone mode may not work correctly with MCP interface")
     print()
     print("IBKR Gateway must be running with paper trading login and API enabled!")
     print("Port 7497 for paper trading, Client ID 5")

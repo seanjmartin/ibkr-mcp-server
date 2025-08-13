@@ -101,6 +101,11 @@ Stop level automatically adjusts as price moves favorably.
 - If MSFT falls to $405, stop order triggers
 - Stop never moves down, only up
 
+**Parameter Requirements:**
+- **For Trailing Stops:** Must specify either `trail_percent` OR `trail_amount`
+- **Stop Price:** Not required for trailing stops (system calculates automatically)
+- **Validation:** System validates trailing stop parameters before order placement
+
 ## Managing Stop Loss Orders
 
 ### Viewing All Stop Orders

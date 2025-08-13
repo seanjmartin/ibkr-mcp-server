@@ -230,9 +230,9 @@ ALL paper tests MUST be run using pytest with full Python path:
 C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_switch_account.py -v -s
 
 NEVER use:
-- python -m pytest [...]     # ❌ Python not in PATH
-- pytest [...]               # ❌ Pytest not in PATH  
-- python tests/paper/...     # ❌ Direct execution bypasses pytest framework
+- python -m pytest [...]     # [ERROR] Python not in PATH
+- pytest [...]               # [ERROR] Pytest not in PATH  
+- python tests/paper/...     # [ERROR] Direct execution bypasses pytest framework
 
 CLIENT ID REQUIREMENT:
 All paper tests use CLIENT ID 5 for shared IBKR Gateway connection.

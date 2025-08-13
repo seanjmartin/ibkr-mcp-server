@@ -113,13 +113,89 @@ Each execution contains comprehensive execution details:
 
 ## Key Differences from get_completed_orders
 
-| Feature | get_completed_orders | get_executions |
-|---------|---------------------|----------------|
-| **Level** | Order-level summary | Execution-level detail |
+| Aspect | `get_completed_orders` | `get_executions` |
+|--------|------------------------|-------------------|
+| **Data Level** | Order-level summary | Execution-level detail |
 | **Granularity** | One record per order | Multiple records per order (if partially filled) |
-| **Price Info** | Average fill price | Exact execution prices |
+| **IBKR API Call** | `reqCompletedOrdersAsync()` | `reqExecutionsAsync()` |
+| **Returns** | `List[Trade]` objects | `List[Fill]` objects |
+| **Price Info** | Average fill price | Exact execution prices for each fill |
 | **Commission** | Total commission | Commission per execution |
-| **Timing** | Order completion time | Individual execution times |
+| **Timing** | Order completion time | Individual execution timestamps |
+| **Focus** | Order management | Execution quality analysis |
+| **Record Count** | One per order | Multiple per order (if filled in pieces) |
+| **Filtering** | Account only | Account, symbol, days_back |
+| **API Reliability** | May timeout (5s limit) | More robust |
+
+## When to Use Each Tool
+
+### Use `get_executions` When You Need:
+- **Execution Quality Analysis**: Understand how your orders were filled
+- **Price Improvement Tracking**: See actual execution prices vs. quotes
+- **Commission Reconciliation**: Detailed fee breakdown per execution
+- **Market Impact Analysis**: Study how large orders affected prices
+- **Venue Performance**: Compare execution quality across exchanges
+- **Algorithmic Trading Review**: Analyze execution efficiency
+- **Regulatory Compliance**: Detailed audit trail for reporting
+
+### Use `get_completed_orders` When You Need:
+- **Order Management**: Review what orders have been filled
+- **Portfolio Review**: High-level trading activity summary
+- **Trading Activity Reports**: General transaction history
+- **Order Verification**: Confirm orders executed as expected
+- **P&L Attribution**: Order-level profit/loss analysis
+
+## Practical Example: Multiple Fills
+
+**Scenario:** You place a market order to buy 1,000 shares of AAPL
+
+### `get_executions` Response (3 records):
+```json
+[
+  {
+    "execution_id": "0001f4e4.673a1234.01.01",
+    "order_id": 123,
+    "shares": 400,
+    "price": 180.00,
+    "time": "2024-01-15T14:30:01.123Z",
+    "exchange": "NASDAQ"
+  },
+  {
+    "execution_id": "0001f4e4.673a1234.01.02", 
+    "order_id": 123,
+    "shares": 300,
+    "price": 180.05,
+    "time": "2024-01-15T14:30:02.456Z",
+    "exchange": "NASDAQ"
+  },
+  {
+    "execution_id": "0001f4e4.673a1234.01.03",
+    "order_id": 123, 
+    "shares": 300,
+    "price": 180.10,
+    "time": "2024-01-15T14:30:03.789Z",
+    "exchange": "ARCA"
+  }
+]
+```
+
+### `get_completed_orders` Response (1 record):
+```json
+[
+  {
+    "order_id": 123,
+    "symbol": "AAPL",
+    "action": "BUY",
+    "quantity": 1000,
+    "status": "Filled",
+    "filled": 1000,
+    "avg_fill_price": 180.05,
+    "commission": 1.00
+  }
+]
+```
+
+**Key Insight:** The execution view shows you got filled at three different prices across two venues, while the order view gives you the summary with average price.
 
 ## Common Use Cases
 

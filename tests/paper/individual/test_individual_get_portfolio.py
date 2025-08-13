@@ -28,9 +28,9 @@ class TestIndividualGetPortfolio:
     """Test get_portfolio MCP tool with comprehensive validation for empty and populated scenarios"""
     
     # Define expected position field structure for comprehensive validation 
-    # Updated to match actual IBKR portfolio API response structure
+    # Updated to match actual IBKR portfolio API response structure (camelCase)
     REQUIRED_POSITION_FIELDS = {'symbol', 'position'}  # Fields that MUST be present in IBKR data
-    OPTIONAL_POSITION_FIELDS = {'market_value', 'avg_cost', 'unrealized_pnl', 'realized_pnl', 'currency', 'exchange', 'contract_id'}
+    OPTIONAL_POSITION_FIELDS = {'marketValue', 'avgCost', 'unrealizedPNL', 'realizedPNL', 'currency', 'exchange', 'secType', 'account'}
     
     # Define expected portfolio summary fields
     PORTFOLIO_SUMMARY_FIELDS = {'total_market_value', 'total_unrealized_pnl', 'total_realized_pnl', 'cash_balance'}
@@ -383,23 +383,23 @@ class TestIndividualGetPortfolio:
                     metrics['exchanges_found'].add(exchange)
                     print(f"  Exchange: {exchange}")
                 
-                # Numeric value validation
-                if 'market_value' in position:
+                # Numeric value validation (corrected field names)
+                if 'marketValue' in position:
                     try:
-                        market_val = float(position['market_value'])
+                        market_val = float(position['marketValue'])
                         metrics['total_market_value'] += market_val
                         print(f"  Market Value: ${market_val:,.2f}")
                     except (ValueError, TypeError):
-                        print(f"  [WARNING] Invalid market value: {position['market_value']}")
+                        print(f"  [WARNING] Invalid market value: {position['marketValue']}")
                 
-                # P&L validation
-                if 'unrealized_pnl' in position:
+                # P&L validation (corrected field names)
+                if 'unrealizedPNL' in position:
                     try:
-                        pnl = float(position['unrealized_pnl'])
+                        pnl = float(position['unrealizedPNL'])
                         metrics['total_unrealized_pnl'] += pnl
                         print(f"  Unrealized P&L: ${pnl:,.2f}")
                     except (ValueError, TypeError):
-                        print(f"  [WARNING] Invalid P&L: {position['unrealized_pnl']}")
+                        print(f"  [WARNING] Invalid P&L: {position['unrealizedPNL']}")
             
             else:
                 print(f"  [WARNING] Position {i+1} is not a dict: {type(position)}")
@@ -409,7 +409,7 @@ class TestIndividualGetPortfolio:
             print(f"\nCurrency Analysis:")
             for currency in sorted(metrics['currencies_found']):
                 currency_positions = [p for p in positions if p.get('currency') == currency]
-                currency_value = sum(float(p.get('market_value', 0)) for p in currency_positions)
+                currency_value = sum(float(p.get('marketValue', 0)) for p in currency_positions)
                 print(f"  {currency}: {len(currency_positions)} positions, ${currency_value:,.2f}")
         
         print(f"\nPortfolio Totals:")
@@ -549,9 +549,9 @@ PREREQUISITES:
 
 # Standalone execution for debugging (NOT RECOMMENDED - Use pytest commands above)
 if __name__ == "__main__":
-    print("⚠️  STANDALONE EXECUTION DETECTED")
-    print("⚠️  RECOMMENDED: Use pytest execution commands shown above")
-    print("⚠️  Standalone mode may not work correctly with MCP interface")
+    print("[WARNING]  STANDALONE EXECUTION DETECTED")
+    print("[WARNING]  RECOMMENDED: Use pytest execution commands shown above")
+    print("[WARNING]  Standalone mode may not work correctly with MCP interface")
     print()
     print("IBKR Gateway must be running with paper trading login and API enabled!")
     print("Port 7497 for paper trading, Client ID 5")

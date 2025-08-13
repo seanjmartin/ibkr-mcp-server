@@ -213,7 +213,7 @@ class TestIndividualPlaceLimitOrder:
         except Exception as e:
             print(f"Exception during error handling test: {e}")
             # This might be expected for some tools
-            print(f"✅ Exception-based error handling: {type(e).__name__}")
+            print(f"[OK] Exception-based error handling: {type(e).__name__}")
 
 # CRITICAL EXECUTION INSTRUCTIONS
 """
@@ -224,9 +224,9 @@ ALL paper tests MUST be run using pytest with full Python path:
 C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_place_limit_order.py -v -s
 
 NEVER use:
-- python -m pytest [...]     # ❌ Python not in PATH
-- pytest [...]               # ❌ Pytest not in PATH  
-- python tests/paper/...     # ❌ Direct execution bypasses pytest framework
+- python -m pytest [...]     # [ERROR] Python not in PATH
+- pytest [...]               # [ERROR] Pytest not in PATH  
+- python tests/paper/...     # [ERROR] Direct execution bypasses pytest framework
 
 CLIENT ID REQUIREMENT:
 All paper tests use CLIENT ID 5 for shared IBKR Gateway connection.
@@ -250,9 +250,9 @@ PREREQUISITES:
 
 # Standalone execution for debugging (NOT RECOMMENDED - Use pytest commands above)
 if __name__ == "__main__":
-    print("⚠️  STANDALONE EXECUTION DETECTED")
-    print("⚠️  RECOMMENDED: Use pytest execution commands shown above")
-    print("⚠️  Standalone mode may not work correctly with MCP interface")
+    print("[WARNING]  STANDALONE EXECUTION DETECTED")
+    print("[WARNING]  RECOMMENDED: Use pytest execution commands shown above")
+    print("[WARNING]  Standalone mode may not work correctly with MCP interface")
     print()
     print("IBKR Gateway must be running with paper trading login and API enabled!")
     print("Port 7497 for paper trading, Client ID 5")

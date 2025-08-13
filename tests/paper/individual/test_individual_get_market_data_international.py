@@ -291,7 +291,7 @@ class TestIndividualGetMarketDataInternational:
                     print(f"Parsed multi-symbol result: {parsed_result}")
                     
                     if isinstance(parsed_result, list):
-                        print(f"✅ Returned {len(parsed_result)} international market data entries")
+                        print(f"[OK] Returned {len(parsed_result)} international market data entries")
                         
                         # Look for both symbols
                         symbols_found = set()
@@ -301,20 +301,20 @@ class TestIndividualGetMarketDataInternational:
                                 print(f"[OK] Found symbol: {entry['symbol']}")
                         
                         if "ASML" in symbols_found or "SAP" in symbols_found:
-                            print(f"✅ Found expected international symbols: {symbols_found}")
+                            print(f"[OK] Found expected international symbols: {symbols_found}")
                         else:
-                            print(f"ℹ️ Symbols found: {symbols_found}")
+                            print(f"[INFO] Symbols found: {symbols_found}")
                     else:
-                        print(f"ℹ️ Multi-symbol response format: {type(parsed_result)}")
+                        print(f"[INFO] Multi-symbol response format: {type(parsed_result)}")
                         
                 except json.JSONDecodeError:
-                    print(f"ℹ️ Non-JSON multi-symbol response: {response_text}")
+                    print(f"[INFO] Non-JSON multi-symbol response: {response_text}")
             else:
                 print(f"Unexpected multi-symbol response format: {result}")
             
         except Exception as e:
             print(f"Exception during multi-symbol test: {e}")
-            print(f"ℹ️ Exception-based handling: {type(e).__name__}")
+            print(f"[INFO] Exception-based handling: {type(e).__name__}")
 
 # CRITICAL EXECUTION INSTRUCTIONS
 r"""
@@ -325,9 +325,9 @@ ALL paper tests MUST be run using pytest with full Python path:
 C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_get_market_data_international.py -v -s
 
 NEVER use:
-- python -m pytest [...]     # ❌ Python not in PATH
-- pytest [...]               # ❌ Pytest not in PATH  
-- python tests/paper/...     # ❌ Direct execution bypasses pytest framework
+- python -m pytest [...]     # [ERROR] Python not in PATH
+- pytest [...]               # [ERROR] Pytest not in PATH  
+- python tests/paper/...     # [ERROR] Direct execution bypasses pytest framework
 
 CLIENT ID REQUIREMENT:
 All paper tests use CLIENT ID 5 for shared IBKR Gateway connection.
@@ -351,9 +351,9 @@ PREREQUISITES:
 
 # Standalone execution for debugging (NOT RECOMMENDED - Use pytest commands above)
 if __name__ == "__main__":
-    print("⚠️  STANDALONE EXECUTION DETECTED")
-    print("⚠️  RECOMMENDED: Use pytest execution commands shown above")
-    print("⚠️  Standalone mode may not work correctly with MCP interface")
+    print("[WARNING]  STANDALONE EXECUTION DETECTED")
+    print("[WARNING]  RECOMMENDED: Use pytest execution commands shown above")
+    print("[WARNING]  Standalone mode may not work correctly with MCP interface")
     print()
     print("IBKR Gateway must be running with paper trading login and API enabled!")
     print("Port 7497 for paper trading, Client ID 5")

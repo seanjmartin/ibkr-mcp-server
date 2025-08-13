@@ -673,7 +673,7 @@ class TestSpecificErrorScenarios:
         
         # Attempt international operation - resolve_symbol is informational only
         # It should succeed even with international trading disabled
-        result = client.international_manager.resolve_symbol('ASML')
+        result = await client.international_manager.resolve_symbol('ASML')
         assert isinstance(result, dict)
         assert 'symbol' in result
     

@@ -242,17 +242,17 @@ class TestIndividualGetAccountSummary:
                 
                 # Check if it indicates an error
                 if "error" in response_text.lower() or "invalid" in response_text.lower():
-                    print(f"✅ Error handling working: {response_text}")
+                    print(f"[OK] Error handling working: {response_text}")
                 else:
                     # Might have succeeded despite invalid params - that's also valid behavior
-                    print(f"ℹ️ Tool handled invalid params gracefully: {response_text}")
+                    print(f"[INFO] Tool handled invalid params gracefully: {response_text}")
             else:
                 print(f"Unexpected error response format: {result}")
             
         except Exception as e:
             print(f"Exception during error handling test: {e}")
             # This might be expected for some tools
-            print(f"✅ Exception-based error handling: {type(e).__name__}")
+            print(f"[OK] Exception-based error handling: {type(e).__name__}")
 
 # CRITICAL EXECUTION INSTRUCTIONS
 """
@@ -263,9 +263,9 @@ ALL paper tests MUST be run using pytest with full Python path:
 C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_[tool_name].py -v -s
 
 NEVER use:
-- python -m pytest [...]     # ❌ Python not in PATH
-- pytest [...]               # ❌ Pytest not in PATH  
-- python tests/paper/...     # ❌ Direct execution bypasses pytest framework
+- python -m pytest [...]     # [ERROR] Python not in PATH
+- pytest [...]               # [ERROR] Pytest not in PATH  
+- python tests/paper/...     # [ERROR] Direct execution bypasses pytest framework
 
 CLIENT ID REQUIREMENT:
 All paper tests use CLIENT ID 5 for shared IBKR Gateway connection.
@@ -288,9 +288,9 @@ PREREQUISITES:
 
 # Standalone execution for debugging (NOT RECOMMENDED - Use pytest commands above)
 if __name__ == "__main__":
-    print("⚠️  STANDALONE EXECUTION DETECTED")
-    print("⚠️  RECOMMENDED: Use pytest execution commands shown above")
-    print("⚠️  Standalone mode may not work correctly with MCP interface")
+    print("[WARNING]  STANDALONE EXECUTION DETECTED")
+    print("[WARNING]  RECOMMENDED: Use pytest execution commands shown above")
+    print("[WARNING]  Standalone mode may not work correctly with MCP interface")
     print()
     print("IBKR Gateway must be running with paper trading login and API enabled!")
     print("Port 7497 for paper trading, Client ID 5")

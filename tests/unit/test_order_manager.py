@@ -23,6 +23,23 @@ from ib_async import IB, Stock, Order, Trade, MarketOrder, LimitOrder, StopOrder
 
 
 @pytest.fixture
+def enabled_trading_settings():
+    """Fixture to enable trading in enhanced_validators"""
+    with patch('ibkr_mcp_server.enhanced_validators.enhanced_settings') as mock_settings:
+        mock_settings.enable_trading = True
+        mock_settings.enable_stop_loss_orders = True
+        mock_settings.ibkr_is_paper = True
+        mock_settings.max_order_size = 1000
+        mock_settings.max_order_value_usd = 50000.0  # Increased for tests
+        mock_settings.max_stop_loss_orders = 25
+        mock_settings.max_trail_percent = 25.0
+        mock_settings.supported_forex_pairs = ["EURUSD", "GBPUSD", "USDJPY"]
+        mock_settings.supported_currencies = ["USD", "EUR", "GBP", "JPY", "CHF", "AUD", "CAD"]
+        mock_settings.allowed_account_prefixes = ["DU", "DUH"]
+        yield mock_settings
+
+
+@pytest.fixture
 def mock_ib():
     """Mock IB client with common order methods."""
     ib = Mock(spec=IB)
@@ -38,9 +55,29 @@ def mock_ib():
 
 
 @pytest.fixture
-def order_manager(mock_ib):
-    """Create OrderManager with mocked IB client."""
-    return OrderManager(mock_ib)
+def enabled_trading_settings():
+    """Fixture to enable trading in enhanced_validators"""
+    with patch('ibkr_mcp_server.enhanced_validators.enhanced_settings') as mock_settings:
+        mock_settings.enable_trading = True
+        mock_settings.enable_forex_trading = True
+        mock_settings.enable_international_trading = True
+        mock_settings.enable_stop_loss_orders = True
+        mock_settings.ibkr_is_paper = True
+        mock_settings.max_order_size = 1000  # Allow large test orders
+        mock_settings.max_order_value_usd = 100000.0  # Allow large test values
+        mock_settings.max_daily_orders = 1000  # Allow many test orders
+        mock_settings.max_stop_loss_orders = 100  # Allow many test stop losses
+        mock_settings.supported_forex_pairs = ["EURUSD", "GBPUSD", "USDJPY"]
+        mock_settings.supported_currencies = ["USD", "EUR", "GBP", "JPY", "CHF", "AUD", "CAD"]
+        mock_settings.allowed_account_prefixes = ["DU", "DUH"]
+        yield mock_settings
+
+
+@pytest.fixture
+def order_manager(mock_ib, enabled_trading_settings):
+    """Create OrderManager with mocked IB client and enhanced settings."""
+    manager = OrderManager(mock_ib)
+    return manager
 
 
 @pytest.fixture
@@ -664,14 +701,21 @@ class TestOrderValidation:
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_order_manager_complex_scenarios():
+async def test_order_manager_complex_scenarios(enabled_trading_settings):
     """Test complex multi-order scenarios and interactions"""
     # Setup comprehensive test environment
     mock_ib = Mock()
     mock_ib.isConnected.return_value = True
     mock_ib.nextOrderId.return_value = 10001
     
-    order_manager = OrderManager(mock_ib)
+    # Use enhanced settings with increased limits for testing
+    with patch('ibkr_mcp_server.trading.order_management.OrderValidator') as mock_validator_class:
+        # Create a mock validator that accepts all orders
+        mock_validator = Mock()
+        mock_validator.validate_order_placement = Mock()  # Doesn't raise exceptions
+        mock_validator_class.return_value = mock_validator
+        
+        order_manager = OrderManager(mock_ib)
     
     # Setup mock contract
     mock_contract = Mock()

@@ -21,6 +21,13 @@ def enabled_trading_settings():
         mock_settings.enable_trading = True
         mock_settings.enable_stop_loss_orders = True
         mock_settings.ibkr_is_paper = True
+        mock_settings.max_order_size = 1000
+        mock_settings.max_order_value_usd = 50000.0  # Increased for tests
+        mock_settings.max_stop_loss_orders = 25
+        mock_settings.max_trail_percent = 25.0  # Critical missing attribute for trailing stops
+        mock_settings.supported_forex_pairs = ["EURUSD", "GBPUSD", "USDJPY"]
+        mock_settings.supported_currencies = ["USD", "EUR", "GBP", "JPY", "CHF", "AUD", "CAD"]
+        mock_settings.allowed_account_prefixes = ["DU", "DUH"]
         yield mock_settings
 
 
@@ -43,7 +50,7 @@ class TestStopLossManager:
         assert hasattr(stop_manager, 'cancel_stop_loss')
     
     @pytest.mark.asyncio
-    async def test_place_stop_loss_basic(self, mock_ib):
+    async def test_place_stop_loss_basic(self, mock_ib, enabled_trading_settings):
         """Test basic stop loss placement"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -89,7 +96,7 @@ class TestStopLossManager:
         assert result['status'] == 'Submitted'
     
     @pytest.mark.asyncio
-    async def test_place_stop_limit_order(self, mock_ib):
+    async def test_place_stop_limit_order(self, mock_ib, enabled_trading_settings):
         """Test stop-limit order placement"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -134,7 +141,7 @@ class TestStopLossManager:
         # Note: limit_price is not returned in the standard response
     
     @pytest.mark.asyncio
-    async def test_place_trailing_stop(self, mock_ib):
+    async def test_place_trailing_stop(self, mock_ib, enabled_trading_settings):
         """Test trailing stop order placement"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -177,7 +184,7 @@ class TestStopLossManager:
         # Note: trail_percent is not returned in the standard response
     
     @pytest.mark.asyncio
-    async def test_get_stop_losses_active(self, mock_ib):
+    async def test_get_stop_losses_active(self, mock_ib, enabled_trading_settings):
         """Test retrieving active stop loss orders"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -203,7 +210,7 @@ class TestStopLossManager:
         assert len(result) >= 0  # May be filtered
     
     @pytest.mark.asyncio
-    async def test_modify_stop_loss(self, mock_ib):
+    async def test_modify_stop_loss(self, mock_ib, enabled_trading_settings):
         """Test modifying existing stop loss order"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -248,7 +255,7 @@ class TestStopLossManager:
         assert 'timestamp' in result
     
     @pytest.mark.asyncio
-    async def test_cancel_stop_loss(self, mock_ib):
+    async def test_cancel_stop_loss(self, mock_ib, enabled_trading_settings):
         """Test cancelling stop loss order"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -274,7 +281,7 @@ class TestStopLossManager:
         assert result['order_id'] == 99999
         assert result['status'] == 'Cancelled'
     
-    def test_validate_stop_loss_parameters(self, mock_ib):
+    def test_validate_stop_loss_parameters(self, mock_ib, enabled_trading_settings):
         """Test stop loss parameter validation"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -318,7 +325,7 @@ class TestStopLossManagerErrorHandling:
     """Test stop loss manager error handling"""
     
     @pytest.mark.asyncio
-    async def test_connection_error_handling(self, mock_ib):
+    async def test_connection_error_handling(self, mock_ib, enabled_trading_settings):
         """Test handling of connection errors"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -336,7 +343,7 @@ class TestStopLossManagerErrorHandling:
         assert "Connection lost" in str(exc_info.value) or "error" in str(exc_info.value).lower()
     
     @pytest.mark.asyncio
-    async def test_invalid_symbol_handling(self, mock_ib):
+    async def test_invalid_symbol_handling(self, mock_ib, enabled_trading_settings):
         """Test handling of invalid symbols"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -355,7 +362,7 @@ class TestStopLossManagerErrorHandling:
         assert "symbol" in str(exc_info.value).lower() or "contract" in str(exc_info.value).lower()
     
     @pytest.mark.asyncio
-    async def test_order_rejection_handling(self, mock_ib):
+    async def test_order_rejection_handling(self, mock_ib, enabled_trading_settings):
         """Test handling of order rejections"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -380,7 +387,7 @@ class TestStopLossManagerErrorHandling:
         assert "rejected" in str(exc_info.value).lower() or "error" in str(exc_info.value).lower()
     
     @pytest.mark.asyncio
-    async def test_modify_nonexistent_order(self, mock_ib):
+    async def test_modify_nonexistent_order(self, mock_ib, enabled_trading_settings):
         """Test modifying non-existent order"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -393,7 +400,7 @@ class TestStopLossManagerErrorHandling:
         assert "not found" in str(exc_info.value).lower() or "order" in str(exc_info.value).lower()
     
     @pytest.mark.asyncio
-    async def test_cancel_nonexistent_order(self, mock_ib):
+    async def test_cancel_nonexistent_order(self, mock_ib, enabled_trading_settings):
         """Test cancelling non-existent order"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -410,7 +417,7 @@ class TestStopLossManagerErrorHandling:
 class TestStopLossManagerValidation:
     """Test stop loss manager validation functionality"""
     
-    def test_validator_integration(self, mock_ib):
+    def test_validator_integration(self, mock_ib, enabled_trading_settings):
         """Test that validator properly integrates with stop loss manager"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -514,7 +521,7 @@ class TestStopLossManagerUtilities:
         assert hasattr(stop_manager.order_states, 'default_factory')  # defaultdict
 
     @pytest.mark.asyncio
-    async def test_stop_loss_manager_concurrent_orders(self, mock_ib):
+    async def test_stop_loss_manager_concurrent_orders(self, mock_ib, enabled_trading_settings):
         """Test concurrent order management functionality"""
         stop_manager = StopLossManager(mock_ib)
         
@@ -605,7 +612,7 @@ class TestStopLossManagerUtilities:
         assert len(stop_manager.active_stops) == 3  # Should track all placed orders
 
     @pytest.mark.asyncio
-    async def test_stop_loss_manager_order_tracking(self, mock_ib):
+    async def test_stop_loss_manager_order_tracking(self, mock_ib, enabled_trading_settings):
         """Test advanced order tracking functionality"""
         stop_manager = StopLossManager(mock_ib)
         

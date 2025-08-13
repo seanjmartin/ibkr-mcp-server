@@ -229,16 +229,16 @@ class TestIndividualGetMarketData:
                 
                 # Check if it indicates an error for missing parameters
                 if "error" in response_text.lower() or "required" in response_text.lower() or "symbol" in response_text.lower():
-                    print(f"✅ Parameter validation working: {response_text}")
+                    print(f"[OK] Parameter validation working: {response_text}")
                 else:
-                    print(f"ℹ️ Tool handled missing params gracefully: {response_text}")
+                    print(f"[INFO] Tool handled missing params gracefully: {response_text}")
             else:
                 print(f"Unexpected error response format: {result}")
             
         except Exception as e:
             print(f"Exception during parameter validation test: {e}")
             # This might be expected for missing required parameters
-            print(f"✅ Exception-based parameter validation: {type(e).__name__}")
+            print(f"[OK] Exception-based parameter validation: {type(e).__name__}")
 
     async def test_get_market_data_invalid_symbol_handling(self):
         """Test get_market_data error handling with invalid symbol"""
@@ -268,24 +268,24 @@ class TestIndividualGetMarketData:
                     print(f"Parsed response: {parsed_result}")
                     
                     if "error" in str(response_text).lower():
-                        print(f"✅ Error handling working: Invalid symbol rejected")
+                        print(f"[OK] Error handling working: Invalid symbol rejected")
                     elif isinstance(parsed_result, list) and len(parsed_result) == 0:
-                        print(f"✅ Empty result for invalid symbol (valid response)")
+                        print(f"[OK] Empty result for invalid symbol (valid response)")
                     else:
-                        print(f"ℹ️ Unexpected response for invalid symbol: {parsed_result}")
+                        print(f"[INFO] Unexpected response for invalid symbol: {parsed_result}")
                         
                 except json.JSONDecodeError:
                     # Non-JSON error message
                     if "error" in response_text.lower() or "invalid" in response_text.lower():
-                        print(f"✅ Error message returned: {response_text}")
+                        print(f"[OK] Error message returned: {response_text}")
                     else:
-                        print(f"ℹ️ Non-JSON response: {response_text}")
+                        print(f"[INFO] Non-JSON response: {response_text}")
             else:
                 print(f"Unexpected response format: {result}")
             
         except Exception as e:
             print(f"Exception during invalid symbol test: {e}")
-            print(f"✅ Exception-based error handling: {type(e).__name__}")
+            print(f"[OK] Exception-based error handling: {type(e).__name__}")
 
 # CRITICAL EXECUTION INSTRUCTIONS
 r"""
@@ -296,9 +296,9 @@ ALL paper tests MUST be run using pytest with full Python path:
 C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_get_market_data.py -v -s
 
 NEVER use:
-- python -m pytest [...]     # ❌ Python not in PATH
-- pytest [...]               # ❌ Pytest not in PATH  
-- python tests/paper/...     # ❌ Direct execution bypasses pytest framework
+- python -m pytest [...]     # [ERROR] Python not in PATH
+- pytest [...]               # [ERROR] Pytest not in PATH  
+- python tests/paper/...     # [ERROR] Direct execution bypasses pytest framework
 
 CLIENT ID REQUIREMENT:
 All paper tests use CLIENT ID 5 for shared IBKR Gateway connection.
@@ -321,9 +321,9 @@ PREREQUISITES:
 
 # Standalone execution for debugging (NOT RECOMMENDED - Use pytest commands above)
 if __name__ == "__main__":
-    print("⚠️  STANDALONE EXECUTION DETECTED")
-    print("⚠️  RECOMMENDED: Use pytest execution commands shown above")
-    print("⚠️  Standalone mode may not work correctly with MCP interface")
+    print("[WARNING]  STANDALONE EXECUTION DETECTED")
+    print("[WARNING]  RECOMMENDED: Use pytest execution commands shown above")
+    print("[WARNING]  Standalone mode may not work correctly with MCP interface")
     print()
     print("IBKR Gateway must be running with paper trading login and API enabled!")
     print("Port 7497 for paper trading, Client ID 5")

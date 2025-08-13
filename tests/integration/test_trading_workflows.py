@@ -297,26 +297,26 @@ class TestRiskManagementWorkflow:
                 {
                     'symbol': 'AAPL',
                     'quantity': 100,
-                    'avg_cost': 180.00,
+                    'avgCost': 180.00,
                     'current_price': 185.50,
-                    'market_value': 18550.0,
-                    'unrealized_pnl': 550.0
+                    'marketValue': 18550.0,
+                    'unrealizedPNL': 550.0
                 },
                 {
                     'symbol': 'TSLA',
                     'quantity': 50,
-                    'avg_cost': 245.00,
+                    'avgCost': 245.00,
                     'current_price': 238.90,
-                    'market_value': 11945.0,
-                    'unrealized_pnl': -305.0
+                    'marketValue': 11945.0,
+                    'unrealizedPNL': -305.0
                 },
                 {
                     'symbol': 'ASML',
                     'quantity': 25,
-                    'avg_cost': 600.00,
+                    'avgCost': 600.00,
                     'current_price': 650.80,
-                    'market_value': 16270.0,
-                    'unrealized_pnl': 1270.0
+                    'marketValue': 16270.0,
+                    'unrealizedPNL': 1270.0
                 }
             ],
             'total_value': 46765.0
@@ -362,7 +362,7 @@ class TestRiskManagementWorkflow:
         stop_loss_orders = []
         for position in portfolio['positions']:
             # Calculate stop loss levels (10% below avg cost for simplicity)
-            stop_price = position['avg_cost'] * 0.90
+            stop_price = position['avgCost'] * 0.90
             
             if position['symbol'] == 'TSLA':
                 # Use trailing stop for volatile stock

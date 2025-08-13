@@ -199,14 +199,18 @@ Set automatic sell orders to limit losses and protect profits.
 - `symbol` (required): Stock symbol
 - `action` (required): BUY or SELL
 - `quantity` (required): Number of shares
-- `stop_price` (required): Trigger price
+- `stop_price` (conditional): Trigger price - **REQUIRED** for STP/STP LMT orders, **OPTIONAL** for TRAIL orders
 - `exchange` (optional): Exchange routing (default: "SMART")
 - `currency` (optional): Currency for the order (default: "USD")
 - `order_type` (optional): STP, STP LMT, TRAIL (default: "STP")
 - `limit_price` (optional): For stop-limit orders
-- `trail_amount` (optional): For trailing stops - dollar amount
-- `trail_percent` (optional): For trailing stops - percentage
+- `trail_amount` (conditional): For trailing stops - dollar amount (**REQUIRED** for TRAIL orders if trail_percent not provided)
+- `trail_percent` (conditional): For trailing stops - percentage (**REQUIRED** for TRAIL orders if trail_amount not provided)
 - `time_in_force` (optional): Order duration - "GTC" or "DAY"
+
+**Parameter Validation Rules:**
+- **For STP/STP LMT orders**: `stop_price` is REQUIRED
+- **For TRAIL orders**: Either `trail_percent` OR `trail_amount` is REQUIRED; `stop_price` is ignored
 
 **Order Types:**
 - **STP**: Basic stop order (market execution when triggered)
@@ -438,6 +442,17 @@ Get comprehensive status information for any order by its ID.
 
 ## 📋 Order History & Tracking (3 Tools)
 
+### Understanding Order History Tools
+
+The IBKR MCP Server provides two complementary views of your trading history:
+
+| Aspect | `get_completed_orders` | `get_executions` |
+|--------|------------------------|-------------------|
+| **View Level** | Order-level summary | Execution-level detail |
+| **Granularity** | One record per order | Multiple records per order (if filled in pieces) |
+| **Use Case** | Order management & portfolio review | Execution quality analysis |
+| **Best For** | "What orders did I place?" | "How were my orders filled?" |
+
 ### `get_open_orders`
 View all pending orders that haven't been filled yet.
 
@@ -458,10 +473,16 @@ View all pending orders that haven't been filled yet.
 ```
 
 ### `get_completed_orders`
-View recently completed trades and filled orders.
+**Order-level view** - One record per completed order with summary information.
 
 **Parameters:**
 - `account` (optional): Filter by specific account ID
+
+**When to Use:**
+- Order management and verification
+- High-level trading activity review
+- Portfolio transaction history
+- Tax reporting and P&L analysis
 
 **Returns:**
 - Complete order information including:
@@ -471,24 +492,26 @@ View recently completed trades and filled orders.
   - Financial data: commission, time_in_force
   - Metadata: account, order_ref, client_id
 
-**Features:**
-- 5-second timeout handling for IBKR API reliability
-- Empty list returned when no completed orders exist
-- Full order lifecycle information
-
 **Example:**
 ```
 "Show me my recent completed orders"
-→ Returns completed order data or empty list for new accounts
+→ Returns order summaries with average fill prices and total commissions
 ```
 
 ### `get_executions`
-Get detailed execution information for specific trades.
+**Execution-level view** - Multiple records per order showing individual fills.
 
 **Parameters:**
 - `account` (optional): Filter by specific account ID
 - `symbol` (optional): Filter by specific symbol
 - `days_back` (optional): Number of days to search back (default: 7)
+
+**When to Use:**
+- Execution quality analysis
+- Price improvement tracking
+- Market impact studies
+- Venue performance comparison
+- Detailed commission breakdown
 
 **Returns:**
 - Comprehensive execution data including:
@@ -500,18 +523,42 @@ Get detailed execution information for specific trades.
   - Timing: execution time (sorted most recent first)
   - Account information: account number
 
-**Features:**
-- Automatic sorting by execution time (most recent first)
-- Flexible filtering by account and/or symbol
-- Configurable historical range via days_back parameter
-
 **Example:**
 ```
 "Show me execution details for my Apple trades"
-→ Detailed AAPL execution data with venue and timing information
+→ Individual fill records with exact prices and venues
 
 "Get my executions from the last 30 days"
-→ All executions with days_back parameter
+→ All individual executions with detailed venue information
+```
+
+### Practical Example: Multiple Fills
+
+**Scenario:** 1,000 share AAPL market order filled in pieces
+
+**`get_completed_orders` shows (1 record):**
+- Order summary: 1,000 shares @ avg $180.05
+- Total commission: $1.00
+
+**`get_executions` shows (3 records):**
+- Fill 1: 400 shares @ $180.00 on NASDAQ
+- Fill 2: 300 shares @ $180.05 on NASDAQ  
+- Fill 3: 300 shares @ $180.10 on ARCA
+
+### Workflow Integration
+
+**Combined Analysis:**
+```
+1. "Show me my completed orders today" (order overview)
+2. "Get execution details for order #12345" (drill down)
+3. "Analyze execution quality vs market conditions"
+```
+
+**Performance Review:**
+```
+1. Use get_completed_orders for P&L attribution
+2. Use get_executions for execution quality analysis
+3. Compare venues and timing for optimization
 ```
 
 ## 📚 Documentation (1 Tool)
@@ -536,13 +583,16 @@ Access comprehensive help system for all tools.
 → Complete forex workflow documentation
 
 "Show me examples for stop loss orders"
-→ Practical examples and use cases
+→ Practical examples and use cases including trailing stop parameter validation
 
 "Help with get_market_data tool"
 → Complete tool documentation with parameters
 
 "Help with order placement"
 → Complete order management workflow documentation 🆕
+
+"Help with trailing stops"
+→ Parameter validation rules for TRAIL orders
 ```
 
 ## 🔧 Tool Usage Patterns

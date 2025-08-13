@@ -304,3 +304,78 @@ class TestOrderValidator:
             
             with pytest.raises(ValidationError):
                 InternationalValidator.validate_international_enabled()
+
+
+@pytest.mark.unit  
+class TestTrailingStopValidation:
+    """Test trailing stop order validation"""
+    
+    def test_trailing_stop_percent_validation(self):
+        """Test that trailing stops with trail_percent don't require stop_price"""
+        with patch('ibkr_mcp_server.enhanced_validators.enhanced_settings') as mock_settings:
+            mock_settings.enable_trading = True
+            mock_settings.enable_stop_loss_orders = True
+            mock_settings.max_order_size = 1000
+            mock_settings.max_order_value_usd = 100000.0
+            mock_settings.max_trail_percent = 50.0
+            
+            # This should NOT fail - trailing stops don't need stop_price
+            order_data = {
+                'symbol': 'AAPL',
+                'action': 'SELL', 
+                'quantity': 100,
+                'order_type': 'TRAIL',
+                'trail_percent': 10.0
+                # Note: no stop_price provided - this should be valid for TRAIL orders
+            }
+            
+            # This should pass without ValidationError
+            try:
+                StopLossValidator.validate_stop_loss_order(order_data)
+            except ValidationError as e:
+                pytest.fail(f"Trailing stop with trail_percent should not require stop_price: {str(e)}")
+    
+    def test_trailing_stop_amount_validation(self):
+        """Test that trailing stops with trail_amount don't require stop_price"""
+        with patch('ibkr_mcp_server.enhanced_validators.enhanced_settings') as mock_settings:
+            mock_settings.enable_trading = True
+            mock_settings.enable_stop_loss_orders = True
+            mock_settings.max_order_size = 1000
+            mock_settings.max_order_value_usd = 100000.0
+            
+            # This should NOT fail - trailing stops don't need stop_price
+            order_data = {
+                'symbol': 'AAPL',
+                'action': 'SELL',
+                'quantity': 100,
+                'order_type': 'TRAIL',
+                'trail_amount': 25.0
+                # Note: no stop_price provided - this should be valid for TRAIL orders
+            }
+            
+            # This should pass without ValidationError
+            try:
+                StopLossValidator.validate_stop_loss_order(order_data)
+            except ValidationError as e:
+                pytest.fail(f"Trailing stop with trail_amount should not require stop_price: {str(e)}")
+    
+    def test_basic_stop_loss_still_requires_stop_price(self):
+        """Test that basic stop losses still require stop_price"""
+        with patch('ibkr_mcp_server.enhanced_validators.enhanced_settings') as mock_settings:
+            mock_settings.enable_trading = True
+            mock_settings.enable_stop_loss_orders = True
+            mock_settings.max_order_size = 1000
+            mock_settings.max_order_value_usd = 100000.0
+            
+            # Basic stop order without stop_price should still fail
+            order_data = {
+                'symbol': 'AAPL',
+                'action': 'SELL',
+                'quantity': 100,
+                'order_type': 'STP'
+                # Note: no stop_price provided - this should fail for STP orders
+            }
+            
+            # This should fail with ValidationError
+            with pytest.raises(ValidationError, match="Stop price must be a positive number"):
+                StopLossValidator.validate_stop_loss_order(order_data)

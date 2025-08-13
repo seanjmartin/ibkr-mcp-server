@@ -412,14 +412,31 @@ The system automatically detects the correct exchange and currency for internati
 "Show me my pending orders"
 ```
 
-**Recent Trades:**
+**Order History (Two Views Available):**
+
+*Order-Level View (Summary):*
 ```
-"Show me my recent executions"
+"Show me my recent completed orders"
+→ One record per order with average fill prices
 ```
 
-**Order History:**
+*Execution-Level View (Detailed):*
 ```
-"Show me today's completed orders"
+"Show me my recent executions" 
+→ Individual fill records showing exact prices and venues
+```
+
+**When to Use Which:**
+- Use **completed orders** for general trading review and P&L analysis
+- Use **executions** to analyze how your orders were filled and execution quality
+
+**Example: Large Order Analysis**
+```
+1. "Show me my recent completed orders" 
+   → See that AAPL order for 1000 shares filled at avg $180.05
+   
+2. "Get execution details for my Apple trades"
+   → See it was filled in 3 pieces: 400@$180.00, 300@$180.05, 300@$180.10
 ```
 
 ## Advanced Workflows

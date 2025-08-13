@@ -256,24 +256,24 @@ class TestIndividualConvertCurrency:
                     # Validate reverse conversion
                     if isinstance(parsed_result, dict):
                         if "from_currency" in parsed_result and parsed_result["from_currency"] == "EUR":
-                            print(f"✅ Correct from currency: {parsed_result['from_currency']}")
+                            print(f"[OK] Correct from currency: {parsed_result['from_currency']}")
                         if "to_currency" in parsed_result and parsed_result["to_currency"] == "USD":
-                            print(f"✅ Correct to currency: {parsed_result['to_currency']}")
+                            print(f"[OK] Correct to currency: {parsed_result['to_currency']}")
                         if "converted_amount" in parsed_result:
                             converted = parsed_result["converted_amount"]
                             if converted > 500:  # EUR->USD should typically be > EUR amount
-                                print(f"✅ Realistic EUR->USD conversion: €500 → ${converted}")
+                                print(f"[OK] Realistic EUR->USD conversion: EUR500  ->  ${converted}")
                             else:
-                                print(f"ℹ️ EUR->USD conversion result: €500 → ${converted}")
+                                print(f"[INFO] EUR->USD conversion result: EUR500  ->  ${converted}")
                     
                 except json.JSONDecodeError:
-                    print(f"ℹ️ Non-JSON reverse conversion response: {response_text}")
+                    print(f"[INFO] Non-JSON reverse conversion response: {response_text}")
             else:
                 print(f"Unexpected reverse conversion response format: {result}")
             
         except Exception as e:
             print(f"Exception during reverse conversion test: {e}")
-            print(f"ℹ️ Exception-based handling: {type(e).__name__}")
+            print(f"[INFO] Exception-based handling: {type(e).__name__}")
 
     async def test_convert_currency_cross_currency(self):
         """Test convert_currency with cross-currency pair (GBP to JPY)"""
@@ -309,31 +309,31 @@ class TestIndividualConvertCurrency:
                     # Validate cross-currency conversion
                     if isinstance(parsed_result, dict):
                         if "from_currency" in parsed_result and parsed_result["from_currency"] == "GBP":
-                            print(f"✅ Correct from currency: {parsed_result['from_currency']}")
+                            print(f"[OK] Correct from currency: {parsed_result['from_currency']}")
                         if "to_currency" in parsed_result and parsed_result["to_currency"] == "JPY":
-                            print(f"✅ Correct to currency: {parsed_result['to_currency']}")
+                            print(f"[OK] Correct to currency: {parsed_result['to_currency']}")
                         if "converted_amount" in parsed_result:
                             converted = parsed_result["converted_amount"]
-                            # GBP->JPY should typically be in thousands (e.g., £100 → ¥15,000+)
+                            # GBP->JPY should typically be in thousands (e.g., GBP100  ->  JPY15,000+)
                             if converted > 5000:
-                                print(f"✅ Realistic GBP->JPY conversion: £100 → ¥{converted:,.0f}")
+                                print(f"[OK] Realistic GBP->JPY conversion: GBP100  ->  JPY{converted:,.0f}")
                             else:
-                                print(f"ℹ️ GBP->JPY conversion result: £100 → ¥{converted}")
+                                print(f"[INFO] GBP->JPY conversion result: GBP100  ->  JPY{converted}")
                         if "conversion_method" in parsed_result:
                             method = parsed_result["conversion_method"]
                             if method == "cross_currency":
-                                print(f"✅ Cross-currency method detected: {method}")
+                                print(f"[OK] Cross-currency method detected: {method}")
                             else:
-                                print(f"ℹ️ Conversion method: {method}")
+                                print(f"[INFO] Conversion method: {method}")
                     
                 except json.JSONDecodeError:
-                    print(f"ℹ️ Non-JSON cross-currency response: {response_text}")
+                    print(f"[INFO] Non-JSON cross-currency response: {response_text}")
             else:
                 print(f"Unexpected cross-currency response format: {result}")
             
         except Exception as e:
             print(f"Exception during cross-currency test: {e}")
-            print(f"ℹ️ Exception-based handling: {type(e).__name__}")
+            print(f"[INFO] Exception-based handling: {type(e).__name__}")
 
     async def test_convert_currency_error_handling(self):
         """Test convert_currency error handling with invalid currency"""
@@ -364,17 +364,17 @@ class TestIndividualConvertCurrency:
                 
                 # Check if it indicates an error
                 if "error" in response_text.lower() or "invalid" in response_text.lower():
-                    print(f"✅ Error handling working: {response_text}")
+                    print(f"[OK] Error handling working: {response_text}")
                 else:
                     # Might have returned some default or fallback behavior
-                    print(f"ℹ️ Tool handled invalid currency gracefully: {response_text}")
+                    print(f"[INFO] Tool handled invalid currency gracefully: {response_text}")
             else:
                 print(f"Unexpected error response format: {result}")
             
         except Exception as e:
             print(f"Exception during error handling test: {e}")
             # This might be expected for invalid currencies
-            print(f"✅ Exception-based error handling: {type(e).__name__}")
+            print(f"[OK] Exception-based error handling: {type(e).__name__}")
 
 # CRITICAL EXECUTION INSTRUCTIONS
 r"""
@@ -385,9 +385,9 @@ ALL paper tests MUST be run using pytest with full Python path:
 C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_convert_currency.py -v -s
 
 NEVER use:
-- python -m pytest [...]     # ❌ Python not in PATH
-- pytest [...]               # ❌ Pytest not in PATH  
-- python tests/paper/...     # ❌ Direct execution bypasses pytest framework
+- python -m pytest [...]     # [ERROR] Python not in PATH
+- pytest [...]               # [ERROR] Pytest not in PATH  
+- python tests/paper/...     # [ERROR] Direct execution bypasses pytest framework
 
 CLIENT ID REQUIREMENT:
 All paper tests use CLIENT ID 5 for shared IBKR Gateway connection.
@@ -411,9 +411,9 @@ PREREQUISITES:
 
 # Standalone execution for debugging (NOT RECOMMENDED - Use pytest commands above)
 if __name__ == "__main__":
-    print("⚠️  STANDALONE EXECUTION DETECTED")
-    print("⚠️  RECOMMENDED: Use pytest execution commands shown above")
-    print("⚠️  Standalone mode may not work correctly with MCP interface")
+    print("[WARNING]  STANDALONE EXECUTION DETECTED")
+    print("[WARNING]  RECOMMENDED: Use pytest execution commands shown above")
+    print("[WARNING]  Standalone mode may not work correctly with MCP interface")
     print()
     print("IBKR Gateway must be running with paper trading login and API enabled!")
     print("Port 7497 for paper trading, Client ID 5")

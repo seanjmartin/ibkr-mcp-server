@@ -598,21 +598,51 @@ class IBKRClient:
                 contract = trade.contract if hasattr(trade, 'contract') else None
                 order_state = trade.orderStatus if hasattr(trade, 'orderStatus') else None
                 
+                # FIXED: Extract execution data from correct IBKR Trade object attributes
+                # The key issue was that orderStatus has zeros for completed orders
+                # The real data is in order.filledQuantity and other order attributes
+                
+                filled_quantity = getattr(order, 'filledQuantity', 0)
+                total_quantity = getattr(order, 'totalQuantity', filled_quantity)  # Use filled as fallback if total is zero
+                
+                # For completed orders, if totalQuantity is 0, use filledQuantity as the original quantity
+                if total_quantity == 0 and filled_quantity > 0:
+                    total_quantity = filled_quantity
+                    
+                remaining_quantity = max(0, total_quantity - filled_quantity)
+                
+                # Calculate average fill price from multiple sources
+                avg_price = 0
+                if hasattr(trade, 'fills') and trade.fills:
+                    # Calculate weighted average from fills (most accurate)
+                    total_value = sum(fill.execution.price * fill.execution.shares for fill in trade.fills)
+                    total_shares = sum(fill.execution.shares for fill in trade.fills)
+                    avg_price = total_value / total_shares if total_shares > 0 else 0
+                elif hasattr(order, 'avgFillPrice') and order.avgFillPrice and order.avgFillPrice > 0:
+                    # Fallback to order avgFillPrice if it exists and is non-zero
+                    avg_price = order.avgFillPrice
+                elif hasattr(trade, 'execution') and hasattr(trade.execution, 'price'):
+                    # Use execution price if available
+                    avg_price = trade.execution.price
+                elif hasattr(order, 'lmtPrice') and order.lmtPrice and order.orderType in ['LMT', 'STP LMT']:
+                    # For limit orders, use limit price as estimate if no fill price available
+                    avg_price = order.lmtPrice
+                
                 order_data = {
-                    "order_id": getattr(order, 'orderId', getattr(trade, 'order_id', 'Unknown')),
+                    "order_id": getattr(order, 'permId', getattr(order, 'orderId', 'Unknown')),  # Use permId (permanent ID) or orderId
                     "symbol": getattr(contract, 'symbol', 'Unknown') if contract else 'Unknown',
                     "exchange": getattr(contract, 'exchange', 'Unknown') if contract else 'Unknown',
                     "currency": getattr(contract, 'currency', 'Unknown') if contract else 'Unknown',
                     "action": getattr(order, 'action', 'Unknown'),
-                    "quantity": getattr(order, 'totalQuantity', 0),
+                    "quantity": total_quantity,  # FIXED: Use filledQuantity as fallback for completed orders
                     "order_type": getattr(order, 'orderType', 'Unknown'),
                     "limit_price": getattr(order, 'lmtPrice', None),
                     "aux_price": getattr(order, 'auxPrice', None),
                     "time_in_force": getattr(order, 'tif', 'Unknown'),
                     "status": getattr(order_state, 'status', 'Unknown') if order_state else 'Unknown',
-                    "filled": getattr(order_state, 'filled', 0) if order_state else 0,
-                    "remaining": getattr(order_state, 'remaining', 0) if order_state else 0,
-                    "avg_fill_price": getattr(order_state, 'avgFillPrice', 0) if order_state else 0,
+                    "filled": filled_quantity,  # FIXED: Use order.filledQuantity instead of orderStatus.filled
+                    "remaining": remaining_quantity,  # FIXED: Calculate from total - filled
+                    "avg_fill_price": avg_price,  # FIXED: Calculate from fills or use order data
                     "commission": getattr(trade, 'commission', 0) if hasattr(trade, 'commission') else 0,
                     "account": getattr(order, 'account', 'Unknown'),
                     "order_ref": getattr(order, 'orderRef', ''),

@@ -305,28 +305,43 @@ class StopLossValidator(BaseValidator):
                 f"Order quantity {quantity} exceeds maximum allowed {enhanced_settings.max_order_size}"
             )
         
-        stop_price = order_data.get('stop_price', 0)
-        StopLossValidator.validate_positive_number(stop_price, "Stop price")
-        
-        # Check order value limits
-        order_value = quantity * stop_price
-        if order_value > enhanced_settings.max_order_value_usd:
-            raise ValidationError(
-                f"Order value ${order_value:,.2f} exceeds maximum allowed ${enhanced_settings.max_order_value_usd:,.2f}"
-            )
-        
         order_type = order_data.get('order_type', 'STP')
         StopLossValidator.validate_choice(
             order_type, ['STP', 'STP LMT', 'TRAIL'], "Stop loss order type"
         )
         
-        # Type-specific validation
+        # Type-specific validation - moved before order value calculation
         if order_type == 'STP LMT':
+            # Basic stop limit orders require stop_price
+            stop_price = order_data.get('stop_price', 0)
+            StopLossValidator.validate_positive_number(stop_price, "Stop price")
+            
+            # Check order value limits
+            order_value = quantity * stop_price
+            if order_value > enhanced_settings.max_order_value_usd:
+                raise ValidationError(
+                    f"Order value ${order_value:,.2f} exceeds maximum allowed ${enhanced_settings.max_order_value_usd:,.2f}"
+                )
+            
+            # Validate limit price if provided
             limit_price = order_data.get('limit_price')
             if limit_price is not None:
                 StopLossValidator.validate_positive_number(limit_price, "Limit price")
         
+        elif order_type == 'STP':
+            # Basic stop orders require stop_price
+            stop_price = order_data.get('stop_price', 0)
+            StopLossValidator.validate_positive_number(stop_price, "Stop price")
+            
+            # Check order value limits
+            order_value = quantity * stop_price
+            if order_value > enhanced_settings.max_order_value_usd:
+                raise ValidationError(
+                    f"Order value ${order_value:,.2f} exceeds maximum allowed ${enhanced_settings.max_order_value_usd:,.2f}"
+                )
+        
         elif order_type == 'TRAIL':
+            # Trailing stops use trail_amount or trail_percent, NOT stop_price
             trail_amount = order_data.get('trail_amount')
             trail_percent = order_data.get('trail_percent')
             
@@ -335,13 +350,33 @@ class StopLossValidator(BaseValidator):
                     "Trailing stop requires either trail_amount or trail_percent"
                 )
             
+            if trail_amount is not None and trail_percent is not None:
+                raise StopLossValidationError(
+                    "Trailing stop cannot have both trail_amount and trail_percent"
+                )
+            
             if trail_amount is not None:
                 StopLossValidator.validate_positive_number(trail_amount, "Trail amount")
+                # For order value validation, use a reasonable estimate based on current market price
+                # Since we don't have the current price, we'll use a conservative estimate
+                estimated_price = 100.0  # Conservative default for order value calculation
+                order_value = quantity * estimated_price
+                if order_value > enhanced_settings.max_order_value_usd:
+                    raise ValidationError(
+                        f"Estimated order value ${order_value:,.2f} exceeds maximum allowed ${enhanced_settings.max_order_value_usd:,.2f}"
+                    )
             
             if trail_percent is not None:
                 if not 0 < trail_percent <= enhanced_settings.max_trail_percent:
                     raise StopLossValidationError(
                         f"Trail percent must be between 0 and {enhanced_settings.max_trail_percent}, got {trail_percent}"
+                    )
+                # For order value validation with percentage trails, use conservative estimate
+                estimated_price = 100.0  # Conservative default for order value calculation
+                order_value = quantity * estimated_price
+                if order_value > enhanced_settings.max_order_value_usd:
+                    raise ValidationError(
+                        f"Estimated order value ${order_value:,.2f} exceeds maximum allowed ${enhanced_settings.max_order_value_usd:,.2f}"
                     )
         
         # Time in force validation

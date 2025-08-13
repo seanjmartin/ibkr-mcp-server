@@ -95,8 +95,10 @@
 | Tool | Purpose | Example |
 |------|---------|---------|
 | `get_open_orders` | View pending orders | "Show pending orders" |
-| `get_completed_orders` | View recent completed orders | "Show my recent completed orders" |
-| `get_executions` | Detailed execution info | "Get execution details for my Apple trades" |
+| `get_completed_orders` | Order-level view (summary) | "Show my recent completed orders" |
+| `get_executions` | Execution-level view (detailed fills) | "Get execution details for my Apple trades" |
+
+**Key Difference:** `get_completed_orders` shows one record per order with average prices, while `get_executions` shows individual fill records with exact prices and venues.
 
 ### **Documentation (1 tool)**
 | Tool | Purpose | Example |
@@ -168,11 +170,13 @@ All trading features **OFF by default**:
 
 ### **Order History Analysis**
 ```
-1. "Show me my recent completed orders"
-2. "Get execution details for my Apple trades"
-3. "Show me all executions from the last 30 days"
-4. "Get executions for TSLA from my DU account"
+1. "Show me my recent completed orders"           # Order summaries
+2. "Get execution details for my Apple trades"    # Individual fills  
+3. "Show me all executions from the last 30 days" # Detailed analysis
+4. "Get executions for TSLA from my DU account"   # Symbol-specific
 ```
+
+**Two-Level Analysis:** Start with completed orders for overview, then drill down to executions for detailed fill analysis.
 
 ### **Global Trading**
 ```

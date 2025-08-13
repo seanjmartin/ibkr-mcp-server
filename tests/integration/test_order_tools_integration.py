@@ -402,7 +402,7 @@ class TestOrderToolsWorkflowIntegration:
     
     @pytest.mark.asyncio
     async def test_complete_order_lifecycle_workflow(self, enabled_ibkr_client_with_order_manager):
-        """Test complete order workflow: place → status → modify → cancel"""
+        """Test complete order workflow: place  ->  status  ->  modify  ->  cancel"""
         # Mock order placement with AsyncMock return values
         enabled_ibkr_client_with_order_manager.place_limit_order.return_value = {
             "success": True, "order_id": 12345, "status": "Submitted"
