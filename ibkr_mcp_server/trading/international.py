@@ -16,6 +16,157 @@ from ..enhanced_validators import InternationalValidator
 class InternationalManager:
     """Manages international market operations with symbol resolution and validation."""
     
+    # Exchange alias mapping based on validation results
+    # Maps user-friendly exchange codes to IBKR-compatible codes
+    EXCHANGE_ALIASES = {
+        # German exchanges - validated patterns
+        'FRANKFURT': ['FWB', 'FWB2'],           # Frankfurt domestic vs foreign
+        'FWB': ['FWB', 'FWB2'],                 # Include both segments
+        'XETRA': ['IBIS', 'IBIS2'],             # Xetra stocks vs ETFs  
+        'IBIS': ['IBIS', 'IBIS2'],              # Include both segments
+        'TRADEGATE': ['TGATE'],                 # TRADEGATE fails → TGATE works
+        'GETTEX': ['GETTEX'],                   # Direct mapping
+        
+        # UK exchanges - validated patterns
+        'LONDON': ['LSE', 'LSEETF'],            # London stocks vs ETFs
+        'LSE': ['LSE', 'LSEETF'],               # Include both segments
+        'LSEETF': ['LSE', 'LSEETF'],            # Include both segments
+        
+        # Italian exchanges - validated BIT/MIL fail, BVME works
+        'MILAN': ['BVME'],                      # Only BVME works
+        'BIT': ['BVME'],                        # BIT fails → Use BVME
+        'MIL': ['BVME'],                        # MIL fails → Use BVME
+        'BVME': ['BVME'],                       # Direct mapping
+        
+        # Swiss exchanges - validated SWX fails, EBS works  
+        'SWISS': ['EBS'],                       # Only EBS works
+        'SWX': ['EBS'],                         # SWX fails → Use EBS
+        'EBS': ['EBS'],                         # Direct mapping
+        
+        # Swedish exchanges - validated OMX fails, SFB works
+        'STOCKHOLM': ['SFB'],                   # Only SFB works
+        'OMX': ['SFB'],                         # OMX fails → Use SFB
+        'SFB': ['SFB'],                         # Direct mapping
+        
+        # Canadian exchanges - validated TSX fails, TSE works
+        'TORONTO': ['TSE'],                     # Only TSE works
+        'TSX': ['TSE'],                         # TSX fails → Use TSE
+        'TSE': ['TSE'],                         # Direct mapping
+        
+        # Japanese exchanges - validated TSE fails for Japan, TSEJ works
+        'TOKYO': ['TSEJ'],                      # Only TSEJ works for Japan
+        'TSEJ': ['TSEJ'],                       # Direct mapping
+        
+        # Indian exchanges - validated BSE fails, NSE works
+        'INDIA': ['NSE'],                       # Only NSE works
+        'BSE': ['NSE'],                         # BSE fails → Use NSE
+        'NSE': ['NSE'],                         # Direct mapping
+        
+        # Euronext network
+        'AMSTERDAM': ['AEB'],                   # Dutch stocks
+        'AEB': ['AEB'],                         # Direct mapping
+        'PARIS': ['SBF'],                       # French stocks
+        'SBF': ['SBF'],                         # Direct mapping
+        'BRUSSELS': ['BEL', 'ENEXT.BE'],        # Belgian stocks
+        'BEL': ['BEL', 'ENEXT.BE'],             # Include variants
+        
+        # Nordic exchanges
+        'OSLO': ['OSE'],                        # Norwegian stocks
+        'OSE': ['OSE'],                         # Direct mapping
+        'COPENHAGEN': ['KFX', 'CPH'],           # Danish stocks
+        'KFX': ['KFX', 'CPH'],                  # Include variants
+        'HELSINKI': ['HEX'],                    # Finnish stocks
+        'HEX': ['HEX'],                         # Direct mapping
+        
+        # Other European
+        'VIENNA': ['VIX'],                      # Austrian stocks
+        'VIX': ['VIX'],                         # Direct mapping
+        'WARSAW': ['WSE'],                      # Polish stocks
+        'WSE': ['WSE'],                         # Direct mapping
+        
+        # US exchanges - MIC codes fail
+        'NYSE': ['NYSE', 'ARCA'],               # Include routing variants
+        'NASDAQ': ['NASDAQ', 'ISLAND'],         # Include routing variants
+        'ARCA': ['ARCA'],                       # Direct mapping
+        'ISLAND': ['ISLAND'],                   # Direct mapping
+        'BATS': ['BATS'],                       # Direct mapping
+        'IEX': ['IEX'],                         # Direct mapping
+        
+        # Asian & Pacific exchanges
+        'HONGKONG': ['SEHK'],                   # Hong Kong stocks
+        'SEHK': ['SEHK'],                       # Direct mapping
+        'SINGAPORE': ['SGX'],                   # Singapore stocks
+        'SGX': ['SGX'],                         # Direct mapping
+        'AUSTRALIA': ['ASX'],                   # Australian stocks
+        'ASX': ['ASX'],                         # Direct mapping
+        'KOREA': ['KSE'],                       # South Korean stocks
+        'KSE': ['KSE'],                         # Direct mapping
+        
+        # Chinese exchanges
+        'SHANGHAI': ['SSE'],                    # Shanghai stocks
+        'SSE': ['SSE'],                         # Direct mapping
+        'SHENZHEN': ['SZSE'],                   # Shenzhen stocks
+        'SZSE': ['SZSE'],                       # Direct mapping
+        
+        # Other Asian
+        'TAIWAN': ['TWSE'],                     # Taiwanese stocks
+        'TWSE': ['TWSE'],                       # Direct mapping
+        'THAILAND': ['SET'],                    # Thai stocks
+        'SET': ['SET'],                         # Direct mapping
+        'INDONESIA': ['IDX'],                   # Indonesian stocks
+        'IDX': ['IDX'],                         # Direct mapping
+        'MALAYSIA': ['KLSE'],                   # Malaysian stocks
+        'KLSE': ['KLSE'],                       # Direct mapping
+        
+        # Latin America
+        'BRAZIL': ['B3', 'BVMF'],               # Brazilian stocks
+        'B3': ['B3', 'BVMF'],                   # Include variants
+        'BVMF': ['B3', 'BVMF'],                 # Include variants
+        'MEXICO': ['MEXI'],                     # Mexican stocks
+        'MEXI': ['MEXI'],                       # Direct mapping
+        
+        # Middle East & Africa
+        'TELAVIV': ['TASE'],                    # Israeli stocks
+        'TASE': ['TASE'],                       # Direct mapping
+        'SAUDI': ['TADAWUL'],                   # Saudi Arabian stocks
+        'TADAWUL': ['TADAWUL'],                 # Direct mapping
+        'EGYPT': ['EGX'],                       # Egyptian stocks
+        'EGX': ['EGX'],                         # Direct mapping
+        'SOUTHAFRICA': ['JSE'],                 # South African stocks
+        'JSE': ['JSE'],                         # Direct mapping
+        
+        # MIC code mappings - validated MIC codes fail, use IBKR codes
+        'XNYS': ['NYSE'],                       # NYSE MIC → NYSE IBKR
+        'XNAS': ['NASDAQ'],                     # NASDAQ MIC → NASDAQ IBKR
+        'XLON': ['LSE', 'LSEETF'],              # London MIC → LSE variants
+        'XTKS': ['TSEJ'],                       # Tokyo MIC → TSEJ IBKR
+        'XMIL': ['BVME'],                       # Milan MIC → BVME IBKR
+        'XSWX': ['EBS'],                        # Swiss MIC → EBS IBKR
+        'XSTO': ['SFB'],                        # Stockholm MIC → SFB IBKR
+        'XTSE': ['TSE'],                        # Toronto MIC → TSE IBKR
+        'XBOM': ['NSE'],                        # BSE MIC → NSE IBKR
+        'XNSE': ['NSE'],                        # NSE MIC → NSE IBKR
+        'XAMS': ['AEB'],                        # Amsterdam MIC → AEB IBKR
+        'XPAR': ['SBF'],                        # Paris MIC → SBF IBKR
+        'XBRU': ['BEL'],                        # Brussels MIC → BEL IBKR
+        'XOSL': ['OSE'],                        # Oslo MIC → OSE IBKR
+        'XCSE': ['KFX', 'CPH'],                 # Copenhagen MIC → KFX variants
+        'XHEL': ['HEX'],                        # Helsinki MIC → HEX IBKR
+        'XWBO': ['VIX'],                        # Vienna MIC → VIX IBKR
+        'XWAR': ['WSE'],                        # Warsaw MIC → WSE IBKR
+        'XHKG': ['SEHK'],                       # Hong Kong MIC → SEHK IBKR
+        'XSES': ['SGX'],                        # Singapore MIC → SGX IBKR
+        'XASX': ['ASX'],                        # Australian MIC → ASX IBKR
+        'XKRX': ['KSE'],                        # Korea MIC → KSE IBKR
+        'XSHG': ['SSE'],                        # Shanghai MIC → SSE IBKR
+        'XTAI': ['TWSE'],                       # Taiwan MIC → TWSE IBKR
+        'XMEX': ['MEXI'],                       # Mexico MIC → MEXI IBKR
+        
+        # Special routing systems
+        'SMART': ['SMART'],                     # IBKR smart routing
+        'IDEALPRO': ['IDEALPRO'],               # IBKR forex routing
+    }
+    
     def __init__(self, ib_client: IB):
         self.ib = ib_client
         self.exchange_mgr = exchange_manager
@@ -473,11 +624,12 @@ class InternationalManager:
             # Determine resolution strategy based on input pattern
             resolution_method = "exact_symbol"
             matches = []
+            exchange_resolution_info = {}
             
             if self._is_exact_symbol(original_symbol):
-                # Direct symbol lookup
-                matches = await self._resolve_exact_symbol(symbol, exchange, currency, sec_type)
-                resolution_method = "exact_symbol"
+                # Direct symbol lookup with exchange fallback
+                matches, exchange_resolution_info = await self._resolve_with_exchange_fallback(symbol, exchange, currency, sec_type)
+                resolution_method = exchange_resolution_info.get('resolution_method', 'exact_symbol')
                 
             elif self._is_alternative_id(original_symbol):
                 # CUSIP/ISIN/ConID lookup
@@ -497,18 +649,18 @@ class InternationalManager:
                     if matches:
                         resolution_method = "fuzzy_search"
                     else:
-                        # If fuzzy search fails, fall back to exact symbol
-                        matches = await self._resolve_exact_symbol(symbol, exchange, currency, sec_type)
-                        resolution_method = "exact_symbol"
+                        # If fuzzy search fails, fall back to exact symbol with exchange fallback
+                        matches, exchange_resolution_info = await self._resolve_with_exchange_fallback(symbol, exchange, currency, sec_type)
+                        resolution_method = exchange_resolution_info.get('resolution_method', 'exact_symbol')
                 except Exception:
-                    # If fuzzy search fails, fall back to exact symbol
-                    matches = await self._resolve_exact_symbol(symbol, exchange, currency, sec_type)
-                    resolution_method = "exact_symbol"
+                    # If fuzzy search fails, fall back to exact symbol with exchange fallback
+                    matches, exchange_resolution_info = await self._resolve_with_exchange_fallback(symbol, exchange, currency, sec_type)
+                    resolution_method = exchange_resolution_info.get('resolution_method', 'exact_symbol')
                 
             else:
-                # Fall back to exact symbol if fuzzy search disabled
-                matches = await self._resolve_exact_symbol(symbol, exchange, currency, sec_type)
-                resolution_method = "exact_symbol"
+                # Fall back to exact symbol if fuzzy search disabled, with exchange fallback
+                matches, exchange_resolution_info = await self._resolve_with_exchange_fallback(symbol, exchange, currency, sec_type)
+                resolution_method = exchange_resolution_info.get('resolution_method', 'exact_symbol')
             
             # If no matches found and original resolution method failed, update method to 'none'
             if not matches:
@@ -679,6 +831,81 @@ class InternationalManager:
         except Exception:
             return 'Unknown'
     
+    async def _resolve_with_exchange_fallback(self, symbol: str, exchange: str = None, currency: str = None, sec_type: str = "STK") -> tuple[List[Dict], Dict]:
+        """
+        Implement cascading exchange resolution logic.
+        
+        Returns:
+            tuple: (matches, resolution_info)
+            - matches: List of resolved contracts  
+            - resolution_info: Dict with resolution metadata
+        """
+        resolution_info = {
+            'resolved_via_alias': False,
+            'original_exchange': exchange,
+            'actual_exchange': exchange,
+            'resolution_method': 'exact_exchange',
+            'exchanges_tried': []
+        }
+        
+        if not exchange:
+            # No exchange specified, use SMART routing
+            matches = await self._resolve_exact_symbol(symbol, "SMART", currency, sec_type)
+            resolution_info['actual_exchange'] = "SMART"
+            resolution_info['resolution_method'] = 'smart_routing'
+            resolution_info['exchanges_tried'] = ["SMART"]
+            return matches, resolution_info
+        
+        exchange_upper = exchange.upper()
+        resolution_info['exchanges_tried'].append(exchange_upper)
+        
+        # 1. Try user's requested exchange first
+        try:
+            matches = await self._resolve_exact_symbol(symbol, exchange_upper, currency, sec_type)
+            if matches:
+                resolution_info['actual_exchange'] = exchange_upper
+                return matches, resolution_info
+        except Exception as e:
+            self.logger.debug(f"Original exchange {exchange_upper} failed for {symbol}: {e}")
+        
+        # 2. Try exchange aliases if original exchange failed
+        aliases = self.EXCHANGE_ALIASES.get(exchange_upper, [])
+        if aliases:
+            for alias in aliases:
+                if alias == exchange_upper:
+                    continue  # Skip the original exchange we already tried
+                    
+                resolution_info['exchanges_tried'].append(alias)
+                try:
+                    matches = await self._resolve_exact_symbol(symbol, alias, currency, sec_type)
+                    if matches:
+                        resolution_info['resolved_via_alias'] = True
+                        resolution_info['actual_exchange'] = alias
+                        resolution_info['resolution_method'] = 'exchange_alias'
+                        self.logger.info(f"Resolved {symbol} via alias: {exchange_upper} → {alias}")
+                        return matches, resolution_info
+                except Exception as e:
+                    self.logger.debug(f"Exchange alias {alias} failed for {symbol}: {e}")
+                    continue
+        
+        # 3. Fallback to SMART routing as last resort
+        if exchange_upper != "SMART":
+            resolution_info['exchanges_tried'].append("SMART")
+            try:
+                matches = await self._resolve_exact_symbol(symbol, "SMART", currency, sec_type)
+                if matches:
+                    resolution_info['resolved_via_alias'] = True
+                    resolution_info['actual_exchange'] = "SMART"
+                    resolution_info['resolution_method'] = 'exchange_fallback_smart'
+                    self.logger.info(f"Resolved {symbol} via SMART fallback from {exchange_upper}")
+                    return matches, resolution_info
+            except Exception as e:
+                self.logger.debug(f"SMART routing fallback failed for {symbol}: {e}")
+        
+        # No matches found with any exchange
+        resolution_info['resolution_method'] = 'exchange_fallback_failed'
+        return [], resolution_info
+
     async def _resolve_exact_symbol(self, symbol: str, exchange: str = None, currency: str = None, sec_type: str = "STK") -> List[Dict]:
         """Resolve exact symbol via direct IBKR API call."""
         try:

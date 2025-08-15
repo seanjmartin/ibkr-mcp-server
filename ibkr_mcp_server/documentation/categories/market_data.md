@@ -35,29 +35,84 @@ Market data tools provide real-time and on-demand access to global financial mar
 ### International Symbol Resolution
 ```
 1. "Find Microsoft symbol" -> Fuzzy search capability
-2. "Where does SAP trade?" -> Exchange and currency detection
+2. "Where does SAP trade?" -> Exchange and currency detection with fallback
 3. "Resolve CUSIP 037833100" -> Alternative identifier support
+4. "Try XETRA for SAP" -> Exchange alias mapping (XETRA->IBIS/IBIS2)
 ```
 
-## Market Coverage
+## Enhanced Exchange Mapping System
 
-### Exchanges Supported (48 Total)
-- **Europe (19)**: XETRA, LSE, SBF, AEB, SWX, KFX, BIT, MIL, BME, BVME, VIX, BEL, OSE, OMX, HEX, WSE, LSEETF, GETTEX, TRADEGATE
-- **North America (7)**: NYSE, NASDAQ, ARCA, BATS, IEX, TSX, TSXV
-- **Latin America (2)**: BOVESPA, MEXI
-- **Asia (12)**: TSE, SEHK, KSE, TWSE, SSE, SZSE, BSE, NSE, SGX, SET, IDX, KLSE
-- **Pacific (2)**: ASX, NZX
-- **Middle East & Africa (4)**: TASE, TADAWUL, EGX, JSE
-- **Global/Special (2)**: SMART (intelligent routing), IDEALPRO (forex - 21 pairs)
+### Smart Exchange Resolution
+The system implements intelligent exchange mapping that automatically handles:
+- **Standard Exchange Names**: FRANKFURT, LONDON, TOKYO work automatically
+- **MIC Codes**: Market Identifier Codes (XETR, XLON, XTKS) mapped to working alternatives
+- **Cascading Fallback**: User request → Exchange aliases → SMART routing
+- **Regional Variants**: Different codes for stocks vs ETFs, domestic vs foreign
+
+### Validated Exchange Mappings
+
+#### European Markets
+**Germany**:
+- `FRANKFURT` → FWB (domestic) + FWB2 (foreign) segments
+- `XETRA` → IBIS (stocks) + IBIS2 (ETFs) segments  
+- `TRADEGATE` → TGATE (validated: TRADEGATE fails, TGATE works)
+
+**Switzerland**:
+- `SWISS` → EBS (validated: SWX fails, EBS works)
+- MIC `XSWX` → EBS
+
+**Sweden**:
+- `STOCKHOLM` → SFB (validated: OMX fails, SFB works)
+- MIC `XSTO` → SFB
+
+**Italy**:
+- `MILAN` → BVME (validated: BIT/MIL fail, BVME works)
+- MIC `XMIL` → BVME
+
+**United Kingdom**:
+- `LONDON` → LSE (stocks) + LSEETF (ETFs)
+- MIC `XLON` → LSE variants
+
+#### North American Markets
+**Canada**:
+- `TORONTO` → TSE (validated: TSX fails, TSE works)
+- MIC `XTSE` → TSE
+
+**United States**:
+- `NYSE` → NYSE + ARCA routing variants
+- `NASDAQ` → NASDAQ + ISLAND routing variants
+- MIC codes `XNYS`, `XNAS` → Working IBKR equivalents
+
+#### Asian Markets
+**Japan**:
+- `TOKYO` → TSEJ (validated: TSE fails for Japan, TSEJ works)
+- MIC `XTKS` → TSEJ
+
+**India**:
+- `INDIA` → NSE (validated: BSE fails, NSE works)
+- MIC `XBOM`, `XNSE` → NSE
+
+### Market Coverage (60+ Exchanges)
+- **Europe (25+)**: Germany, UK, Switzerland, Sweden, Italy, Euronext, Nordic, Eastern Europe
+- **North America (8+)**: US major exchanges + routing, Canada, Mexico
+- **Asia (20+)**: Japan, China, Hong Kong, Singapore, India, Korea, Taiwan, Southeast Asia
+- **Other Regions (12+)**: Australia, Brazil, Middle East, Africa
+- **Special Systems (2)**: SMART routing, IDEALPRO forex
 
 ### Auto-Detection Examples
 - "AAPL" -> SMART/USD (US - Apple)
 - "ASML" -> AEB/EUR (Netherlands - ASML)
-- "7203" -> TSE/JPY (Japan - Toyota)
+- "7203" -> TSEJ/JPY (Japan - Toyota) 
 - "00700" -> SEHK/HKD (Hong Kong - Tencent)
 - "005930" -> KSE/KRW (South Korea - Samsung)
-- "SAP" -> XETRA/EUR (Germany - SAP)
+- "SAP" -> IBIS/EUR (Germany - SAP)
 - "VOD" -> LSE/GBP (UK - Vodafone)
+
+### Exchange Mapping Examples
+- User requests "SAP on XETRA" → System tries XETRA → Falls back to IBIS → Success
+- User requests "Tesla on FRANKFURT" → System tries FRANKFURT → Falls back to FWB → Success
+- User requests "Apple on XNYS" → System maps XNYS to NYSE → Success
+- User requests "Toyota on TSE" → System maps TSE to TSEJ for Japan → Success
 
 ## Key Features
 
@@ -66,6 +121,9 @@ Market data tools provide real-time and on-demand access to global financial mar
 - **Company Names**: "Microsoft" -> "MSFT"  
 - **Alternative IDs**: CUSIP, ISIN, FIGI support
 - **Confidence Scoring**: Multiple match ranking
+- **Exchange Mapping**: Standard names and MIC codes work automatically
+- **Cascading Fallback**: User request → Aliases → SMART routing
+- **Regional Intelligence**: Domestic vs foreign, stocks vs ETFs
 
 ### Multi-Currency Support  
 - **Native Quotes**: Prices in local currency
@@ -89,9 +147,18 @@ Market data tools provide real-time and on-demand access to global financial mar
 
 ### Symbol Resolution Strategy
 1. **Start Simple**: Try direct symbol first
-2. **Use Fuzzy Search**: Company names when symbol unknown
-3. **Check Alternatives**: Multiple exchanges for same company
-4. **Verify Results**: Review confidence scores and metadata
+2. **Use Standard Names**: FRANKFURT, LONDON, TOKYO work automatically
+3. **Trust Exchange Mapping**: System handles MIC codes and aliases transparently
+4. **Use Fuzzy Search**: Company names when symbol unknown
+5. **Check Alternatives**: Multiple exchanges for same company
+6. **Verify Results**: Review confidence scores and resolution metadata
+
+### Exchange Selection Best Practices
+1. **Use Standard Names**: LONDON over LSE, FRANKFURT over FWB
+2. **Let System Map**: MIC codes automatically converted to working alternatives
+3. **Trust Fallbacks**: System tries aliases before failing
+4. **Check Resolution Info**: See which exchange actually worked
+5. **Leverage SMART**: Default routing when exchange uncertain
 
 ### Global Market Considerations
 1. **Market Hours**: Respect local trading hours
@@ -115,4 +182,5 @@ Market data tools work together for comprehensive analysis:
 
 **Related Categories**: forex, international, portfolio  
 **Key Tools**: get_market_data, get_forex_rates, resolve_symbol  
-**Global Coverage**: 48 exchanges, 21 forex pairs, 13 currencies
+**Global Coverage**: 60+ exchanges with smart mapping, 21 forex pairs, 13 currencies  
+**Enhanced Features**: Cascading exchange resolution, MIC code support, regional intelligence
