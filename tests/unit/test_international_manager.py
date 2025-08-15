@@ -136,6 +136,82 @@ class TestInternationalManager:
             assert first_match['symbol'] == 'AAPL'
 
     @pytest.mark.asyncio
+    async def test_ibkr_native_fuzzy_search_integration(self, mock_ib):
+        """Test IBKR native reqMatchingSymbolsAsync API integration for European companies"""
+        # Setup mock for IBKR native API
+        mock_ib.isConnected.return_value = True
+        
+        # Mock the IBKR reqMatchingSymbolsAsync API response for European company
+        from ib_async import ContractDescription, Contract
+        
+        # Create a mock contract for European company (e.g., Kongsberg)
+        mock_contract = Contract()
+        mock_contract.symbol = "KOG"
+        mock_contract.exchange = "OSE"
+        mock_contract.currency = "NOK"
+        mock_contract.secType = "STK"
+        mock_contract.conId = 123456
+        mock_contract.country = "Norway"
+        mock_contract.primaryExchange = "OSE"
+        
+        mock_contract_desc = Mock()
+        mock_contract_desc.contract = mock_contract
+        mock_contract_desc.description = "Kongsberg Group ASA"
+        
+        # Mock the IBKR API call
+        mock_ib.reqMatchingSymbolsAsync = AsyncMock(return_value=[mock_contract_desc])
+        
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Test European company name fuzzy search
+        result = await intl_manager._resolve_fuzzy_search("Kongsberg")
+        
+        assert isinstance(result, list)
+        assert len(result) > 0
+        
+        # Verify the IBKR API was called
+        mock_ib.reqMatchingSymbolsAsync.assert_called_once_with("Kongsberg")
+        
+        # Check the result structure
+        first_match = result[0]
+        assert first_match['symbol'] == 'KOG'
+        assert first_match['name'] == 'Kongsberg Group ASA'
+        assert first_match['exchange'] == 'OSE'
+        assert first_match['currency'] == 'NOK'
+        assert first_match['country'] == 'Norway'
+        assert first_match['confidence'] == 0.9  # High confidence for IBKR matches
+        assert 'conid' in first_match
+        assert first_match['conid'] == 123456
+
+    @pytest.mark.asyncio
+    async def test_ibkr_fuzzy_search_fallback_behavior(self, mock_ib):
+        """Test fallback behavior when IBKR fuzzy search fails"""
+        mock_ib.isConnected.return_value = True
+        
+        # Mock IBKR API to raise an exception
+        mock_ib.reqMatchingSymbolsAsync = AsyncMock(side_effect=Exception("IBKR API error"))
+        
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Mock the fallback exact symbol resolution
+        intl_manager._resolve_exact_symbol = AsyncMock(return_value=[{
+            'symbol': 'FALLBACK',
+            'name': 'Fallback Symbol',
+            'exchange': 'SMART',
+            'currency': 'USD'
+        }])
+        
+        # Test fallback behavior
+        result = await intl_manager._resolve_fuzzy_search("TestSymbol")
+        
+        # Should call the fallback method
+        intl_manager._resolve_exact_symbol.assert_called_once_with("TESTSYMBOL", None, None, "STK")
+        
+        # Should return fallback result
+        assert len(result) == 1
+        assert result[0]['symbol'] == 'FALLBACK'
+
+    @pytest.mark.asyncio
     async def test_resolve_symbol_alternative_ids(self, mock_ib):
         """Test alternative ID resolution (CUSIP, ISIN, ConID)"""
         mock_ib.isConnected.return_value = True
@@ -659,7 +735,7 @@ class TestInternationalManagerValidation:
         
         # Setup cache with known result using correct cache key format 
         test_symbol = "AAPL"
-        cache_key = f"{test_symbol.upper()}_None_None_STK_5"  # Matches actual implementation
+        cache_key = f"{test_symbol.upper()}_None_None_STK_5_False"  # Matches actual implementation: {symbol}_{exchange}_{currency}_{sec_type}_{max_results}_{prefer_native_exchange}
         cached_result = {
             'symbol': test_symbol,
             'matches': [{'symbol': 'AAPL', 'confidence': 0.9}],

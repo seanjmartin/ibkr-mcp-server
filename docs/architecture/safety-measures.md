@@ -436,7 +436,7 @@ Different operation types have tailored safety validation:
 ### ✅ Integration Test Coverage (83/83 passing)
 - **MCP Safety Integration**: Trading tools with safety validation (11 tests)
 - **Error Handling Integration**: Comprehensive error scenarios (31 tests)
-- **MCP Tools Integration**: Complete MCP tool coverage (17 tests)
+- **MCP Tools Integration**: Complete MCP tool coverage (23 tests)
 - **Order Tools Integration**: Advanced order management (16 tests)
 - **Trading Workflows**: End-to-end workflow validation (8 tests)
 - **Rate Limiting Integration**: Market data and forex operations

@@ -5,8 +5,8 @@ A comprehensive Model Context Protocol (MCP) server that provides Claude AI with
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![IBKR API](https://img.shields.io/badge/IBKR-API%20Compatible-green.svg)](https://interactivebrokers.github.io/tws-api/)
-[![Development Complete](https://img.shields.io/badge/Status-Development%20Complete-green.svg)](docs/PRODUCTION_DEPLOYMENT.md)
-[![Test Coverage](https://img.shields.io/badge/Tests-140%2F140%20Passing-brightgreen.svg)](TESTING_STATUS.md)
+[![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)](docs/architecture/system-architecture.md)
+[![Test Coverage](https://img.shields.io/badge/Tests-254%2F254%20Passing-brightgreen.svg)](docs/architecture/testing-strategy.md)
 
 ## 🌟 Features
 
@@ -32,7 +32,7 @@ A comprehensive Model Context Protocol (MCP) server that provides Claude AI with
 
 ## 🚀 Quick Start
 
-**🎉 DEVELOPMENT TO DATE**: >250 tests 100% passing, comprehensive safety framework, ready for paper trading validation!
+**🎉 DEVELOPMENT COMPLETE**: 254 unit tests 100% passing, comprehensive safety framework, production-ready global trading platform!
 
 👉 **[API Quick Reference](docs/API_QUICK_REFERENCE.md)** - Essential commands & examples  
 👉 **[Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT.md)** - Complete setup instructions
@@ -81,144 +81,85 @@ Add to your Claude Desktop configuration:
 
 ## 🏗️ Architecture
 
-### Modular Design
-```
-ibkr_mcp_server/
-├── client.py                 # Enhanced IBKR client with global trading
-├── tools.py                  # 23 MCP tools for Claude integration
-├── main.py                   # MCP server entry point
-├── config.py                 # Configuration management
-├── utils.py                  # Utilities and base exceptions
-├── data/                     # Reference data for global markets
-│   ├── forex_pairs.py        # 21+ forex pairs with metadata
-│   ├── international_symbols.py # 23+ international stocks
-│   └── exchange_info.py      # Global exchange information
-├── trading/                  # Specialized trading managers
-│   ├── forex.py              # Forex trading and conversion
-│   ├── international.py      # Global market symbol resolution
-│   ├── stop_loss.py          # Advanced order management
-│   └── order_management.py   # Order placement and lifecycle
-├── documentation/            # Comprehensive tool documentation
-├── enhanced_config.py        # Safety and trading configuration
-├── enhanced_validators.py    # Input validation framework
-└── safety_framework.py      # Audit logging and protection
-```
+### Professional Trading Platform
+The IBKR MCP Server is built as a comprehensive trading platform with:
 
-### Trading Managers
-- **ForexManager**: Real-time rates, currency conversion, forex trading
-- **InternationalManager**: Global symbol resolution, multi-currency market data
-- **StopLossManager**: Order lifecycle management, bracket orders, trailing stops
+- **Enhanced IBKR Client**: Central orchestrator with 29 methods managing all IBKR interactions
+- **23 MCP Tools**: Complete Claude Desktop integration for natural language trading
+- **Safety Framework**: Multi-layer protection with audit logging and emergency controls
+- **Trading Managers**: Specialized managers for forex, international markets, and risk management
+- **Global Market Support**: 12 exchanges, 21 forex pairs, intelligent symbol detection
 
-### Safety Framework Components
-- **TradingSafetyManager**: Unified safety orchestration
-- **TradingAuditLogger**: Complete operation audit trail
-- **EmergencyKillSwitch**: Instant trading halt capability
-- **RateLimiter**: API usage protection
+### Key Components
+- **Trading Safety**: Emergency kill switch, rate limiting, comprehensive audit trails
+- **Global Markets**: Automatic exchange detection for US, European, and Asian stocks
+- **Risk Management**: Advanced stop loss orders, bracket orders, trailing stops
+- **Currency Trading**: Real-time forex rates with cross-currency conversion
 
-## 🛠️ Available Tools (23 Total)
+📖 **[Complete Technical Architecture](docs/architecture/system-architecture.md)**
 
-### Portfolio & Account Management
-- `get_portfolio` - View current positions and P&L
-- `get_account_summary` - Account balances and metrics  
-- `get_accounts` - List available accounts
-- `switch_account` - Change active account
-- `get_connection_status` - IBKR connection status
+## 🛠️ Complete MCP Tools (23 Total)
 
-### Global Market Data
-- `get_market_data` - Live quotes for any stock worldwide (auto-detects exchange)
-- `resolve_international_symbol` - Look up exchange/currency for international stocks
+### **Portfolio & Account Management (5 tools)**
+- `get_portfolio` - View current positions with P&L analysis
+- `get_account_summary` - Account balances and metrics
+- `get_accounts` - List all available IBKR accounts
+- `switch_account` - Change active trading account
+- `get_connection_status` - IBKR connection health and system status
 
-### Forex Trading
-- `get_forex_rates` - Real-time rates for 21 currency pairs
-- `convert_currency` - Convert amounts between currencies using live rates
+### **Market Data & Analysis (2 tools)**
+- `get_market_data` - Live quotes for stocks worldwide with intelligent exchange detection
+- `resolve_symbol` - Unified symbol resolution with fuzzy search and company data
 
-### Risk Management
-- `place_stop_loss` - Set automatic sell orders to limit losses
-- `get_stop_losses` - View existing stop loss orders
-- `modify_stop_loss` - Adjust stop prices or quantities
+### **Forex & Currency (2 tools)**
+- `get_forex_rates` - Real-time forex rates for 21 currency pairs
+- `convert_currency` - Multi-currency conversion with live rates
+
+### **Risk Management (4 tools)**
+- `place_stop_loss` - Create stop orders for loss protection
+- `get_stop_losses` - View all active stop loss orders
+- `modify_stop_loss` - Adjust existing stop loss orders
 - `cancel_stop_loss` - Remove stop loss orders
 
-### Order Placement & Management 🆕
-- `place_market_order` - Execute immediate market orders
-- `place_limit_order` - Place orders with price control
-- `place_bracket_order` - Advanced orders with entry/stop/target
-- `cancel_order` - Cancel pending orders
-- `modify_order` - Modify existing orders
-- `get_order_status` - Check order status and execution
-
-### Order History & Tracking
+### **Order History & Tracking (3 tools)**
 - `get_open_orders` - View pending orders
-- `get_completed_orders` - View recent trades
-- `get_executions` - Detailed execution information
+- `get_completed_orders` - Order-level trade history (summary)
+- `get_executions` - Execution-level details (individual fills)
 
-### Documentation
-- `get_tool_documentation` - Comprehensive help system
+### **Order Placement & Management (6 tools)**
+- `place_market_order` - Execute market orders for immediate execution
+- `place_limit_order` - Place limit orders with price control
+- `place_bracket_order` - Advanced bracket orders (entry + stop + target)
+- `cancel_order` - Cancel pending orders
+- `modify_order` - Modify existing orders (quantity, price, time-in-force)
+- `get_order_status` - Get comprehensive order status information
+
+### **Documentation (1 tool)**
+- `get_tool_documentation` - Built-in help system for all tools
 
 ## 🌍 Global Market Support
 
-### Supported Exchanges & Currencies (48 Total)
+### Supported Exchanges (12 Total)
 
-**Europe (19):**
-- **XETRA** (Germany) - EUR: Frankfurt Stock Exchange
+**US Markets:**
+- **SMART** - IBKR Smart Routing across all US exchanges (NYSE, NASDAQ, AMEX)
+
+**European Markets (6):**
+- **XETRA** (Germany) - EUR: Frankfurt Stock Exchange  
 - **LSE** (United Kingdom) - GBP: London Stock Exchange
 - **SBF** (France) - EUR: Euronext Paris
 - **AEB** (Netherlands) - EUR: Euronext Amsterdam
 - **SWX** (Switzerland) - CHF: SIX Swiss Exchange
 - **KFX** (Denmark) - DKK: Nasdaq Copenhagen
-- **BIT** (Italy) - EUR: Borsa Italiana
-- **MIL** (Italy) - EUR: Milan Stock Exchange
-- **BME** (Spain) - EUR: Bolsas y Mercados Españoles
-- **BVME** (Spain) - EUR: Madrid Stock Exchange
-- **VIX** (Austria) - EUR: Vienna Stock Exchange
-- **BEL** (Belgium) - EUR: Euronext Brussels
-- **OSE** (Norway) - NOK: Oslo Stock Exchange
-- **OMX** (Sweden) - SEK: Nasdaq Stockholm
-- **HEX** (Finland) - EUR: Nasdaq Helsinki
-- **WSE** (Poland) - PLN: Warsaw Stock Exchange
-- **LSEETF** (United Kingdom) - GBP: London Stock Exchange ETF Segment
-- **GETTEX** (Germany) - EUR: Gettex Exchange
-- **TRADEGATE** (Germany) - EUR: Tradegate Exchange
 
-**North America (7):**
-- **NYSE** (United States) - USD: New York Stock Exchange
-- **NASDAQ** (United States) - USD: NASDAQ Stock Market
-- **ARCA** (United States) - USD: NYSE Arca
-- **BATS** (United States) - USD: Cboe BZX Exchange
-- **IEX** (United States) - USD: Investors Exchange
-- **TSX** (Canada) - CAD: Toronto Stock Exchange
-- **TSXV** (Canada) - CAD: TSX Venture Exchange
-
-**Latin America (2):**
-- **MEXI** (Mexico) - MXN: Mexican Stock Exchange
-- **BOVESPA** (Brazil) - BRL: B3 Stock Exchange
-
-**Asia (12):**
+**Asian Markets (4):**
 - **TSE** (Japan) - JPY: Tokyo Stock Exchange
 - **SEHK** (Hong Kong) - HKD: Stock Exchange of Hong Kong
 - **KSE** (South Korea) - KRW: Korea Exchange
-- **TWSE** (Taiwan) - TWD: Taiwan Stock Exchange
-- **SSE** (China) - CNY: Shanghai Stock Exchange
-- **SZSE** (China) - CNY: Shenzhen Stock Exchange
-- **BSE** (India) - INR: Bombay Stock Exchange
-- **NSE** (India) - INR: National Stock Exchange of India
-- **SGX** (Singapore) - SGD: Singapore Exchange
-- **SET** (Thailand) - THB: Stock Exchange of Thailand
-- **IDX** (Indonesia) - IDR: Indonesia Stock Exchange
-- **KLSE** (Malaysia) - MYR: Bursa Malaysia
-
-**Pacific (2):**
 - **ASX** (Australia) - AUD: Australian Securities Exchange
-- **NZX** (New Zealand) - NZD: New Zealand Exchange
 
-**Middle East & Africa (4):**
-- **TASE** (Israel) - ILS: Tel Aviv Stock Exchange
-- **TADAWUL** (Saudi Arabia) - SAR: Saudi Stock Exchange
-- **EGX** (Egypt) - EGP: Egyptian Exchange
-- **JSE** (South Africa) - ZAR: Johannesburg Stock Exchange
-
-**Global/Special (2):**
-- **SMART** (Global) - USD: IBKR Smart Routing
-- **IDEALPRO** (Global) - Multiple: IBKR Forex Exchange
+**Forex Trading:**
+- **IDEALPRO** - IBKR's institutional forex platform with 21 currency pairs
 
 ### Intelligent Symbol Detection
 ```python
@@ -256,13 +197,14 @@ place_stop_loss(symbol="MSFT", action="SELL", quantity=75,
 - **Major Pairs (7)**: EURUSD, GBPUSD, USDJPY, USDCHF, AUDUSD, USDCAD, NZDUSD
 - **Cross Pairs (14)**: EURGBP, EURJPY, GBPJPY, CHFJPY, EURCHF, AUDJPY, CADJPY, NZDJPY, EURAUD, EURNZD, GBPAUD, GBPNZD, AUDCAD, AUDNZD
 
-### Supported Currencies (29 Total)
-- **Major (8)**: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD
-- **Asian (6)**: HKD, KRW, CNY, SGD, TWD, CNH
-- **European (3)**: DKK, SEK, NOK  
-- **Americas (2)**: BRL, MXN
-- **Middle East & Africa (3)**: ZAR, AED, SAR
-- **Additional Global (7)**: INR, PLN, ILS, TRY, CZK, HUF, MYR
+### Supported Currencies (13 Total)
+**Major Currencies**: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD  
+**Additional**: HKD, KRW, DKK, SEK, NOK
+
+**All currencies support:**
+- Real-time conversion using live forex rates
+- Cross-currency calculations via USD routing
+- Multi-currency account balance tracking
 
 ### Currency Conversion
 ```python
@@ -358,18 +300,7 @@ The server integrates seamlessly with Claude Desktop through the MCP protocol:
 "Place a bracket order for AAPL with stop at $180 and target at $200"
 ```
 
-## 🏗️ Architecture
 
-### Modular Design
-- **ForexManager**: Currency trading and conversion
-- **InternationalManager**: Global symbol resolution  
-- **StopLossManager**: Advanced risk management
-- **Safety Framework**: Comprehensive protection system
-
-### Reference Data
-- **25+ International Stocks**: Complete metadata with auto-detection
-- **21 Forex Pairs**: Complete trading specifications and metadata
-- **10+ Global Exchanges**: Trading hours, currencies, settlement rules
 
 ## 🚨 Safety & Security
 

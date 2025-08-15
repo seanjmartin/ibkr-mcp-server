@@ -123,6 +123,13 @@ class EnhancedSettings(BaseSettings):
     symbol_resolution_exchange_preference: str = "SMART"
     symbol_resolution_currency_preference: str = "USD"
     
+    # IBKR Native Symbol Search Configuration
+    use_ibkr_native_symbol_search: bool = True
+    ibkr_symbol_search_rate_limit_seconds: float = 1.1  # IBKR requires 1+ second
+    ibkr_symbol_search_timeout_seconds: int = 10
+    ibkr_symbol_search_max_results: int = 16  # IBKR API limit
+    fallback_to_exact_on_fuzzy_fail: bool = True
+    
     # ========================================
     # STOP LOSS CONFIGURATION
     # ========================================

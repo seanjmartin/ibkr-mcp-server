@@ -33,7 +33,9 @@ class InternationalManager:
             'invalidations': 0,
             'memory_usage': 0,
             'last_cleanup': datetime.now(timezone.utc),
-            'total_requests': 0
+            'total_requests': 0,
+            'reverse_lookup_hits': 0,    # NEW: Track reverse lookup hits
+            'reverse_lookup_entries': 0  # NEW: Count of reverse lookup entries
         }
         
         # PHASE 4.2 ADDITIONS: API call count tracking
@@ -796,81 +798,95 @@ class InternationalManager:
             self.logger.error(f"Alternative ID resolution failed for {identifier}: {e}")
             return []
     
+    def _check_reverse_lookup_cache(self, query: str, exchange: str = None, currency: str = None, sec_type: str = "STK") -> Optional[List[Dict]]:
+        """Check if query matches any cached company names via reverse lookup."""
+        # Normalize query for lookup
+        normalized_query = self._normalize_company_name(query)
+        reverse_key = f"reverse_lookup_{normalized_query}"
+        
+        # Try exact match first
+        cached_result = self._get_cached_resolution(reverse_key)
+        if cached_result:
+            return cached_result.get('matches', [])
+        
+        # Try variations of the query
+        query_variations = [
+            query.lower().strip(),
+            self._clean_company_name(query),
+            query.upper().strip()
+        ]
+        
+        for variation in query_variations:
+            if not variation or variation == normalized_query:
+                continue
+                
+            variation_key = f"reverse_lookup_{self._normalize_company_name(variation)}"
+            cached_result = self._get_cached_resolution(variation_key)
+            if cached_result:
+                self.logger.debug(f"Found reverse lookup via variation: {variation}")
+                return cached_result.get('matches', [])
+        
+        return None
+    
     async def _resolve_fuzzy_search(self, query: str, exchange: str = None, currency: str = None, sec_type: str = "STK") -> List[Dict]:
-        """Resolve using fuzzy search (company names) with rate limiting and cache-first strategy."""
+        """Resolve using IBKR's native reqMatchingSymbols API."""
         try:
-            # PHASE 4.2: Track fuzzy search attempt
+            # Track fuzzy search attempt
             self.fuzzy_search_stats['fuzzy_searches_attempted'] += 1
+            self.api_call_stats['req_matching_symbols_calls'] += 1
             
-            # PHASE 4.3: Enforce rate limiting with graceful degradation
+            # NEW: Check reverse lookup cache first
+            reverse_lookup_result = self._check_reverse_lookup_cache(query, exchange, currency, sec_type)
+            if reverse_lookup_result:
+                self.logger.debug(f"Found reverse lookup cache hit for: {query}")
+                self.fuzzy_search_stats['fuzzy_searches_successful'] += 1
+                return reverse_lookup_result
+            
+            # Rate limiting (1+ second between calls)
             rate_limit_passed = await self._enforce_rate_limiting()
             if not rate_limit_passed:
-                # Return empty results when rate limited - graceful degradation
-                self.logger.debug(f"Fuzzy search rate limited for query: {query}")
+                self.logger.debug(f"IBKR API rate limited for query: {query}")
                 return []
             
-            # PHASE 4.3: Cache-first strategy - check if we have cached fuzzy results
-            fuzzy_cache_key = f"fuzzy_{query.lower().strip()}_{exchange}_{currency}_{sec_type}"
-            cached_fuzzy_result = self._get_cached_resolution(fuzzy_cache_key)
-            if cached_fuzzy_result:
-                self.logger.debug(f"Returning cached fuzzy search result for: {query}")
-                # Return the matches array from cached result
-                return cached_fuzzy_result.get('matches', [])
+            # Cache check
+            fuzzy_cache_key = f"ibkr_fuzzy_{query.lower().strip()}_{exchange}_{currency}_{sec_type}"
+            cached_result = self._get_cached_resolution(fuzzy_cache_key)
+            if cached_result:
+                self.logger.debug(f"Returning cached IBKR fuzzy search result for: {query}")
+                return cached_result.get('matches', [])
             
-            # For now, implement basic fuzzy search using existing database
-            # In the future, this could use IBKR's reqMatchingSymbols API
+            # Call IBKR's native API
+            self.logger.debug(f"Calling IBKR reqMatchingSymbolsAsync for: {query}")
+            contract_descriptions = await self.ib.reqMatchingSymbolsAsync(query)
             
+            # Convert to our format
             fuzzy_matches = []
-            matched_company = None
-            
-            # Check if query matches known company names in our database
-            company_name_mappings = {
-                'apple': 'AAPL',
-                'microsoft': 'MSFT', 
-                'google': 'GOOGL',
-                'tesla': 'TSLA',
-                'amazon': 'AMZN',
-                'meta': 'META',
-                'netflix': 'NFLX',
-                'nvidia': 'NVDA',
-                'asml': 'ASML',
-                'sap': 'SAP',
-                'toyota': '7203',
-                'samsung': '005930'
-            }
-            
-            query_lower = query.lower().strip()
-            
-            # Look for exact company name matches
-            for company_name, symbol in company_name_mappings.items():
-                if company_name in query_lower or query_lower in company_name:
-                    matched_company = company_name
-                    # Resolve the matched symbol using exact symbol resolution
-                    exact_matches = await self._resolve_exact_symbol(symbol, exchange, currency, sec_type)
-                    fuzzy_matches.extend(exact_matches)
-            
-            # PHASE 4.3: Cache the fuzzy search results
-            if fuzzy_matches:
-                fuzzy_result = {
-                    'matches': fuzzy_matches,
-                    'resolution_method': 'fuzzy_search',
-                    'matched_company': matched_company,
-                    'query': query
+            for desc in contract_descriptions:
+                contract = desc.contract
+                match = {
+                    'symbol': contract.symbol,
+                    'name': getattr(desc, 'description', contract.symbol),
+                    'conid': contract.conId,
+                    'exchange': exchange or contract.exchange or 'SMART',
+                    'primary_exchange': getattr(contract, 'primaryExchange', ''),
+                    'currency': currency or contract.currency,
+                    'sec_type': contract.secType,
+                    'country': getattr(contract, 'country', ''),
+                    'confidence': 0.9  # High confidence for IBKR matches
                 }
-                self._cache_resolution(fuzzy_cache_key, fuzzy_result)
-                self.logger.debug(f"Cached fuzzy search result for: {query}")
+                fuzzy_matches.append(match)
             
-            # PHASE 4.2: Track fuzzy search results and accuracy
+            # Cache results
             if fuzzy_matches:
+                result = {'matches': fuzzy_matches, 'query': query}
+                self._cache_resolution(fuzzy_cache_key, result)
+                self._create_reverse_lookup_entries(fuzzy_matches, query)
                 self.fuzzy_search_stats['fuzzy_searches_successful'] += 1
-                
-                # Calculate confidence score for fuzzy match
-                confidence = self._calculate_fuzzy_confidence(query, matched_company, fuzzy_matches)
-                
-                # Update accuracy tracking
-                self._update_fuzzy_accuracy_metrics(query, matched_company, fuzzy_matches, confidence)
+                self.logger.debug(f"IBKR fuzzy search found {len(fuzzy_matches)} matches for: {query}")
+            else:
+                self.logger.debug(f"IBKR fuzzy search found no matches for: {query}")
             
-            # Update overall accuracy rate
+            # Update accuracy tracking
             total_attempts = self.fuzzy_search_stats['fuzzy_searches_attempted']
             if total_attempts > 0:
                 self.fuzzy_search_stats['fuzzy_accuracy_rate'] = (
@@ -880,7 +896,17 @@ class InternationalManager:
             return fuzzy_matches
             
         except Exception as e:
-            self.logger.error(f"Fuzzy search failed for {query}: {e}")
+            self.logger.warning(f"IBKR fuzzy search failed for {query}: {e}")
+            
+            # Fallback strategy - try exact symbol resolution
+            try:
+                from ..enhanced_config import enhanced_settings
+                if enhanced_settings.fallback_to_exact_on_fuzzy_fail:
+                    self.logger.debug(f"Falling back to exact symbol resolution for: {query}")
+                    return await self._resolve_exact_symbol(query.upper(), exchange, currency, sec_type)
+            except Exception as fallback_error:
+                self.logger.error(f"Fallback exact resolution also failed for {query}: {fallback_error}")
+            
             return []
     
     def _calculate_confidence_score(self, match: Dict, query: str, exchange_preference: str) -> float:
@@ -1176,23 +1202,98 @@ class InternationalManager:
         raise last_exception if last_exception else Exception("Contract qualification failed")
     
     def _cache_resolution(self, cache_key: str, result: Dict) -> None:
-        """Cache symbol resolution result with statistics tracking."""
+        """Cache symbol resolution result with statistics tracking and reverse lookups."""
         # PHASE 2: Memory management - cleanup if needed
         if len(self.resolution_cache) >= self.max_cache_size:
             self._cleanup_old_cache_entries()
         
+        # Store main cache entry
         self.resolution_cache[cache_key] = {
             'data': result,
             'timestamp': datetime.now(timezone.utc).timestamp(),
             'hit_count': 0  # Track popularity for LRU cleanup
         }
         
+        # NEW: Create reverse lookup entries for company names
+        self._create_reverse_lookup_entries(cache_key, result)
+        
         # Update statistics
         self.cache_stats['memory_usage'] = len(self.resolution_cache)
         self.logger.debug(f"Cached resolution for {cache_key}")
     
+    def _create_reverse_lookup_entries(self, main_cache_key: str, result: Dict) -> None:
+        """Create reverse lookup cache entries mapping company names to symbol resolutions."""
+        if 'matches' not in result:
+            return
+        
+        timestamp = datetime.now(timezone.utc).timestamp()
+        
+        for match in result['matches']:
+            # Extract company names and variations
+            company_names = self._extract_company_name_variations(match)
+            
+            for company_name in company_names:
+                if not company_name:
+                    continue
+                    
+                # Create reverse lookup cache key
+                reverse_key = f"reverse_lookup_{self._normalize_company_name(company_name)}"
+                
+                # Store redirect to main cache entry (lightweight)
+                self.resolution_cache[reverse_key] = {
+                    'data': {'redirect_to': main_cache_key},
+                    'timestamp': timestamp,
+                    'hit_count': 0,
+                    'is_reverse_lookup': True
+                }
+                
+                self.cache_stats['reverse_lookup_entries'] += 1
+                self.logger.debug(f"Created reverse lookup: {reverse_key} -> {main_cache_key}")
+    
+    def _extract_company_name_variations(self, match: Dict) -> List[str]:
+        """Extract various company name formats for reverse lookup caching."""
+        variations = []
+        
+        # Primary company name
+        name = match.get('name', '')
+        if name:
+            variations.append(name)
+            
+            # Remove common suffixes for better matching
+            cleaned_name = self._clean_company_name(name)
+            if cleaned_name != name:
+                variations.append(cleaned_name)
+        
+        # Symbol as potential company reference
+        symbol = match.get('symbol', '')
+        if symbol and len(symbol) > 2:  # Avoid single letters
+            variations.append(symbol)
+        
+        return variations
+    
+    def _clean_company_name(self, name: str) -> str:
+        """Remove common company suffixes and clean name for better matching."""
+        # Common company suffixes to remove
+        suffixes = [
+            'ASA', 'AB', 'AG', 'SA', 'SE', 'PLC', 'LTD', 'LIMITED', 'INC', 'INCORPORATED',
+            'CORP', 'CORPORATION', 'GROUP', 'GRUPPEN', 'COMPANY', 'CO', 'LLC', 'LLP'
+        ]
+        
+        cleaned = name.strip()
+        words = cleaned.split()
+        
+        # Remove suffix if present
+        if words and words[-1].upper() in suffixes:
+            cleaned = ' '.join(words[:-1])
+        
+        return cleaned.strip()
+    
+    def _normalize_company_name(self, name: str) -> str:
+        """Normalize company name for consistent cache key generation."""
+        return name.lower().strip().replace(' ', '_').replace('.', '').replace('-', '_')
+    
     def _get_cached_resolution(self, cache_key: str) -> Optional[Dict]:
-        """Get cached symbol resolution if still valid, with hit tracking."""
+        """Get cached symbol resolution with redirect support for reverse lookups."""
         self.cache_stats['total_requests'] += 1
         
         cache_entry = self.resolution_cache.get(cache_key)
@@ -1207,11 +1308,35 @@ class InternationalManager:
             self.cache_stats['misses'] += 1
             return None
         
+        # NEW: Handle reverse lookup redirects
+        data = cache_entry['data']
+        if isinstance(data, dict) and 'redirect_to' in data:
+            # This is a reverse lookup redirect
+            redirect_key = data['redirect_to']
+            self.logger.debug(f"Following reverse lookup redirect: {cache_key} -> {redirect_key}")
+            
+            # Get the actual cached data
+            actual_entry = self.resolution_cache.get(redirect_key)
+            if actual_entry and datetime.now(timezone.utc).timestamp() - actual_entry['timestamp'] <= self.cache_duration:
+                # Update hit counts for both entries
+                cache_entry['hit_count'] = cache_entry.get('hit_count', 0) + 1
+                actual_entry['hit_count'] = actual_entry.get('hit_count', 0) + 1
+                self.cache_stats['hits'] += 1
+                self.cache_stats['reverse_lookup_hits'] += 1
+                return actual_entry['data']
+            else:
+                # Redirect target is invalid, clean up
+                del self.resolution_cache[cache_key]
+                if actual_entry:
+                    del self.resolution_cache[redirect_key]
+                self.cache_stats['misses'] += 1
+                return None
+        
         # Cache hit - update statistics and popularity
         self.cache_stats['hits'] += 1
         cache_entry['hit_count'] = cache_entry.get('hit_count', 0) + 1
         
-        return cache_entry['data']
+        return data
     
     def get_supported_exchanges(self) -> List[Dict]:
         """Get list of supported international exchanges with details."""
@@ -1371,7 +1496,7 @@ class InternationalManager:
         }
     
     def _cleanup_old_cache_entries(self) -> None:
-        """Remove old or least-used cache entries to manage memory."""
+        """Remove old or least-used cache entries to manage memory with reverse lookup protection."""
         current_time = datetime.now(timezone.utc).timestamp()
         entries_to_remove = []
         
@@ -1383,17 +1508,49 @@ class InternationalManager:
         # If still over capacity, remove least popular entries
         if len(self.resolution_cache) - len(entries_to_remove) >= self.max_cache_size:
             # Sort by hit count (ascending) to remove least popular first
+            # But protect reverse lookup entries whose targets are preserved
             sorted_entries = sorted(
                 [(k, v) for k, v in self.resolution_cache.items() if k not in entries_to_remove],
                 key=lambda x: x[1].get('hit_count', 0)
             )
             
             # Remove oldest entries until under capacity
-            target_size = self.max_cache_size * 0.8  # Leave 20% headroom
+            target_size = self.max_cache_size  # Use exact size limit
             entries_needed = len(self.resolution_cache) - len(entries_to_remove) - int(target_size)
             
-            for i in range(min(entries_needed, len(sorted_entries))):
-                entries_to_remove.append(sorted_entries[i][0])
+            # NEW: Create protection list for reverse lookups with preserved targets
+            protected_reverse_lookups = set()
+            preserved_main_keys = set()
+            
+            # First pass: identify which main entries will be preserved
+            for i in range(entries_needed, len(sorted_entries)):
+                key, entry = sorted_entries[i]
+                if not entry.get('is_reverse_lookup', False):
+                    preserved_main_keys.add(key)
+            
+            # Second pass: protect reverse lookups that point to preserved main entries
+            for key, entry in self.resolution_cache.items():
+                if (entry.get('is_reverse_lookup', False) and 
+                    isinstance(entry.get('data'), dict) and 
+                    'redirect_to' in entry['data']):
+                    redirect_target = entry['data']['redirect_to']
+                    if redirect_target in preserved_main_keys:
+                        protected_reverse_lookups.add(key)
+            
+            # Select entries for removal, respecting protections
+            candidates_removed = 0
+            for i in range(len(sorted_entries)):
+                if candidates_removed >= entries_needed:
+                    break
+                    
+                key, entry = sorted_entries[i]
+                
+                # Skip protected reverse lookups
+                if key in protected_reverse_lookups:
+                    continue
+                    
+                entries_to_remove.append(key)
+                candidates_removed += 1
         
         # Remove identified entries
         for key in entries_to_remove:
