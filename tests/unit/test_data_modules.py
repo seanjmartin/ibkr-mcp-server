@@ -9,11 +9,9 @@ from typing import Dict, List, Set
 
 from ibkr_mcp_server.data import (
     forex_manager,
-    international_db,
     exchange_manager,
     MAJOR_FOREX_PAIRS,
     SUPPORTED_CURRENCIES,
-    INTERNATIONAL_SYMBOLS,
     EXCHANGE_INFO
 )
 
@@ -22,7 +20,7 @@ class TestReferenceDataLoading:
     """Test reference data loading and integrity"""
     
     def test_reference_data_loading(self):
-        """Test reference data loading (forex pairs, symbols, etc.)"""
+        """Test reference data loading (forex pairs, exchanges, etc.)"""
         # Test forex pairs data loading
         assert MAJOR_FOREX_PAIRS is not None
         assert isinstance(MAJOR_FOREX_PAIRS, dict)
@@ -33,11 +31,6 @@ class TestReferenceDataLoading:
         assert isinstance(SUPPORTED_CURRENCIES, (list, set))
         assert len(SUPPORTED_CURRENCIES) > 0
         
-        # Test international symbols data
-        assert INTERNATIONAL_SYMBOLS is not None
-        assert isinstance(INTERNATIONAL_SYMBOLS, dict)
-        assert len(INTERNATIONAL_SYMBOLS) > 0
-        
         # Test exchange info data
         assert EXCHANGE_INFO is not None
         assert isinstance(EXCHANGE_INFO, dict)
@@ -45,7 +38,6 @@ class TestReferenceDataLoading:
         
         # Test manager objects are properly initialized
         assert forex_manager is not None
-        assert international_db is not None
         assert exchange_manager is not None
         
         # Test critical forex pairs are present
@@ -53,70 +45,35 @@ class TestReferenceDataLoading:
         for pair in critical_pairs:
             assert pair in MAJOR_FOREX_PAIRS, f"Critical forex pair {pair} missing"
         
-        # Test critical international symbols are present
-        critical_symbols = ['ASML', 'SAP', '7203']  # Netherlands, Germany, Japan
-        for symbol in critical_symbols:
-            assert symbol in INTERNATIONAL_SYMBOLS, f"Critical symbol {symbol} missing"
-        
         # Test critical exchanges are present
         critical_exchanges = ['AEB', 'XETRA', 'TSE', 'SMART']
         for exchange in critical_exchanges:
             assert exchange in EXCHANGE_INFO, f"Critical exchange {exchange} missing"
+        
+        # NOTE: International symbols are now resolved dynamically via IBKR API
+        # instead of using a hardcoded database - see test_international_manager.py
     
-    def test_international_symbols_data(self):
-        """Test international symbols reference data"""
-        # Test that we have comprehensive symbol data
-        assert len(INTERNATIONAL_SYMBOLS) >= 15, "Should have at least 15 international symbols"
+    def test_international_symbols_migration_note(self):
+        """Test note about international symbols migration to IBKR API"""
+        # NOTE: International symbols are now resolved dynamically via IBKR's 
+        # reqMatchingSymbolsAsync API instead of using a hardcoded database.
+        # This provides:
+        # - Coverage of thousands of symbols instead of ~15 hardcoded ones
+        # - Automatic updates when IBKR adds new symbols
+        # - Support for European companies that were previously failing
+        # - Professional-grade fuzzy matching and typo tolerance
+        #
+        # For testing international symbol resolution, see:
+        # - tests/unit/test_international_manager.py::test_ibkr_native_fuzzy_search_integration
+        # - test_symbol_resolution_fix.py (integration verification)
         
-        # Test each symbol has required fields
-        required_fields = ['exchange', 'currency', 'name', 'country', 'sector']
-        for symbol, data in INTERNATIONAL_SYMBOLS.items():
-            assert isinstance(symbol, str), f"Symbol {symbol} should be string"
-            assert len(symbol) > 0, f"Symbol {symbol} should not be empty"
-            
-            for field in required_fields:
-                assert field in data, f"Symbol {symbol} missing required field: {field}"
-                assert data[field] is not None, f"Symbol {symbol} field {field} is None"
-                assert len(str(data[field])) > 0, f"Symbol {symbol} field {field} is empty"
+        # Verify that we no longer have the hardcoded international symbols
+        from ibkr_mcp_server.data import __all__
+        assert 'INTERNATIONAL_SYMBOLS' not in __all__, "INTERNATIONAL_SYMBOLS should no longer be exported"
+        assert 'international_db' not in __all__, "international_db should no longer be exported"
         
-        # Test regional coverage
-        regions = set()
-        exchanges = set()
-        currencies = set()
-        
-        for symbol, data in INTERNATIONAL_SYMBOLS.items():
-            regions.add(data['country'])
-            exchanges.add(data['exchange'])
-            currencies.add(data['currency'])
-        
-        # Test we cover major regions
-        assert 'Netherlands' in regions, "Should include Dutch stocks"
-        assert 'Germany' in regions, "Should include German stocks"
-        assert 'Japan' in regions, "Should include Japanese stocks"
-        assert 'United Kingdom' in regions or 'UK' in regions, "Should include UK stocks"
-        
-        # Test we cover major exchanges
-        assert 'AEB' in exchanges, "Should include Euronext Amsterdam"
-        assert 'XETRA' in exchanges, "Should include Frankfurt exchange"
-        assert 'TSE' in exchanges, "Should include Tokyo exchange"
-        
-        # Test we cover major currencies
-        assert 'EUR' in currencies, "Should include Euro currency"
-        assert 'JPY' in currencies, "Should include Japanese Yen"
-        assert 'GBP' in currencies, "Should include British Pound"
-        
-        # Test specific known symbols
-        test_symbols = {
-            'ASML': {'exchange': 'AEB', 'currency': 'EUR', 'country': 'Netherlands'},
-            'SAP': {'exchange': 'XETRA', 'currency': 'EUR', 'country': 'Germany'},
-            '7203': {'exchange': 'TSE', 'currency': 'JPY', 'country': 'Japan'}
-        }
-        
-        for symbol, expected in test_symbols.items():
-            assert symbol in INTERNATIONAL_SYMBOLS, f"Critical symbol {symbol} not found"
-            actual = INTERNATIONAL_SYMBOLS[symbol]
-            for key, value in expected.items():
-                assert actual[key] == value, f"Symbol {symbol} {key}: expected {value}, got {actual[key]}"
+        # This test serves as documentation of the architectural change
+        assert True, "International symbols now resolved via IBKR API instead of hardcoded data"
     
     def test_forex_pairs_data(self):
         """Test forex pairs reference data"""
@@ -290,39 +247,9 @@ class TestReferenceDataLoading:
             assert min_size > 0, f"Min size for {pair} should be positive, got {min_size}"
             assert min_size >= 1000, f"Min size for {pair} should be at least 1000, got {min_size}"
         
-        # Test international symbols data integrity
-        for symbol, data in INTERNATIONAL_SYMBOLS.items():
-            # Test symbol format
-            assert isinstance(symbol, str), f"Symbol {symbol} should be string"
-            assert len(symbol) > 0, f"Symbol {symbol} should not be empty"
-            assert symbol.strip() == symbol, f"Symbol {symbol} should not have leading/trailing whitespace"
-            
-            # Test exchange validity
-            exchange = data['exchange']
-            assert exchange in EXCHANGE_INFO, f"Symbol {symbol} exchange {exchange} not found in EXCHANGE_INFO"
-            
-            # Test currency consistency with exchange
-            symbol_currency = data['currency']
-            exchange_currency = EXCHANGE_INFO[exchange]['currency']
-            if exchange_currency != 'Multiple':  # IDEALPRO has Multiple currencies
-                assert symbol_currency == exchange_currency, f"Symbol {symbol} currency {symbol_currency} doesn't match exchange {exchange} currency {exchange_currency}"
-            
-            # Test required fields are not empty
-            required_fields = ['name', 'country', 'sector']
-            for field in required_fields:
-                value = data[field]
-                assert isinstance(value, str), f"Symbol {symbol} field {field} should be string"
-                assert len(value.strip()) > 0, f"Symbol {symbol} field {field} should not be empty"
-            
-            # Test sector is valid (get all actual sectors from data first to validate they exist)
-            all_sectors = set(data_item['sector'] for data_item in INTERNATIONAL_SYMBOLS.values())
-            valid_sectors = [
-                'Technology', 'Healthcare', 'Energy', 'Finance', 'Consumer', 'Consumer Goods', 
-                'Industrial', 'Telecommunications', 'Automotive', 'Materials', 'Utilities', 
-                'Pharmaceuticals', 'Mining', 'Real Estate', 'Financial Services'
-            ]
-            sector = data['sector']
-            assert sector in valid_sectors or sector in all_sectors, f"Symbol {symbol} has unexpected sector: {sector}. All sectors: {sorted(all_sectors)}"
+        # NOTE: International symbols data integrity is now tested via IBKR API integration
+        # See test_international_manager.py for symbol resolution testing
+        pass
         
         # Test exchange data integrity
         for exchange, data in EXCHANGE_INFO.items():
@@ -359,23 +286,7 @@ class TestReferenceDataLoading:
             assert isinstance(trading_hours, dict), f"Exchange {exchange} trading_hours should be dict"
             assert len(trading_hours) > 0, f"Exchange {exchange} trading_hours should not be empty"
         
-        # Test cross-reference integrity
-        # Ensure all currencies in INTERNATIONAL_SYMBOLS exist in SUPPORTED_CURRENCIES
-        symbol_currencies = set()
-        for symbol, data in INTERNATIONAL_SYMBOLS.items():
-            symbol_currencies.add(data['currency'])
-        
-        for currency in symbol_currencies:
-            assert currency in SUPPORTED_CURRENCIES, f"Currency {currency} from INTERNATIONAL_SYMBOLS not in SUPPORTED_CURRENCIES"
-        
-        # Ensure all exchanges in INTERNATIONAL_SYMBOLS exist in EXCHANGE_INFO
-        symbol_exchanges = set()
-        for symbol, data in INTERNATIONAL_SYMBOLS.items():
-            symbol_exchanges.add(data['exchange'])
-        
-        for exchange in symbol_exchanges:
-            assert exchange in EXCHANGE_INFO, f"Exchange {exchange} from INTERNATIONAL_SYMBOLS not in EXCHANGE_INFO"
-        
+        # Test cross-reference integrity for remaining static data
         # Test that major forex currencies are supported
         forex_currencies = set()
         for pair, data in MAJOR_FOREX_PAIRS.items():
@@ -387,6 +298,7 @@ class TestReferenceDataLoading:
         
         # Test data consistency - ensure we have good coverage
         assert len(MAJOR_FOREX_PAIRS) >= 20, f"Should have at least 20 forex pairs, got {len(MAJOR_FOREX_PAIRS)}"
-        assert len(INTERNATIONAL_SYMBOLS) >= 15, f"Should have at least 15 international symbols, got {len(INTERNATIONAL_SYMBOLS)}"
         assert len(EXCHANGE_INFO) >= 10, f"Should have at least 10 exchanges, got {len(EXCHANGE_INFO)}"
         assert len(SUPPORTED_CURRENCIES) >= 10, f"Should have at least 10 supported currencies, got {len(SUPPORTED_CURRENCIES)}"
+        
+        # NOTE: International symbols coverage is now unlimited via IBKR API integration
