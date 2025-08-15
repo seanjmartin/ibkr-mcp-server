@@ -316,9 +316,17 @@ resolve_symbol("CLEAR_CACHE")
 
 ## Supported Global Coverage
 
-**US Markets:** All NASDAQ, NYSE, AMEX stocks via SMART routing
-**European Markets:** AEB, XETRA, LSE, SBF, SWX, KFX exchanges  
-**Asian Markets:** TSE, SEHK, KSE, ASX exchanges
-**Fuzzy Search:** 2000+ major company names mapped to symbols
-**Alternative IDs:** CUSIP/ISIN support for institutional integration
-**Real-time Integration:** Live data via IBKR API with intelligent caching
+**48 Exchanges Worldwide:**
+- **Europe (19):** XETRA, LSE, SBF, AEB, SWX, KFX, BIT, MIL, BME, BVME, VIX, BEL, OSE, OMX, HEX, WSE, LSEETF, GETTEX, TRADEGATE
+- **North America (7):** NYSE, NASDAQ, ARCA, BATS, IEX, TSX, TSXV
+- **Latin America (2):** BOVESPA, MEXI
+- **Asia (12):** TSE, SEHK, KSE, TWSE, SSE, SZSE, BSE, NSE, SGX, SET, IDX, KLSE
+- **Pacific (2):** ASX, NZX
+- **Middle East & Africa (4):** TASE, TADAWUL, EGX, JSE
+- **Global/Special (2):** SMART (intelligent routing), IDEALPRO (forex)
+
+**Advanced Features:**
+- **Fuzzy Search:** 2000+ major company names mapped to symbols
+- **Alternative IDs:** CUSIP/ISIN support for institutional integration
+- **Real-time Integration:** Live data via IBKR API with intelligent caching
+- **Global Currency Support:** USD, EUR, GBP, JPY, CHF, AUD, CAD, and 25+ others

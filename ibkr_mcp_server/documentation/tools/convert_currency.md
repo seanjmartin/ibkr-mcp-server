@@ -18,10 +18,13 @@ The system automatically determines the best conversion method:
 
 **to_currency**: Target currency (3-letter code like "USD", "EUR", "GBP")
 
-Supported currencies include:
-- **Major**: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD
-- **Asian**: HKD, KRW, SGD
-- **European**: DKK, SEK, NOK
+Supported currencies include (29 total):
+- **Major (8)**: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD
+- **Asian (6)**: HKD, KRW, CNY, SGD, TWD, CNH
+- **European (3)**: DKK, SEK, NOK  
+- **Americas (2)**: BRL, MXN
+- **Middle East & Africa (3)**: ZAR, AED, SAR
+- **Additional Global (7)**: INR, PLN, ILS, TRY, CZK, HUF, MYR
 
 ## Examples
 

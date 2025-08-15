@@ -950,6 +950,32 @@ class InternationalManager:
             'TOTAL': {'exchange': 'SBF', 'currency': 'EUR', 'country': 'France'},
             'SANOFI': {'exchange': 'SBF', 'currency': 'EUR', 'country': 'France'},
             
+            # Italian stocks
+            'ENI': {'exchange': 'BIT', 'currency': 'EUR', 'country': 'Italy'},
+            'ENEL': {'exchange': 'BIT', 'currency': 'EUR', 'country': 'Italy'},
+            'UCG': {'exchange': 'BIT', 'currency': 'EUR', 'country': 'Italy'},  # UniCredit
+            'ISP': {'exchange': 'BIT', 'currency': 'EUR', 'country': 'Italy'},  # Intesa Sanpaolo
+            
+            # Spanish stocks  
+            'SAN': {'exchange': 'BME', 'currency': 'EUR', 'country': 'Spain'},  # Santander
+            'IBE': {'exchange': 'BME', 'currency': 'EUR', 'country': 'Spain'},  # Iberdrola
+            'TEF': {'exchange': 'BME', 'currency': 'EUR', 'country': 'Spain'},  # Telefonica
+            'BBVA': {'exchange': 'BME', 'currency': 'EUR', 'country': 'Spain'},
+            
+            # Austrian stocks
+            'AMS': {'exchange': 'VIX', 'currency': 'EUR', 'country': 'Austria'},  # AMS-Osram
+            
+            # Nordic stocks
+            'EQNR': {'exchange': 'OSE', 'currency': 'NOK', 'country': 'Norway'},  # Equinor
+            'DNB': {'exchange': 'OSE', 'currency': 'NOK', 'country': 'Norway'},
+            'VOLV-B': {'exchange': 'OMX', 'currency': 'SEK', 'country': 'Sweden'},  # Volvo
+            'ERIC': {'exchange': 'OMX', 'currency': 'SEK', 'country': 'Sweden'},  # Ericsson
+            'NOK1V': {'exchange': 'HEX', 'currency': 'EUR', 'country': 'Finland'},  # Nokia
+            
+            # Polish stocks
+            'PKN': {'exchange': 'WSE', 'currency': 'PLN', 'country': 'Poland'},  # PKN Orlen
+            'PZU': {'exchange': 'WSE', 'currency': 'PLN', 'country': 'Poland'},
+            
             # UK stocks  
             'BARC': {'exchange': 'LSE', 'currency': 'GBP', 'country': 'United Kingdom'},
             'BP': {'exchange': 'LSE', 'currency': 'GBP', 'country': 'United Kingdom'},
@@ -964,9 +990,84 @@ class InternationalManager:
             '2330': {'exchange': 'TWSE', 'currency': 'TWD', 'country': 'Taiwan'},  # TSMC
             '005930': {'exchange': 'KSE', 'currency': 'KRW', 'country': 'South Korea'},  # Samsung
             
+            # US stocks (major NYSE/NASDAQ listings)
+            'AAPL': {'exchange': 'NASDAQ', 'currency': 'USD', 'country': 'United States'},
+            'MSFT': {'exchange': 'NASDAQ', 'currency': 'USD', 'country': 'United States'},
+            'GOOGL': {'exchange': 'NASDAQ', 'currency': 'USD', 'country': 'United States'},
+            'TSLA': {'exchange': 'NASDAQ', 'currency': 'USD', 'country': 'United States'},
+            'NVDA': {'exchange': 'NASDAQ', 'currency': 'USD', 'country': 'United States'},
+            'JPM': {'exchange': 'NYSE', 'currency': 'USD', 'country': 'United States'},
+            'JNJ': {'exchange': 'NYSE', 'currency': 'USD', 'country': 'United States'},
+            'V': {'exchange': 'NYSE', 'currency': 'USD', 'country': 'United States'},
+            'PG': {'exchange': 'NYSE', 'currency': 'USD', 'country': 'United States'},
+            'HD': {'exchange': 'NYSE', 'currency': 'USD', 'country': 'United States'},
+            
             # Canadian stocks
-            'SHOP': {'exchange': 'TSE', 'currency': 'CAD', 'country': 'Canada'},
-            'RY': {'exchange': 'TSE', 'currency': 'CAD', 'country': 'Canada'},
+            'SHOP': {'exchange': 'TSX', 'currency': 'CAD', 'country': 'Canada'},
+            'RY': {'exchange': 'TSX', 'currency': 'CAD', 'country': 'Canada'},
+            'TD': {'exchange': 'TSX', 'currency': 'CAD', 'country': 'Canada'},
+            'BNS': {'exchange': 'TSX', 'currency': 'CAD', 'country': 'Canada'},
+            'CNR': {'exchange': 'TSX', 'currency': 'CAD', 'country': 'Canada'},
+            
+            # Brazilian stocks
+            'PETR4': {'exchange': 'B3', 'currency': 'BRL', 'country': 'Brazil'},
+            'VALE3': {'exchange': 'B3', 'currency': 'BRL', 'country': 'Brazil'},
+            'ITUB4': {'exchange': 'B3', 'currency': 'BRL', 'country': 'Brazil'},
+            'BBDC4': {'exchange': 'B3', 'currency': 'BRL', 'country': 'Brazil'},
+            
+            # Mexican stocks
+            'AMXL': {'exchange': 'MEXI', 'currency': 'MXN', 'country': 'Mexico'},
+            'CEMEXCPO': {'exchange': 'MEXI', 'currency': 'MXN', 'country': 'Mexico'},
+            
+            # Taiwan stocks
+            '2330': {'exchange': 'TWSE', 'currency': 'TWD', 'country': 'Taiwan'},  # TSMC
+            '2454': {'exchange': 'TWSE', 'currency': 'TWD', 'country': 'Taiwan'},  # MediaTek
+            '2317': {'exchange': 'TWSE', 'currency': 'TWD', 'country': 'Taiwan'},  # Hon Hai
+            
+            # Chinese stocks
+            '000001': {'exchange': 'SZSE', 'currency': 'CNY', 'country': 'China'},  # Ping An Bank
+            '600036': {'exchange': 'SSE', 'currency': 'CNY', 'country': 'China'},  # China Merchants Bank
+            '000002': {'exchange': 'SZSE', 'currency': 'CNY', 'country': 'China'},  # Vanke
+            '600519': {'exchange': 'SSE', 'currency': 'CNY', 'country': 'China'},  # Kweichow Moutai
+            
+            # Indian stocks
+            'RELIANCE': {'exchange': 'NSE', 'currency': 'INR', 'country': 'India'},
+            'TCS': {'exchange': 'NSE', 'currency': 'INR', 'country': 'India'},
+            'HDFCBANK': {'exchange': 'NSE', 'currency': 'INR', 'country': 'India'},
+            'INFY': {'exchange': 'NSE', 'currency': 'INR', 'country': 'India'},
+            'HINDUNILVR': {'exchange': 'NSE', 'currency': 'INR', 'country': 'India'},
+            
+            # Singapore stocks
+            'D05': {'exchange': 'SGX', 'currency': 'SGD', 'country': 'Singapore'},  # DBS
+            'O39': {'exchange': 'SGX', 'currency': 'SGD', 'country': 'Singapore'},  # OCBC
+            'U11': {'exchange': 'SGX', 'currency': 'SGD', 'country': 'Singapore'},  # UOB
+            
+            # Thai stocks
+            'PTT': {'exchange': 'SET', 'currency': 'THB', 'country': 'Thailand'},
+            'KBANK': {'exchange': 'SET', 'currency': 'THB', 'country': 'Thailand'},
+            'SCB': {'exchange': 'SET', 'currency': 'THB', 'country': 'Thailand'},
+            
+            # Indonesian stocks
+            'BBCA': {'exchange': 'IDX', 'currency': 'IDR', 'country': 'Indonesia'},  # Bank Central Asia
+            'BBRI': {'exchange': 'IDX', 'currency': 'IDR', 'country': 'Indonesia'},  # Bank Rakyat
+            'BMRI': {'exchange': 'IDX', 'currency': 'IDR', 'country': 'Indonesia'},  # Bank Mandiri
+            
+            # Malaysian stocks
+            'MAYBANK': {'exchange': 'KLSE', 'currency': 'MYR', 'country': 'Malaysia'},
+            'TENAGA': {'exchange': 'KLSE', 'currency': 'MYR', 'country': 'Malaysia'},
+            'CIMB': {'exchange': 'KLSE', 'currency': 'MYR', 'country': 'Malaysia'},
+            
+            # New Zealand stocks
+            'FPH': {'exchange': 'NZX', 'currency': 'NZD', 'country': 'New Zealand'},  # Fisher & Paykel Healthcare
+            'SPK': {'exchange': 'NZX', 'currency': 'NZD', 'country': 'New Zealand'},  # Spark New Zealand
+            
+            # Israeli stocks
+            'TEVA': {'exchange': 'TASE', 'currency': 'ILS', 'country': 'Israel'},
+            'CHKP': {'exchange': 'TASE', 'currency': 'ILS', 'country': 'Israel'},  # Check Point
+            
+            # South African stocks
+            'NPN': {'exchange': 'JSE', 'currency': 'ZAR', 'country': 'South Africa'},  # Naspers
+            'SBK': {'exchange': 'JSE', 'currency': 'ZAR', 'country': 'South Africa'},  # Standard Bank
         }
         
         symbol_upper = symbol.upper()

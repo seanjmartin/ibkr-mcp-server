@@ -221,9 +221,14 @@ MAJOR_FOREX_PAIRS = {
     }
 }
 
-# Supported currencies
+# Supported currencies - comprehensive IBKR-verified list (29 total)
 SUPPORTED_CURRENCIES = {
-    'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD', 'HKD', 'KRW', 'DKK', 'SEK', 'NOK'
+    # Major currencies (13): Core trading currencies with high liquidity
+    'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD', 'HKD', 'KRW', 'DKK', 'SEK', 'NOK',
+    # Additional major exchange currencies (5): Confirmed IBKR support for major economies
+    'CNY', 'SGD', 'INR', 'BRL', 'MXN',
+    # Research-verified currencies (11): IBKR officially supports for trading/conversion
+    'ZAR', 'PLN', 'ILS', 'TRY', 'CZK', 'HUF', 'AED', 'SAR', 'MYR', 'TWD', 'CNH'
 }
 
 

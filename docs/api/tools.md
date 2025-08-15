@@ -197,7 +197,7 @@ Get real-time forex rates for 21 currency pairs.
 ```
 
 ### `convert_currency`
-Convert amounts between any of 13 supported currencies using live rates.
+Convert amounts between any of 29 supported currencies using live rates.
 
 **Parameters:**
 - `amount` (required): Amount to convert

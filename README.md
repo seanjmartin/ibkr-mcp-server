@@ -14,7 +14,7 @@ A comprehensive Model Context Protocol (MCP) server that provides Claude AI with
 - 🇺🇸 **US Markets**: NASDAQ, NYSE, AMEX
 - 🇪🇺 **European Markets**: XETRA, LSE, AEB, SBF, SWX, KFX
 - 🌏 **Asian Markets**: TSE, SEHK, KSE, ASX
-- 💱 **Forex Trading**: 21 currency pairs across 13 currencies with real-time conversion
+- 💱 **Forex Trading**: 21+ currency pairs across 29 currencies with real-time conversion
 
 ### **Advanced Trading Capabilities**
 - 📊 **Portfolio Management**: Real-time positions, P&L, multi-currency accounts
@@ -156,33 +156,83 @@ ibkr_mcp_server/
 
 ## 🌍 Global Market Support
 
-### Supported Exchanges & Currencies (12 Total)
+### Supported Exchanges & Currencies (48 Total)
 
-**European Exchanges (6):**
-- **XETRA** (Germany) - EUR: SAP, Siemens, BMW
-- **LSE** (London) - GBP: Vodafone, BP, Shell  
-- **SBF** (Euronext Paris) - EUR: LVMH, Total, Sanofi
-- **AEB** (Euronext Amsterdam) - EUR: ASML, Unilever, ING
-- **SWX** (SIX Swiss Exchange) - CHF: Nestle, Novartis, Roche
-- **KFX** (Nasdaq Copenhagen) - DKK: Novo Nordisk, Maersk, Carlsberg
+**Europe (19):**
+- **XETRA** (Germany) - EUR: Frankfurt Stock Exchange
+- **LSE** (United Kingdom) - GBP: London Stock Exchange
+- **SBF** (France) - EUR: Euronext Paris
+- **AEB** (Netherlands) - EUR: Euronext Amsterdam
+- **SWX** (Switzerland) - CHF: SIX Swiss Exchange
+- **KFX** (Denmark) - DKK: Nasdaq Copenhagen
+- **BIT** (Italy) - EUR: Borsa Italiana
+- **MIL** (Italy) - EUR: Milan Stock Exchange
+- **BME** (Spain) - EUR: Bolsas y Mercados Españoles
+- **BVME** (Spain) - EUR: Madrid Stock Exchange
+- **VIX** (Austria) - EUR: Vienna Stock Exchange
+- **BEL** (Belgium) - EUR: Euronext Brussels
+- **OSE** (Norway) - NOK: Oslo Stock Exchange
+- **OMX** (Sweden) - SEK: Nasdaq Stockholm
+- **HEX** (Finland) - EUR: Nasdaq Helsinki
+- **WSE** (Poland) - PLN: Warsaw Stock Exchange
+- **LSEETF** (United Kingdom) - GBP: London Stock Exchange ETF Segment
+- **GETTEX** (Germany) - EUR: Gettex Exchange
+- **TRADEGATE** (Germany) - EUR: Tradegate Exchange
 
-**Asian & Pacific Exchanges (4):**
-- **TSE** (Tokyo) - JPY: Toyota (7203), Honda, Sony
-- **SEHK** (Hong Kong) - HKD: Tencent (00700), TSMC (2330)
-- **KSE** (Korea) - KRW: Samsung (005930), LG, SK Hynix
-- **ASX** (Australia) - AUD: BHP, CBA, Woolworths
+**North America (7):**
+- **NYSE** (United States) - USD: New York Stock Exchange
+- **NASDAQ** (United States) - USD: NASDAQ Stock Market
+- **ARCA** (United States) - USD: NYSE Arca
+- **BATS** (United States) - USD: Cboe BZX Exchange
+- **IEX** (United States) - USD: Investors Exchange
+- **TSX** (Canada) - CAD: Toronto Stock Exchange
+- **TSXV** (Canada) - CAD: TSX Venture Exchange
 
-**Global Trading (2):**
-- **SMART** (IBKR Routing) - USD: All US stocks
-- **IDEALPRO** (Forex) - Multiple: 21 currency pairs, 13 currencies
+**Latin America (2):**
+- **MEXI** (Mexico) - MXN: Mexican Stock Exchange
+- **BOVESPA** (Brazil) - BRL: B3 Stock Exchange
+
+**Asia (12):**
+- **TSE** (Japan) - JPY: Tokyo Stock Exchange
+- **SEHK** (Hong Kong) - HKD: Stock Exchange of Hong Kong
+- **KSE** (South Korea) - KRW: Korea Exchange
+- **TWSE** (Taiwan) - TWD: Taiwan Stock Exchange
+- **SSE** (China) - CNY: Shanghai Stock Exchange
+- **SZSE** (China) - CNY: Shenzhen Stock Exchange
+- **BSE** (India) - INR: Bombay Stock Exchange
+- **NSE** (India) - INR: National Stock Exchange of India
+- **SGX** (Singapore) - SGD: Singapore Exchange
+- **SET** (Thailand) - THB: Stock Exchange of Thailand
+- **IDX** (Indonesia) - IDR: Indonesia Stock Exchange
+- **KLSE** (Malaysia) - MYR: Bursa Malaysia
+
+**Pacific (2):**
+- **ASX** (Australia) - AUD: Australian Securities Exchange
+- **NZX** (New Zealand) - NZD: New Zealand Exchange
+
+**Middle East & Africa (4):**
+- **TASE** (Israel) - ILS: Tel Aviv Stock Exchange
+- **TADAWUL** (Saudi Arabia) - SAR: Saudi Stock Exchange
+- **EGX** (Egypt) - EGP: Egyptian Exchange
+- **JSE** (South Africa) - ZAR: Johannesburg Stock Exchange
+
+**Global/Special (2):**
+- **SMART** (Global) - USD: IBKR Smart Routing
+- **IDEALPRO** (Global) - Multiple: IBKR Forex Exchange
 
 ### Intelligent Symbol Detection
 ```python
-# These all work automatically:
-get_market_data("AAPL")        # US stock → SMART/USD
-get_market_data("ASML")        # Dutch stock → AEB/EUR  
-get_market_data("7203")        # Japanese stock → TSE/JPY
-get_market_data("AAPL,ASML,7203") # Mixed query handled seamlessly
+# Global stock quotes work automatically:
+get_market_data("AAPL")        # US stock → SMART/USD (Apple)
+get_market_data("ASML")        # Dutch stock → AEB/EUR (ASML)  
+get_market_data("7203")        # Japanese stock → TSE/JPY (Toyota)
+get_market_data("00700")       # Hong Kong stock → SEHK/HKD (Tencent)
+get_market_data("005930")      # Korean stock → KSE/KRW (Samsung)
+get_market_data("SAP")         # German stock → XETRA/EUR (SAP)
+get_market_data("RDSA")        # UK stock → LSE/GBP (Shell)
+
+# Mixed international queries handled seamlessly:
+get_market_data("AAPL,ASML,7203,00700,005930,SAP,RDSA")
 ```
 
 ### Advanced Risk Management
@@ -205,7 +255,14 @@ place_stop_loss(symbol="MSFT", action="SELL", quantity=75,
 ### Supported Currency Pairs (21 Total)
 - **Major Pairs (7)**: EURUSD, GBPUSD, USDJPY, USDCHF, AUDUSD, USDCAD, NZDUSD
 - **Cross Pairs (14)**: EURGBP, EURJPY, GBPJPY, CHFJPY, EURCHF, AUDJPY, CADJPY, NZDJPY, EURAUD, EURNZD, GBPAUD, GBPNZD, AUDCAD, AUDNZD
-- **Supported Currencies (13)**: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD, HKD, KRW, DKK, SEK, NOK
+
+### Supported Currencies (29 Total)
+- **Major (8)**: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD
+- **Asian (6)**: HKD, KRW, CNY, SGD, TWD, CNH
+- **European (3)**: DKK, SEK, NOK  
+- **Americas (2)**: BRL, MXN
+- **Middle East & Africa (3)**: ZAR, AED, SAR
+- **Additional Global (7)**: INR, PLN, ILS, TRY, CZK, HUF, MYR
 
 ### Currency Conversion
 ```python

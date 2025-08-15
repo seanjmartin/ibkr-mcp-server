@@ -2,8 +2,8 @@
 
 ## Overview
 Get real-time exchange rates for major currency pairs from Interactive Brokers. 
-Supports 20+ currency pairs including majors (EURUSD, GBPUSD), crosses (EURGBP, EURJPY), 
-and exotics (EURNZD, AUDCAD). Returns bid, ask, and last prices with precise timestamps.
+Supports 21+ currency pairs across 29 currencies including majors (EURUSD, GBPUSD), crosses (EURGBP, EURJPY), 
+and exotic currencies through conversion tools. Returns bid, ask, and last prices with precise timestamps.
 
 The system automatically caches rates for 5 seconds to optimize performance while 
 ensuring fresh data. In paper trading environments where IBKR may return NaN values, 

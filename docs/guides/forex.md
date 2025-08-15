@@ -105,23 +105,39 @@ The system automatically handles cross-currency conversions using the most effic
 
 ## Supported Currencies
 
-The system supports conversion between these 13 currencies:
+The system supports conversion between these 29 currencies:
 
-| Currency | Code | Full Name |
-|----------|------|-----------|
-| US Dollar | USD | United States Dollar |
-| Euro | EUR | European Union Euro |
-| British Pound | GBP | British Pound Sterling |
-| Japanese Yen | JPY | Japanese Yen |
-| Swiss Franc | CHF | Swiss Franc |
-| Australian Dollar | AUD | Australian Dollar |
-| Canadian Dollar | CAD | Canadian Dollar |
-| New Zealand Dollar | NZD | New Zealand Dollar |
-| Hong Kong Dollar | HKD | Hong Kong Dollar |
-| South Korean Won | KRW | South Korean Won |
-| Danish Krone | DKK | Danish Krone |
-| Swedish Krona | SEK | Swedish Krona |
-| Norwegian Krone | NOK | Norwegian Krone |
+| Currency | Code | Full Name | Region |
+|----------|------|-----------|--------|
+| US Dollar | USD | United States Dollar | Americas |
+| Euro | EUR | European Union Euro | Europe |
+| British Pound | GBP | British Pound Sterling | Europe |
+| Japanese Yen | JPY | Japanese Yen | Asia |
+| Swiss Franc | CHF | Swiss Franc | Europe |
+| Australian Dollar | AUD | Australian Dollar | Pacific |
+| Canadian Dollar | CAD | Canadian Dollar | Americas |
+| New Zealand Dollar | NZD | New Zealand Dollar | Pacific |
+| Hong Kong Dollar | HKD | Hong Kong Dollar | Asia |
+| South Korean Won | KRW | South Korean Won | Asia |
+| Danish Krone | DKK | Danish Krone | Europe |
+| Swedish Krona | SEK | Swedish Krona | Europe |
+| Norwegian Krone | NOK | Norwegian Krone | Europe |
+| Chinese Yuan | CNY | Chinese Yuan Renminbi | Asia |
+| Singapore Dollar | SGD | Singapore Dollar | Asia |
+| Indian Rupee | INR | Indian Rupee | Asia |
+| Brazilian Real | BRL | Brazilian Real | Americas |
+| Mexican Peso | MXN | Mexican Peso | Americas |
+| South African Rand | ZAR | South African Rand | Africa |
+| Polish Zloty | PLN | Polish Zloty | Europe |
+| Israeli Shekel | ILS | Israeli New Shekel | Middle East |
+| Turkish Lira | TRY | Turkish Lira | Europe/Asia |
+| Czech Koruna | CZK | Czech Koruna | Europe |
+| Hungarian Forint | HUF | Hungarian Forint | Europe |
+| UAE Dirham | AED | United Arab Emirates Dirham | Middle East |
+| Saudi Riyal | SAR | Saudi Arabian Riyal | Middle East |
+| Malaysian Ringgit | MYR | Malaysian Ringgit | Asia |
+| Taiwan Dollar | TWD | New Taiwan Dollar | Asia |
+| Chinese Yuan (Offshore) | CNH | Chinese Yuan (Hong Kong) | Asia |
 
 ## Forex Trading Workflows
 

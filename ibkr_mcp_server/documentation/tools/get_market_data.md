@@ -20,11 +20,20 @@ and get properly routed market data for each exchange and currency.
 - True: System determines best exchange for each symbol
 - False: Uses explicit symbol.exchange.currency format
 
-Supported exchanges and regions:
-- **US**: NYSE, NASDAQ (symbols like AAPL, TSLA, GOOGL)
-- **Europe**: XETRA (SAP), LSE (VOD), AEB (ASML), SWX (NESN)
-- **Asia**: TSE (7203=Toyota), SEHK (00700=Tencent), KSE (005930=Samsung)
-- **Others**: ASX (CBA), KFX (NOVO-B)
+Supported exchanges and regions (48 total):
+- **Europe (19)**: XETRA, LSE, SBF, AEB, SWX, KFX, BIT, MIL, BME, BVME, VIX, BEL, OSE, OMX, HEX, WSE, LSEETF, GETTEX, TRADEGATE
+- **North America (7)**: NYSE, NASDAQ, ARCA, BATS, IEX, TSX, TSXV
+- **Latin America (2)**: BOVESPA (Brazil), MEXI (Mexico)
+- **Asia (12)**: TSE, SEHK, KSE, TWSE, SSE, SZSE, BSE, NSE, SGX, SET, IDX, KLSE
+- **Pacific (2)**: ASX (Australia), NZX (New Zealand)
+- **Middle East & Africa (4)**: TASE, TADAWUL, EGX, JSE
+- **Global/Special (2)**: SMART (auto-routing), IDEALPRO (forex)
+
+**Popular symbols by region:**
+- **US**: AAPL, TSLA, GOOGL, MSFT (NYSE/NASDAQ)
+- **Europe**: SAP (XETRA), VOD (LSE), ASML (AEB), NESN (SWX)
+- **Asia**: 7203=Toyota (TSE), 00700=Tencent (SEHK), 005930=Samsung (KSE)
+- **Others**: CBA (ASX), NOVO-B (KFX)
 
 ## Examples
 

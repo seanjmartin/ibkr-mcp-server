@@ -161,7 +161,7 @@ Once connected, you have access to:
 - Check order status and execution details
 
 ### **Currency & Forex**
-- Convert between 13 supported currencies
+- Convert between 29 supported currencies
 - Get live forex rates with bid/ask spreads
 - Cross-currency calculations
 

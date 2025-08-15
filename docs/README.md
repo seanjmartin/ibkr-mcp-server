@@ -43,7 +43,7 @@ Welcome to the comprehensive documentation for the IBKR MCP Server - a professio
 ### **Markets Supported**
 - **12 Exchanges**: US, European, Asian, and Pacific markets
 - **21 Forex Pairs**: Major and cross currency pairs
-- **13 Currencies**: Multi-currency trading and conversion
+- **29 Currencies**: Multi-currency trading and conversion
 - **23 International Symbols**: Pre-configured global stocks
 
 ### **Key Features**

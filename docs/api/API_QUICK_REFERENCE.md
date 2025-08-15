@@ -109,22 +109,28 @@
 
 ### **Auto-Detection Examples**
 ```
-"AAPL"  → SMART/USD (US)
-"ASML"  → AEB/EUR (Netherlands)  
-"7203"  → TSE/JPY (Japan)
-"SAP"   → XETRA/EUR (Germany)
-"VOD"   → LSE/GBP (UK)
+"AAPL"   → SMART/USD (US)
+"ASML"   → AEB/EUR (Netherlands)  
+"7203"   → TSE/JPY (Japan - Toyota)
+"00700"  → SEHK/HKD (Hong Kong - Tencent)
+"005930" → KSE/KRW (South Korea - Samsung)
+"SAP"    → XETRA/EUR (Germany)
+"VOD"    → LSE/GBP (UK)
 ```
 
-### **12 Exchanges Supported**
-- **US**: SMART (all US stocks)
-- **Europe**: XETRA, LSE, AEB, SBF, SWX, KFX
-- **Asia**: TSE, SEHK, KSE, ASX  
-- **Forex**: IDEALPRO (21 pairs)
+### **48 Exchanges Supported**
+- **Europe (19)**: XETRA, LSE, SBF, AEB, SWX, KFX, BIT, MIL, BME, BVME, VIX, BEL, OSE, OMX, HEX, WSE, LSEETF, GETTEX, TRADEGATE
+- **North America (7)**: NYSE, NASDAQ, ARCA, BATS, IEX, TSX, TSXV
+- **Latin America (2)**: MEXI, BOVESPA
+- **Asia (12)**: TSE, SEHK, KSE, TWSE, SSE, SZSE, BSE, NSE, SGX, SET, IDX, KLSE
+- **Pacific (2)**: ASX, NZX
+- **Middle East & Africa (4)**: TASE, TADAWUL, EGX, JSE
+- **Global/Special (2)**: SMART (all US stocks), IDEALPRO (forex)
 
-### **21 Forex Pairs**
+### **21+ Forex Pairs Across 29 Currencies**
 **Major (7)**: EURUSD, GBPUSD, USDJPY, USDCHF, AUDUSD, USDCAD, NZDUSD  
-**Cross (14)**: EURGBP, EURJPY, GBPJPY, CHFJPY, EURCHF, AUDJPY, etc.
+**Cross (14)**: EURGBP, EURJPY, GBPJPY, CHFJPY, EURCHF, AUDJPY, etc.  
+**Supported Currencies**: USD, EUR, GBP, JPY, CHF, AUD, CAD, NZD, HKD, KRW, CNY, SGD, TWD, CNH, DKK, SEK, NOK, BRL, MXN, ZAR, AED, SAR, INR, PLN, ILS, TRY, CZK, HUF, MYR
 
 ## 🛡️ **Safety Framework**
 
@@ -233,7 +239,7 @@ All trading features **OFF by default**:
 ## 📈 **Advanced Features**
 
 ### **Multi-Currency Support**
-- **Account Balances**: USD, EUR, GBP, JPY, CHF, AUD, CAD, etc.
+- **Account Balances**: 29 currencies including USD, EUR, GBP, JPY, CHF, AUD, CAD, CNY, INR, BRL, etc.
 - **Position Tracking**: Native currency + USD equivalent
 - **Real-time Conversion**: Live forex rates for all calculations
 

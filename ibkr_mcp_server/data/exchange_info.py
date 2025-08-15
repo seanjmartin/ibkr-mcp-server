@@ -99,6 +99,312 @@ EXCHANGE_INFO = {
             'close': time(18, 0)
         }
     },
+    'BIT': {
+        'name': 'Borsa Italiana',
+        'country': 'Italy',
+        'currency': 'EUR',
+        'timezone': 'Europe/Rome',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 CET
+            'close': time(17, 30)  # 17:30 CET
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(8, 0),
+            'close': time(18, 0)
+        }
+    },
+    'MIL': {
+        'name': 'Milan Stock Exchange',
+        'country': 'Italy',
+        'currency': 'EUR',
+        'timezone': 'Europe/Rome',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 CET
+            'close': time(17, 30)  # 17:30 CET
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(8, 0),
+            'close': time(18, 0)
+        }
+    },
+    'BME': {
+        'name': 'Bolsas y Mercados Españoles',
+        'country': 'Spain',
+        'currency': 'EUR',
+        'timezone': 'Europe/Madrid',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 CET
+            'close': time(17, 30)  # 17:30 CET
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(8, 0),
+            'close': time(18, 0)
+        }
+    },
+    'BVME': {
+        'name': 'Madrid Stock Exchange',
+        'country': 'Spain',
+        'currency': 'EUR',
+        'timezone': 'Europe/Madrid',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 CET
+            'close': time(17, 30)  # 17:30 CET
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(8, 0),
+            'close': time(18, 0)
+        }
+    },
+    'VIX': {
+        'name': 'Vienna Stock Exchange',
+        'country': 'Austria',
+        'currency': 'EUR',
+        'timezone': 'Europe/Vienna',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 CET
+            'close': time(17, 30)  # 17:30 CET
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(8, 0),
+            'close': time(18, 0)
+        }
+    },
+    'BEL': {
+        'name': 'Euronext Brussels',
+        'country': 'Belgium',
+        'currency': 'EUR',
+        'timezone': 'Europe/Brussels',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 CET
+            'close': time(17, 30)  # 17:30 CET
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(7, 15),
+            'close': time(18, 30)
+        }
+    },
+    'OSE': {
+        'name': 'Oslo Stock Exchange',
+        'country': 'Norway',
+        'currency': 'NOK',
+        'timezone': 'Europe/Oslo',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 CET
+            'close': time(16, 30)  # 16:30 CET
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(8, 0),
+            'close': time(17, 30)
+        }
+    },
+    'OMX': {
+        'name': 'Nasdaq Stockholm',
+        'country': 'Sweden',
+        'currency': 'SEK',
+        'timezone': 'Europe/Stockholm',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 CET
+            'close': time(17, 30)  # 17:30 CET
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(8, 0),
+            'close': time(18, 0)
+        }
+    },
+    'HEX': {
+        'name': 'Nasdaq Helsinki',
+        'country': 'Finland',
+        'currency': 'EUR',
+        'timezone': 'Europe/Helsinki',
+        'trading_hours': {
+            'open': time(10, 0),   # 10:00 EET
+            'close': time(18, 30)  # 18:30 EET
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(9, 0),
+            'close': time(19, 0)
+        }
+    },
+    'WSE': {
+        'name': 'Warsaw Stock Exchange',
+        'country': 'Poland',
+        'currency': 'PLN',
+        'timezone': 'Europe/Warsaw',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 CET
+            'close': time(17, 0)   # 17:00 CET
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(8, 30),
+            'close': time(17, 30)
+        }
+    },
+    'IBIS2': {
+        'name': 'Xetra (Alternative Code)',
+        'country': 'Germany',
+        'currency': 'EUR',
+        'timezone': 'Europe/Berlin',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 CET
+            'close': time(17, 30)  # 17:30 CET
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(8, 0),
+            'close': time(22, 0)
+        }
+    },
+    
+    # US Exchanges
+    'NYSE': {
+        'name': 'New York Stock Exchange',
+        'country': 'United States',
+        'currency': 'USD',
+        'timezone': 'America/New_York',
+        'trading_hours': {
+            'open': time(9, 30),   # 09:30 EST/EDT
+            'close': time(16, 0)   # 16:00 EST/EDT
+        },
+        'settlement': 'T+2',
+        'extended_hours': {
+            'pre_market_open': time(4, 0),
+            'after_hours_close': time(20, 0)
+        }
+    },
+    'NASDAQ': {
+        'name': 'NASDAQ Stock Market',
+        'country': 'United States',
+        'currency': 'USD',
+        'timezone': 'America/New_York',
+        'trading_hours': {
+            'open': time(9, 30),   # 09:30 EST/EDT
+            'close': time(16, 0)   # 16:00 EST/EDT
+        },
+        'settlement': 'T+2',
+        'extended_hours': {
+            'pre_market_open': time(4, 0),
+            'after_hours_close': time(20, 0)
+        }
+    },
+    'ARCA': {
+        'name': 'NYSE Arca',
+        'country': 'United States',
+        'currency': 'USD',
+        'timezone': 'America/New_York',
+        'trading_hours': {
+            'open': time(9, 30),   # 09:30 EST/EDT
+            'close': time(16, 0)   # 16:00 EST/EDT
+        },
+        'settlement': 'T+2',
+        'extended_hours': {
+            'pre_market_open': time(4, 0),
+            'after_hours_close': time(20, 0)
+        }
+    },
+    'BATS': {
+        'name': 'Cboe BZX Exchange',
+        'country': 'United States',
+        'currency': 'USD',
+        'timezone': 'America/New_York',
+        'trading_hours': {
+            'open': time(9, 30),   # 09:30 EST/EDT
+            'close': time(16, 0)   # 16:00 EST/EDT
+        },
+        'settlement': 'T+2',
+        'extended_hours': {
+            'pre_market_open': time(4, 0),
+            'after_hours_close': time(20, 0)
+        }
+    },
+    'IEX': {
+        'name': 'Investors Exchange',
+        'country': 'United States',
+        'currency': 'USD',
+        'timezone': 'America/New_York',
+        'trading_hours': {
+            'open': time(9, 30),   # 09:30 EST/EDT
+            'close': time(16, 0)   # 16:00 EST/EDT
+        },
+        'settlement': 'T+2',
+        'extended_hours': {
+            'pre_market_open': time(4, 0),
+            'after_hours_close': time(20, 0)
+        }
+    },
+    
+    # Canadian Exchanges
+    'TSX': {
+        'name': 'Toronto Stock Exchange',
+        'country': 'Canada',
+        'currency': 'CAD',
+        'timezone': 'America/Toronto',
+        'trading_hours': {
+            'open': time(9, 30),   # 09:30 EST/EDT
+            'close': time(16, 0)   # 16:00 EST/EDT
+        },
+        'settlement': 'T+2',
+        'extended_hours': {
+            'pre_market_open': time(7, 0),
+            'after_hours_close': time(17, 0)
+        }
+    },
+    'TSXV': {
+        'name': 'TSX Venture Exchange',
+        'country': 'Canada',
+        'currency': 'CAD',
+        'timezone': 'America/Toronto',
+        'trading_hours': {
+            'open': time(9, 30),   # 09:30 EST/EDT
+            'close': time(16, 0)   # 16:00 EST/EDT
+        },
+        'settlement': 'T+2',
+        'extended_hours': {
+            'pre_market_open': time(7, 0),
+            'after_hours_close': time(17, 0)
+        }
+    },
+    
+    # Latin American Exchanges
+    'B3': {
+        'name': 'B3 Stock Exchange',
+        'country': 'Brazil',
+        'currency': 'BRL',
+        'timezone': 'America/Sao_Paulo',
+        'trading_hours': {
+            'open': time(10, 0),   # 10:00 BRT
+            'close': time(17, 0)   # 17:00 BRT
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(9, 45),
+            'close': time(17, 30)
+        }
+    },
+    'MEXI': {
+        'name': 'Mexican Stock Exchange',
+        'country': 'Mexico',
+        'currency': 'MXN',
+        'timezone': 'America/Mexico_City',
+        'trading_hours': {
+            'open': time(8, 30),   # 08:30 CST/CDT
+            'close': time(15, 0)   # 15:00 CST/CDT
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(8, 0),
+            'close': time(15, 30)
+        }
+    },
     
     # Asian Exchanges
     'TSE': {
@@ -154,6 +460,251 @@ EXCHANGE_INFO = {
             'start': time(7, 0),   # Pre-open phase
             'end': time(10, 0)
         }
+    },
+    'TWSE': {
+        'name': 'Taiwan Stock Exchange',
+        'country': 'Taiwan',
+        'currency': 'TWD',
+        'timezone': 'Asia/Taipei',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 CST
+            'close': time(13, 30)  # 13:30 CST
+        },
+        'settlement': 'T+2',
+        'has_lunch_break': False
+    },
+    'SSE': {
+        'name': 'Shanghai Stock Exchange',
+        'country': 'China',
+        'currency': 'CNY',
+        'timezone': 'Asia/Shanghai',
+        'trading_hours': {
+            'morning_open': time(9, 30),   # 09:30 CST
+            'morning_close': time(11, 30), # 11:30 CST (lunch break)
+            'afternoon_open': time(13, 0), # 13:00 CST
+            'afternoon_close': time(15, 0) # 15:00 CST
+        },
+        'settlement': 'T+1',
+        'has_lunch_break': True
+    },
+    'SZSE': {
+        'name': 'Shenzhen Stock Exchange',
+        'country': 'China',
+        'currency': 'CNY',
+        'timezone': 'Asia/Shanghai',
+        'trading_hours': {
+            'morning_open': time(9, 30),   # 09:30 CST
+            'morning_close': time(11, 30), # 11:30 CST (lunch break)
+            'afternoon_open': time(13, 0), # 13:00 CST
+            'afternoon_close': time(15, 0) # 15:00 CST
+        },
+        'settlement': 'T+1',
+        'has_lunch_break': True
+    },
+    'BSE': {
+        'name': 'Bombay Stock Exchange',
+        'country': 'India',
+        'currency': 'INR',
+        'timezone': 'Asia/Kolkata',
+        'trading_hours': {
+            'open': time(9, 15),   # 09:15 IST
+            'close': time(15, 30)  # 15:30 IST
+        },
+        'settlement': 'T+2',
+        'pre_open': {
+            'start': time(9, 0),
+            'end': time(9, 15)
+        }
+    },
+    'NSE': {
+        'name': 'National Stock Exchange of India',
+        'country': 'India',
+        'currency': 'INR',
+        'timezone': 'Asia/Kolkata',
+        'trading_hours': {
+            'open': time(9, 15),   # 09:15 IST
+            'close': time(15, 30)  # 15:30 IST
+        },
+        'settlement': 'T+2',
+        'pre_open': {
+            'start': time(9, 0),
+            'end': time(9, 15)
+        }
+    },
+    'SGX': {
+        'name': 'Singapore Exchange',
+        'country': 'Singapore',
+        'currency': 'SGD',
+        'timezone': 'Asia/Singapore',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 SGT
+            'close': time(17, 0)   # 17:00 SGT
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(8, 30),
+            'close': time(17, 30)
+        }
+    },
+    'SET': {
+        'name': 'Stock Exchange of Thailand',
+        'country': 'Thailand',
+        'currency': 'THB',
+        'timezone': 'Asia/Bangkok',
+        'trading_hours': {
+            'morning_open': time(10, 0),   # 10:00 ICT
+            'morning_close': time(12, 30), # 12:30 ICT (lunch break)
+            'afternoon_open': time(14, 30), # 14:30 ICT
+            'afternoon_close': time(16, 30) # 16:30 ICT
+        },
+        'settlement': 'T+2',
+        'has_lunch_break': True
+    },
+    'IDX': {
+        'name': 'Indonesia Stock Exchange',
+        'country': 'Indonesia',
+        'currency': 'IDR',
+        'timezone': 'Asia/Jakarta',
+        'trading_hours': {
+            'morning_open': time(9, 0),    # 09:00 WIB
+            'morning_close': time(11, 30), # 11:30 WIB (lunch break)
+            'afternoon_open': time(13, 30), # 13:30 WIB
+            'afternoon_close': time(16, 0)  # 16:00 WIB
+        },
+        'settlement': 'T+2',
+        'has_lunch_break': True
+    },
+    'KLSE': {
+        'name': 'Bursa Malaysia',
+        'country': 'Malaysia',
+        'currency': 'MYR',
+        'timezone': 'Asia/Kuala_Lumpur',
+        'trading_hours': {
+            'morning_open': time(9, 0),    # 09:00 MYT
+            'morning_close': time(12, 30), # 12:30 MYT (lunch break)
+            'afternoon_open': time(14, 0), # 14:00 MYT
+            'afternoon_close': time(17, 0) # 17:00 MYT
+        },
+        'settlement': 'T+2',
+        'has_lunch_break': True
+    },
+    'NZX': {
+        'name': 'New Zealand Exchange',
+        'country': 'New Zealand',
+        'currency': 'NZD',
+        'timezone': 'Pacific/Auckland',
+        'trading_hours': {
+            'open': time(10, 0),   # 10:00 NZST/NZDT
+            'close': time(16, 45)  # 16:45 NZST/NZDT
+        },
+        'settlement': 'T+2',
+        'pre_open': {
+            'start': time(9, 30),
+            'end': time(10, 0)
+        }
+    },
+    
+    # Middle East & Africa Exchanges
+    'TASE': {
+        'name': 'Tel Aviv Stock Exchange',
+        'country': 'Israel',
+        'currency': 'ILS',
+        'timezone': 'Asia/Jerusalem',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 IST
+            'close': time(17, 25)  # 17:25 IST
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(8, 30),
+            'close': time(18, 0)
+        }
+    },
+    'TADAWUL': {
+        'name': 'Saudi Stock Exchange',
+        'country': 'Saudi Arabia',
+        'currency': 'SAR',
+        'timezone': 'Asia/Riyadh',
+        'trading_hours': {
+            'open': time(10, 0),   # 10:00 AST
+            'close': time(15, 0)   # 15:00 AST
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(9, 30),
+            'close': time(15, 30)
+        }
+    },
+    'EGX': {
+        'name': 'Egyptian Exchange',
+        'country': 'Egypt',
+        'currency': 'EGP',
+        'timezone': 'Africa/Cairo',
+        'trading_hours': {
+            'open': time(10, 0),   # 10:00 EET
+            'close': time(14, 30)  # 14:30 EET
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(9, 30),
+            'close': time(15, 0)
+        }
+    },
+    'JSE': {
+        'name': 'Johannesburg Stock Exchange',
+        'country': 'South Africa',
+        'currency': 'ZAR',
+        'timezone': 'Africa/Johannesburg',
+        'trading_hours': {
+            'open': time(9, 0),    # 09:00 SAST
+            'close': time(17, 0)   # 17:00 SAST
+        },
+        'settlement': 'T+3',
+        'market_maker_hours': {
+            'open': time(8, 30),
+            'close': time(17, 30)
+        }
+    },
+    
+    # Additional European Exchanges
+    'LSEETF': {
+        'name': 'London Stock Exchange ETF Segment',
+        'country': 'United Kingdom',
+        'currency': 'GBP',
+        'timezone': 'Europe/London',
+        'trading_hours': {
+            'open': time(8, 0),    # 08:00 GMT/BST
+            'close': time(16, 30)  # 16:30 GMT/BST
+        },
+        'settlement': 'T+2',
+        'market_maker_hours': {
+            'open': time(7, 15),
+            'close': time(17, 30)
+        }
+    },
+    'GETTEX': {
+        'name': 'Gettex Exchange',
+        'country': 'Germany',
+        'currency': 'EUR',
+        'timezone': 'Europe/Berlin',
+        'trading_hours': {
+            'open': time(8, 0),    # 08:00 CET
+            'close': time(22, 0)   # 22:00 CET
+        },
+        'settlement': 'T+2',
+        'continuous_trading': True
+    },
+    'TRADEGATE': {
+        'name': 'Tradegate Exchange',
+        'country': 'Germany',
+        'currency': 'EUR',
+        'timezone': 'Europe/Berlin',
+        'trading_hours': {
+            'open': time(8, 0),    # 08:00 CET
+            'close': time(22, 0)   # 22:00 CET
+        },
+        'settlement': 'T+2',
+        'continuous_trading': True
     },
     
     # US Exchanges (for reference)

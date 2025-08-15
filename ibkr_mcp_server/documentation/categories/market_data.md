@@ -41,17 +41,23 @@ Market data tools provide real-time and on-demand access to global financial mar
 
 ## Market Coverage
 
-### Exchanges Supported (12 Total)
-- **US**: SMART (all US stocks)
-- **Europe**: XETRA, LSE, AEB, SBF, SWX, KFX  
-- **Asia**: TSE, SEHK, KSE, ASX
-- **Forex**: IDEALPRO (21 pairs)
+### Exchanges Supported (48 Total)
+- **Europe (19)**: XETRA, LSE, SBF, AEB, SWX, KFX, BIT, MIL, BME, BVME, VIX, BEL, OSE, OMX, HEX, WSE, LSEETF, GETTEX, TRADEGATE
+- **North America (7)**: NYSE, NASDAQ, ARCA, BATS, IEX, TSX, TSXV
+- **Latin America (2)**: BOVESPA, MEXI
+- **Asia (12)**: TSE, SEHK, KSE, TWSE, SSE, SZSE, BSE, NSE, SGX, SET, IDX, KLSE
+- **Pacific (2)**: ASX, NZX
+- **Middle East & Africa (4)**: TASE, TADAWUL, EGX, JSE
+- **Global/Special (2)**: SMART (intelligent routing), IDEALPRO (forex - 21 pairs)
 
 ### Auto-Detection Examples
-- "AAPL" -> SMART/USD (US)
-- "ASML" -> AEB/EUR (Netherlands)
+- "AAPL" -> SMART/USD (US - Apple)
+- "ASML" -> AEB/EUR (Netherlands - ASML)
 - "7203" -> TSE/JPY (Japan - Toyota)
-- "SAP" -> XETRA/EUR (Germany)
+- "00700" -> SEHK/HKD (Hong Kong - Tencent)
+- "005930" -> KSE/KRW (South Korea - Samsung)
+- "SAP" -> XETRA/EUR (Germany - SAP)
+- "VOD" -> LSE/GBP (UK - Vodafone)
 
 ## Key Features
 
@@ -109,4 +115,4 @@ Market data tools work together for comprehensive analysis:
 
 **Related Categories**: forex, international, portfolio  
 **Key Tools**: get_market_data, get_forex_rates, resolve_symbol  
-**Global Coverage**: 12 exchanges, 21 forex pairs, 13 currencies
+**Global Coverage**: 48 exchanges, 21 forex pairs, 13 currencies
