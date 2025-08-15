@@ -96,4 +96,4 @@ Returns 1:1 conversion with no exchange rate lookup
 • get_forex_rates - See current exchange rates before conversion
 • get_portfolio - Check multi-currency positions requiring conversion
 • get_account_summary - View account balances in different currencies
-• resolve_international_symbol - Find currency for international stocks
+• resolve_symbol - Find exchange and currency for any symbol with fuzzy search

@@ -87,7 +87,7 @@ Returns step-by-step forex trading workflows
 - **portfolio** - Account and position management
 
 **Individual Tools:**
-- **Market Data**: get_market_data, get_forex_rates, resolve_international_symbol
+- **Market Data**: get_market_data, get_forex_rates, resolve_symbol
 - **Portfolio**: get_portfolio, get_account_summary, get_accounts, switch_account
 - **Risk Management**: place_stop_loss, get_stop_losses, modify_stop_loss, cancel_stop_loss
 - **Currency**: convert_currency, get_forex_rates

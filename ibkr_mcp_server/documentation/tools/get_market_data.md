@@ -69,7 +69,7 @@ Gets Tencent price from Hong Kong Stock Exchange in HKD
 5. **Entry/exit timing**: Use live prices for trading decisions
 
 **International Investment Research:**
-1. **Symbol discovery**: Use resolve_international_symbol to find exchanges
+1. **Symbol discovery**: Use resolve_symbol to find exchanges
 2. **Price monitoring**: Track target stocks across global markets
 3. **Market hours awareness**: Understand when each exchange is open
 4. **Currency impact**: Consider FX rates alongside stock prices
@@ -86,7 +86,7 @@ Gets Tencent price from Hong Kong Stock Exchange in HKD
 ### "Could not qualify contract" for international symbol
 • Symbol may not be available in paper trading account
 • Check spelling and format - some symbols are numeric (7203, 005930)
-• Use resolve_international_symbol to find correct exchange
+• Use resolve_symbol to find correct exchange
 • Some exotic stocks may require live trading account access
 
 ### "Zero prices returned" (All price fields show 0.0)
@@ -105,7 +105,7 @@ Gets Tencent price from Hong Kong Stock Exchange in HKD
 • Symbol not in international database - use explicit format
 • Try SYMBOL.SMART.USD for US-traded ADRs
 • Some symbols may trade on multiple exchanges
-• Use resolve_international_symbol to see available options
+• Use resolve_symbol to see available options
 
 ### "Market data subscription required"
 • Some international exchanges require paid data subscriptions
@@ -120,7 +120,7 @@ Gets Tencent price from Hong Kong Stock Exchange in HKD
 • Some stocks trade on multiple exchanges in different currencies
 
 ## Related Tools
-• resolve_international_symbol - Find exchange and currency for symbols
+• resolve_symbol - Find exchange and currency for symbols
 • convert_currency - Convert international prices to your base currency
 • get_forex_rates - Monitor currency exchange rates
 • get_portfolio - See your current positions needing price updates

@@ -82,7 +82,7 @@ timeout 10 C:\Python313\python.exe -m pytest tests/paper/individual/test_individ
 
 **Market Data (2 tools):**
 6. `get_market_data` - Live stock quotes (global)
-7. `resolve_international_symbol` - Exchange/currency resolution
+7. `resolve_symbol` - Unified symbol resolution with fuzzy search
 
 **Forex & Currency (2 tools):**
 8. `get_forex_rates` - Live forex rates (21 pairs)
@@ -203,10 +203,10 @@ class TestPaperTradingMCPTools:
         result = await call_tool("get_market_data", {"symbols": "ASML"})
         # Validate auto-detection to AEB/EUR with pricing
     
-    async def test_resolve_international_symbol_tool(self):
-        """Test symbol resolution MCP tool"""
-        result = await call_tool("resolve_international_symbol", {"symbol": "ASML"})
-        # Validate exchange/currency resolution to AEB/EUR
+    async def test_resolve_symbol_tool(self):
+        """Test unified symbol resolution MCP tool"""
+        result = await call_tool("resolve_symbol", {"symbol": "ASML"})
+        # Validate exchange/currency resolution to AEB/EUR with enhanced capabilities
     
     # Forex & Currency Tools (2 tests)
     async def test_get_forex_rates_tool(self):
@@ -406,7 +406,7 @@ pytest test_individual_get_connection_status.py -v -s --tb=long
 
 ### Phase 2: Tool-by-Tool Validation
 1. **Connection Tools** - get_connection_status, get_accounts (foundation)
-2. **Market Data Tools** - get_market_data, resolve_international_symbol
+2. **Market Data Tools** - get_market_data, resolve_symbol
 3. **Forex Tools** - get_forex_rates, convert_currency
 4. **Portfolio Tools** - get_portfolio, get_account_summary
 5. **Order Tools** - get_open_orders, get_completed_orders (read-only)

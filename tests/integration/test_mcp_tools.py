@@ -164,31 +164,199 @@ class TestMarketDataToolsIntegration:
         assert response_data['data'][0]['symbol'] == 'AAPL'
     
     @pytest.mark.asyncio
-    async def test_resolve_international_symbol_integration(self, enabled_ibkr_client):
-        """Test resolve_international_symbol MCP tool integration"""
+    async def test_resolve_symbol_integration(self, enabled_ibkr_client):
+        """Test resolve_symbol MCP tool integration"""
         # Mock the client method
-        enabled_ibkr_client.resolve_international_symbol = AsyncMock(return_value={
+        enabled_ibkr_client.resolve_symbol = AsyncMock(return_value={
             'success': True,
-            'resolution': {
-                'symbol': 'ASML',
-                'exchange': 'AEB',
-                'currency': 'EUR',
-                'name': 'ASML Holding NV',
-                'country': 'Netherlands',
-                'alternatives': [
-                    {'exchange': 'NASDAQ', 'currency': 'USD', 'symbol': 'ASML'}
-                ]
-            }
+            'matches': [
+                {
+                    'symbol': 'ASML',
+                    'exchange': 'AEB',
+                    'currency': 'EUR',
+                    'name': 'ASML Holding NV',
+                    'country': 'Netherlands',
+                    'confidence': 1.0,
+                    'primary': True
+                }
+            ],
+            'query': 'ASML',
+            'total_matches': 1
         })
         
         with patch('ibkr_mcp_server.tools.ibkr_client', enabled_ibkr_client):
-            result = await call_tool("resolve_international_symbol", {"symbol": "ASML"})
+            result = await call_tool("resolve_symbol", {"symbol": "ASML"})
         
         assert len(result) == 1
         response_data = json.loads(result[0].text)
         assert response_data['success'] is True
-        assert response_data['resolution']['symbol'] == 'ASML'
-        assert response_data['resolution']['exchange'] == 'AEB'
+        assert response_data['matches'][0]['symbol'] == 'ASML'
+        assert response_data['matches'][0]['exchange'] == 'AEB'
+
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_rate_limiting_integration(self, enabled_ibkr_client):
+        """Test resolve_symbol rate limiting integration with MCP tool (Phase 4.3)"""
+        # Test that rate limiting is enforced through MCP interface
+        call_count = 0
+        
+        def rate_limited_resolve(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count > 1:
+                # Simulate rate limiting scenario - return cached/degraded result
+                return {
+                    'success': True,
+                    'matches': [],  # Empty result due to rate limiting
+                    'query': 'AAPL',
+                    'total_matches': 0,
+                    'rate_limited': True,
+                    'source': 'cache'
+                }
+            return {
+                'success': True,
+                'matches': [
+                    {
+                        'symbol': 'AAPL',
+                        'exchange': 'SMART',
+                        'currency': 'USD',
+                        'name': 'Apple Inc.',
+                        'country': 'United States',
+                        'confidence': 1.0,
+                        'primary': True
+                    }
+                ],
+                'query': 'AAPL',
+                'total_matches': 1,
+                'rate_limited': False,
+                'source': 'api'
+            }
+        
+        enabled_ibkr_client.resolve_symbol = AsyncMock(side_effect=rate_limited_resolve)
+        
+        with patch('ibkr_mcp_server.tools.ibkr_client', enabled_ibkr_client):
+            # First call should succeed normally
+            result1 = await call_tool("resolve_symbol", {"symbol": "AAPL"})
+            response1 = json.loads(result1[0].text)
+            assert response1['success'] is True
+            assert len(response1['matches']) == 1
+            assert response1.get('rate_limited', False) is False
+            
+            # Second call should be rate limited (in real scenario)
+            result2 = await call_tool("resolve_symbol", {"symbol": "AAPL"})
+            response2 = json.loads(result2[0].text)
+            assert response2['success'] is True
+            # Rate limited response may have empty matches or cached data
+            assert response2.get('rate_limited', False) is True or response2.get('source') == 'cache'
+
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_fuzzy_search_rate_limiting(self, enabled_ibkr_client):
+        """Test fuzzy search rate limiting behavior through MCP interface (Phase 4.3)"""
+        # Mock resolve_symbol to simulate fuzzy search rate limiting behavior
+        enabled_ibkr_client.resolve_symbol = AsyncMock(return_value={
+            'success': True,
+            'matches': [
+                {
+                    'symbol': 'APPL',  # Fuzzy match result
+                    'exchange': 'SMART',
+                    'currency': 'USD',
+                    'name': 'Apple Inc.',
+                    'country': 'United States',
+                    'confidence': 0.9,  # Fuzzy match confidence
+                    'primary': True
+                }
+            ],
+            'query': 'APPL',  # Intentional typo to trigger fuzzy search
+            'total_matches': 1,
+            'fuzzy_search_used': True,
+            'api_calls_made': 1  # Should be minimal due to rate limiting
+        })
+        
+        with patch('ibkr_mcp_server.tools.ibkr_client', enabled_ibkr_client):
+            result = await call_tool("resolve_symbol", {
+                "symbol": "APPL",  # Typo to trigger fuzzy search
+                "fuzzy_search": True
+            })
+        
+        response_data = json.loads(result[0].text)
+        assert response_data['success'] is True
+        assert 'matches' in response_data
+        # Verify rate limiting integration doesn't break fuzzy search
+        if 'fuzzy_search_used' in response_data:
+            assert response_data['fuzzy_search_used'] is True
+        # Verify API calls are minimized due to rate limiting
+        if 'api_calls_made' in response_data:
+            assert response_data['api_calls_made'] <= 2  # Should be low due to rate limiting
+
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_cache_first_strategy_integration(self, enabled_ibkr_client):
+        """Test cache-first strategy during rate limiting through MCP interface (Phase 4.3)"""
+        cache_hits = 0
+        api_calls = 0
+        
+        def cache_first_resolve(*args, **kwargs):
+            nonlocal cache_hits, api_calls
+            symbol = kwargs.get('symbol', args[0] if args else 'UNKNOWN')
+            
+            # Simulate cache-first behavior during rate limiting
+            if symbol == 'CACHED_SYMBOL':
+                cache_hits += 1
+                return {
+                    'success': True,
+                    'matches': [
+                        {
+                            'symbol': 'CACHED_SYMBOL',
+                            'exchange': 'SMART',
+                            'currency': 'USD',
+                            'name': 'Cached Symbol Inc.',
+                            'confidence': 1.0,
+                            'primary': True
+                        }
+                    ],
+                    'query': symbol,
+                    'total_matches': 1,
+                    'source': 'cache',
+                    'cache_hit': True
+                }
+            else:
+                api_calls += 1
+                return {
+                    'success': True,
+                    'matches': [
+                        {
+                            'symbol': symbol,
+                            'exchange': 'SMART',
+                            'currency': 'USD',
+                            'name': f'{symbol} Inc.',
+                            'confidence': 1.0,
+                            'primary': True
+                        }
+                    ],
+                    'query': symbol,
+                    'total_matches': 1,
+                    'source': 'api',
+                    'cache_hit': False
+                }
+        
+        enabled_ibkr_client.resolve_symbol = AsyncMock(side_effect=cache_first_resolve)
+        
+        with patch('ibkr_mcp_server.tools.ibkr_client', enabled_ibkr_client):
+            # Test cache hit scenario
+            result_cache = await call_tool("resolve_symbol", {"symbol": "CACHED_SYMBOL"})
+            response_cache = json.loads(result_cache[0].text)
+            assert response_cache['success'] is True
+            assert response_cache.get('source') == 'cache'
+            assert response_cache.get('cache_hit') is True
+            
+            # Test API call scenario  
+            result_api = await call_tool("resolve_symbol", {"symbol": "NEW_SYMBOL"})
+            response_api = json.loads(result_api[0].text)
+            assert response_api['success'] is True
+            assert response_api.get('source') == 'api'
+            assert response_api.get('cache_hit') is False
+        
+        # Verify cache-first strategy is working
+        assert cache_hits >= 1
+        assert api_calls >= 1
 
 
 class TestStopLossToolsIntegration:

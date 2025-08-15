@@ -121,25 +121,52 @@ Paper trading accounts may lack real-time market data subscriptions (IBKR Error 
 → TSLA: $245.30 +$3.20 (+1.32%)
 ```
 
-### `resolve_international_symbol`
-Look up exchange and currency information for international stocks.
+### `resolve_symbol`
+Unified symbol resolution for all exchanges with fuzzy search and ambiguity resolution.
 
 **Parameters:**
-- `symbol` (required): Stock symbol to resolve
-- `exchange` (optional): Filter by specific exchange
-- `currency` (optional): Filter by currency
+- `symbol` (required): Symbol, company name, CUSIP, ISIN, or FIGI to resolve
+- `exchange` (optional): Specific exchange (None = auto-detect via SMART)
+- `currency` (optional): Target currency (None = auto-detect)
+- `sec_type` (optional): Security type - STK, OPT, FUT, etc. (default: "STK")
+- `fuzzy_search` (optional): Enable company name matching (default: true)
+- `max_results` (optional): Maximum results to return 1-16 (default: 5)
+- `include_alternatives` (optional): Include CUSIP/ISIN identifiers (default: false)
+- `prefer_native_exchange` (optional): Prefer native exchange over US ADRs for international stocks (default: false)
 
 **Returns:**
-- Primary exchange and currency
-- Alternative listings
-- Company information
-- Trading hours
+- Array of matching securities with confidence scores
+- Primary exchange and currency information
+- Company names and identifiers
+- Alternative listings and identifiers (if requested)
+- Resolution method used (exact_symbol, fuzzy_search, alternative_id)
 
-**Example:**
+**Examples:**
 ```
+"Resolve Apple symbol"
+→ Symbol: AAPL, Name: Apple Inc., Exchange: SMART/USD, Confidence: 1.0
+
 "Where does ASML trade?"
-→ Primary: AEB (Amsterdam) in EUR
-→ Alternative: NASDAQ as ASML in USD
+→ Symbol: ASML, Exchange: AEB/EUR (Primary), NASDAQ/USD (ADR)
+
+"Find symbol for Microsoft Corporation"
+→ Symbol: MSFT, Name: Microsoft Corporation, Exchange: SMART/USD
+
+"Resolve CUSIP 037833100"
+→ Symbol: AAPL, CUSIP: 037833100, Name: Apple Inc.
+
+"Resolve ASML preferring native exchange"
+→ Default: ASML on SMART (USD) - US ADR
+→ Native: ASML on AEB (EUR) - Amsterdam original
+```
+
+**Cache Management Commands:**
+```
+"Resolve symbol CACHE_STATS"
+→ View comprehensive cache performance metrics and API call statistics
+
+"Resolve symbol CLEAR_CACHE"
+→ Clear cache and reset all performance counters
 ```
 
 ## 💱 Forex & Currency (2 Tools)

@@ -195,15 +195,38 @@ class TestMCPMarketDataTools:
             mock_client.get_market_data.assert_called_once_with("AAPL", True)
     
     @pytest.mark.asyncio
-    async def test_resolve_international_symbol_tool(self, mock_client):
-        """Test resolve_international_symbol MCP tool wrapper"""
-        arguments = {"symbol": "ASML"}
+    async def test_resolve_symbol_tool(self, mock_client):
+        """Test resolve_symbol MCP tool wrapper"""
+        arguments = {"symbol": "ASML", "max_results": 5}
+        
+        # Mock the new resolve_symbol method
+        mock_client.resolve_symbol.return_value = {
+            "success": True,
+            "data": {
+                "symbol": "ASML",
+                "matches": [
+                    {
+                        "exchange": "AEB",
+                        "currency": "EUR",
+                        "name": "ASML Holding NV",
+                        "confidence": 0.95
+                    }
+                ]
+            }
+        }
         
         with patch('ibkr_mcp_server.tools.ibkr_client', mock_client):
-            result = await call_tool("resolve_international_symbol", arguments)
+            result = await call_tool("resolve_symbol", arguments)
             
             assert isinstance(result, list)  # MCP response
-            mock_client.resolve_international_symbol.assert_called_once()
+            mock_client.resolve_symbol.assert_called_once_with(
+                symbol="ASML", 
+                exchange=None,
+                currency=None,
+                fuzzy_search=True,
+                include_alternatives=False,
+                max_results=5
+            )
 
 
 @pytest.mark.unit

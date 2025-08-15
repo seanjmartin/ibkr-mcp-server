@@ -105,7 +105,7 @@ This document provides 10 comprehensive testing scenarios designed to exercise a
    "Where does Apple trade and in what currency?"
    ```
    **Expected:** SMART exchange, USD currency, company details  
-   **Tools:** `resolve_international_symbol`
+   **Tools:** `resolve_symbol`
 
 ### Success Criteria:
 - All quotes return current market data
@@ -149,14 +149,14 @@ This document provides 10 comprehensive testing scenarios designed to exercise a
    "Where does ASML trade?"
    ```
    **Expected:** AEB (Amsterdam), EUR currency, company details  
-   **Tools:** `resolve_international_symbol`
+   **Tools:** `resolve_symbol`
 
 5. **Complex International Resolution**
    ```
    "Where does Toyota trade?"
    ```
    **Expected:** TSE (Tokyo), JPY currency, symbol 7203  
-   **Tools:** `resolve_international_symbol`
+   **Tools:** `resolve_symbol`
 
 ### Success Criteria:
 - Auto-detection works for all international symbols
@@ -630,7 +630,7 @@ These scenarios test Claude's ability to interpret complex user requests and int
 
 2. **International Symbol Analysis**
    ```
-   Tools: resolve_international_symbol (ASML)
+   Tools: resolve_symbol (ASML)
    Purpose: Understand European trading mechanics
    ```
 
@@ -749,7 +749,7 @@ These scenarios test Claude's ability to interpret complex user requests and int
 2. **International Stock Research**
    ```
    Tools: get_market_data (ASML, SAP, 7203, 005930, VOD)
-   resolve_international_symbol (for each)
+   resolve_symbol (for each)
    Purpose: Analyze quality international stocks
    ```
 

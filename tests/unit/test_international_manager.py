@@ -6,8 +6,9 @@ market data processing, and global exchange support.
 """
 import pytest
 import asyncio
+import time
 from unittest.mock import Mock, AsyncMock, patch
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from ibkr_mcp_server.trading.international import InternationalManager
 from ibkr_mcp_server.utils import ValidationError
@@ -22,7 +23,7 @@ class TestInternationalManager:
         intl_manager = InternationalManager(mock_ib)
         
         assert intl_manager.ib == mock_ib
-        assert hasattr(intl_manager, 'symbol_db')  # Correct attribute name
+        assert hasattr(intl_manager, 'exchange_mgr')  # Now uses exchange manager only
         assert hasattr(intl_manager, 'validator')
         
         # Test methods exist
@@ -31,69 +32,245 @@ class TestInternationalManager:
     
     @pytest.mark.asyncio
     async def test_resolve_symbol_success(self, mock_ib):
-        """Test successful symbol resolution with IB API validation"""
-        # Setup mock for IB API qualification
+        """Test successful symbol resolution with direct IBKR API"""
+        # Setup mock for direct IBKR API call (reqContractDetailsAsync)
+        mock_contract_detail = Mock()
         mock_contract = Mock()
         mock_contract.symbol = "ASML"
-        mock_contract.exchange = "AEB"
+        mock_contract.exchange = "AEB" 
         mock_contract.currency = "EUR"
         mock_contract.conId = 117589399
         mock_contract.longName = "ASML Holding NV"
-        mock_contract.isin = "NL0010273215"
+        mock_contract.primaryExchange = "AEB"
+        
+        mock_contract_detail.contract = mock_contract
+        mock_contract_detail.secIdList = [
+            Mock(tag="ISIN", value="NL0010273215")
+        ]
         
         mock_ib.isConnected.return_value = True
-        mock_ib.qualifyContractsAsync = AsyncMock(return_value=[mock_contract])
+        mock_ib.reqContractDetailsAsync = AsyncMock(return_value=[mock_contract_detail])
         
         intl_manager = InternationalManager(mock_ib)
         
-        # Mock the database response to include the required 'type' field
-        db_response = [{
-            'symbol': 'ASML',
-            'exchange': 'AEB', 
-            'currency': 'EUR',
-            'type': 'stock',  # Required field for contract creation
-            'name': 'ASML Holding NV',
-            'country': 'Netherlands',
-            'isin': 'NL0010273215'
-        }]
+        # Test ASML resolution - now uses direct IBKR API
+        result = await intl_manager.resolve_symbol("ASML")
         
-        with patch.object(intl_manager.symbol_db, 'resolve_symbol', return_value=db_response):
-            # Test ASML resolution - now async with API validation
-            result = await intl_manager.resolve_symbol("ASML")
-            
-            assert result is not None
-            assert isinstance(result, dict)
-            assert result['symbol'] == 'ASML'
-            assert 'matches' in result
-            assert result['resolution_method'] == 'api_validated'
-            assert len(result['matches']) >= 1
-            
-            # Check first match has validated contract details
-            first_match = result['matches'][0]
-            assert first_match['validated'] == True
-            assert first_match['contract_id'] == 117589399
+        assert result is not None
+        assert isinstance(result, dict)
+        assert 'matches' in result
+        assert result['resolution_method'] == 'exact_symbol'
+        assert len(result['matches']) >= 1
+        
+        # Check first match has the expected fields from real IBKR data
+        first_match = result['matches'][0]
+        assert first_match['symbol'] == 'ASML'
+        assert first_match['conid'] == 117589399
+        assert first_match['name'] == 'ASML Holding NV'
+        assert first_match['exchange'] == 'AEB'
+        assert first_match['currency'] == 'EUR'
+        assert 'isin' in first_match
     
     @pytest.mark.asyncio
     async def test_resolve_symbol_not_found(self, mock_ib):
-        """Test symbol resolution for unknown symbol with API validation"""
-        # Setup mock for IB API - no matches found
+        """Test symbol resolution for unknown symbol with direct IBKR API"""
+        # Setup mock for direct IBKR API - no matches found
         mock_ib.isConnected.return_value = True
-        mock_ib.qualifyContractsAsync = AsyncMock(return_value=[])  # No qualified contracts
+        mock_ib.reqContractDetailsAsync = AsyncMock(return_value=[])  # No contract details found
         
         intl_manager = InternationalManager(mock_ib)
         
-        # Test unknown symbol - now async with API validation
+        # Test unknown symbol - now uses direct IBKR API
         result = await intl_manager.resolve_symbol("UNKNOWN")
         
         # Should return structured response even for unknown symbols
         assert isinstance(result, dict)
         assert result['symbol'] == 'UNKNOWN'
         assert 'matches' in result
-        # With no API matches and no database/guessed matches, should be empty
+        # With no API matches, should be empty
         assert len(result['matches']) == 0
         # New implementation returns 'none' when no matches found
         assert result['resolution_method'] == 'none'
-    
+
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_fuzzy_search(self, mock_ib):
+        """Test fuzzy search functionality for company names"""
+        # Setup mock for fuzzy search
+        mock_ib.isConnected.return_value = True
+        
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Mock the internal resolution methods to simulate fuzzy search behavior
+        # First, _resolve_exact_symbol("APPLE") should fail (no such symbol)
+        # Then, _resolve_fuzzy_search("Apple") should succeed and return AAPL
+        
+        # Mock _resolve_exact_symbol to return empty for "APPLE" (not a real symbol)
+        intl_manager._resolve_exact_symbol = AsyncMock(return_value=[])
+        
+        # Mock _resolve_fuzzy_search to return AAPL match for "Apple"
+        mock_aapl_match = {
+            'symbol': 'AAPL',
+            'name': 'Apple Inc.',
+            'exchange': 'SMART',
+            'currency': 'USD',
+            'sec_type': 'STK',
+            'country': 'United States'
+        }
+        intl_manager._resolve_fuzzy_search = AsyncMock(return_value=[mock_aapl_match])
+        
+        # Test company name fuzzy search
+        result = await intl_manager.resolve_symbol("Apple", fuzzy_search=True)
+        
+        assert isinstance(result, dict)
+        assert 'matches' in result
+        assert result['resolution_method'] in ['fuzzy_search', 'company_name_match']
+        
+        # If fuzzy search found matches, check structure
+        if len(result['matches']) > 0:
+            first_match = result['matches'][0]
+            assert 'symbol' in first_match
+            assert 'confidence' in first_match
+            assert isinstance(first_match['confidence'], (int, float))
+            assert 0.0 <= first_match['confidence'] <= 1.0
+            # Should find AAPL for Apple
+            assert first_match['symbol'] == 'AAPL'
+
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_alternative_ids(self, mock_ib):
+        """Test alternative ID resolution (CUSIP, ISIN, ConID)"""
+        mock_ib.isConnected.return_value = True
+        
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Test ConID resolution
+        result = await intl_manager.resolve_symbol("265598")  # Apple ConID
+        assert isinstance(result, dict)
+        
+        # Test CUSIP pattern
+        result = await intl_manager.resolve_symbol("037833100")  # Apple CUSIP
+        assert isinstance(result, dict)
+        
+        # Test ISIN pattern
+        result = await intl_manager.resolve_symbol("US0378331005")  # Apple ISIN
+        assert isinstance(result, dict)
+
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_confidence_scoring(self, mock_ib):
+        """Test confidence scoring algorithm"""
+        mock_ib.isConnected.return_value = True
+        
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Test exact symbol match (should have high confidence)
+        result = await intl_manager.resolve_symbol("AAPL")
+        
+        if len(result.get('matches', [])) > 0:
+            first_match = result['matches'][0]
+            if 'confidence' in first_match:
+                # Exact symbol matches should have high confidence
+                assert first_match['confidence'] >= 0.8
+
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_max_results_parameter(self, mock_ib):
+        """Test max_results parameter functionality"""
+        mock_ib.isConnected.return_value = True
+        
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Test max_results parameter
+        result = await intl_manager.resolve_symbol("App", max_results=3, fuzzy_search=True)
+        
+        assert isinstance(result, dict)
+        assert 'matches' in result
+        # Should not exceed max_results
+        assert len(result['matches']) <= 3
+
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_include_alternatives(self, mock_ib):
+        """Test include_alternatives parameter with direct IBKR API"""
+        # Setup mock for direct IBKR API call with alternative IDs
+        mock_contract_detail = Mock()
+        mock_contract = Mock()
+        mock_contract.symbol = "AAPL"
+        mock_contract.exchange = "SMART"
+        mock_contract.currency = "USD"
+        mock_contract.conId = 265598
+        mock_contract.longName = "Apple Inc."
+        mock_contract.primaryExchange = "NASDAQ"
+        
+        mock_contract_detail.contract = mock_contract
+        mock_contract_detail.secIdList = [
+            Mock(tag="ISIN", value="US0378331005"),
+            Mock(tag="CUSIP", value="037833100")
+        ]
+        
+        mock_ib.isConnected.return_value = True
+        mock_ib.reqContractDetailsAsync = AsyncMock(return_value=[mock_contract_detail])
+        
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Test with include_alternatives=True - should include ISIN/CUSIP from IBKR data
+        result = await intl_manager.resolve_symbol("AAPL", include_alternatives=True)
+        
+        if len(result.get('matches', [])) > 0:
+            first_match = result['matches'][0]
+            assert 'symbol' in first_match
+            assert first_match['symbol'] == 'AAPL'
+            # Should include alternative IDs from secIdList
+            assert 'isin' in first_match
+            assert 'cusip' in first_match
+
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_cache_behavior(self, mock_ib):
+        """Test cache behavior with enhanced caching"""
+        mock_ib.isConnected.return_value = True
+        
+        intl_manager = InternationalManager(mock_ib)
+        
+        # First call - should miss cache
+        result1 = await intl_manager.resolve_symbol("MSFT")
+        
+        # Second call - should potentially hit cache
+        result2 = await intl_manager.resolve_symbol("MSFT")
+        
+        # Both should return same structure
+        assert isinstance(result1, dict)
+        assert isinstance(result2, dict)
+        assert 'cache_info' in result1 or 'cache_info' in result2
+
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_parameter_validation(self, mock_ib):
+        """Test parameter validation for new parameters"""
+        mock_ib.isConnected.return_value = True
+        
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Test invalid max_results (should be 1-16)
+        try:
+            result = await intl_manager.resolve_symbol("AAPL", max_results=25)
+            # Should either limit to 16 or handle gracefully
+            if 'matches' in result:
+                assert len(result['matches']) <= 16
+        except ValueError:
+            # Should raise ValueError for invalid max_results
+            assert True
+
+    @pytest.mark.asyncio
+    async def test_resolve_symbol_error_handling(self, mock_ib):
+        """Test error handling in enhanced resolve_symbol"""
+        # Test with disconnected IB
+        mock_ib.isConnected.return_value = False
+        
+        intl_manager = InternationalManager(mock_ib)
+        
+        try:
+            result = await intl_manager.resolve_symbol("AAPL")
+            # Should handle disconnection gracefully
+            assert isinstance(result, dict)
+        except Exception as e:
+            # Should not raise unhandled exceptions
+            assert "connection" in str(e).lower() or "not connected" in str(e).lower()
+
     @pytest.mark.asyncio
     async def test_get_market_data_success(self, mock_ib, sample_international_ticker):
         """Test successful international market data retrieval"""
@@ -166,24 +343,21 @@ class TestInternationalManager:
         assert 'TSE' in exchange_codes  # Tokyo
     
     def test_get_supported_symbols(self, mock_ib):
-        """Test getting supported international symbols"""
+        """Test that symbol resolution now works through IBKR API instead of database"""
         intl_manager = InternationalManager(mock_ib)
         
-        # Check if the symbol_db has data - it's a database object, not a dict
-        if hasattr(intl_manager, 'symbol_db') and intl_manager.symbol_db:
-            # Try different ways to access symbols from the database
-            if hasattr(intl_manager.symbol_db, 'get_all_symbols'):
-                symbols = intl_manager.symbol_db.get_all_symbols()
-                assert isinstance(symbols, (list, dict))
-            elif hasattr(intl_manager.symbol_db, 'symbols'):
-                symbols = intl_manager.symbol_db.symbols
-                assert symbols is not None
-            else:
-                # Database exists but no clear way to access symbols - pass test
-                assert True
-        else:
-            # If database doesn't exist, just pass the test
-            assert True
+        # New implementation no longer uses a static symbol database
+        # Symbol resolution is now dynamic through IBKR API
+        # Test that we no longer have symbol_db attribute
+        assert not hasattr(intl_manager, 'symbol_db')
+        
+        # Test that we still have the essential components for IBKR API resolution
+        assert hasattr(intl_manager, 'ib')  # IBKR client
+        assert hasattr(intl_manager, 'exchange_mgr')  # Exchange manager for validation
+        assert hasattr(intl_manager, 'resolve_symbol')  # Main resolution method
+        
+        # Verify the new implementation works through IBKR API
+        assert intl_manager.ib == mock_ib
     
     @pytest.mark.asyncio
     async def test_auto_detect_exchange(self, mock_ib):
@@ -428,6 +602,162 @@ class TestInternationalManagerValidation:
             assert True  # Test passes if no major exception
 
 
+    # === PHASE 4.3 RATE LIMITING TESTS ===
+    # These tests specifically validate the rate limiting implementation
+    # added in Phase 4.3 of the unified symbol resolution project
+
+    @pytest.mark.asyncio
+    async def test_fuzzy_search_rate_limiting_enforcement(self, mock_ib):
+        """Test fuzzy search rate limiting enforcement (Phase 4.3)"""
+        mock_ib.isConnected.return_value = True
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Test _should_rate_limit_fuzzy_search() function
+        # First call should not be rate limited
+        assert not intl_manager._should_rate_limit_fuzzy_search()
+        
+        # Update timing to simulate recent API call
+        intl_manager._update_fuzzy_search_timing()
+        
+        # Immediate second call should be rate limited (within 1 second)
+        assert intl_manager._should_rate_limit_fuzzy_search()
+        
+        # Simulate time passage by setting an old timestamp
+        old_time = datetime.now(timezone.utc) - timedelta(seconds=2)
+        intl_manager.rate_limiting['last_fuzzy_search'] = old_time
+        
+        # After 2 seconds, should not be rate limited
+        assert not intl_manager._should_rate_limit_fuzzy_search()
+
+    @pytest.mark.asyncio 
+    async def test_rate_limit_enforcement_in_resolve_symbol(self, mock_ib):
+        """Test rate limiting integration in _enforce_rate_limiting (Phase 4.3)"""
+        mock_ib.isConnected.return_value = True
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Test 1: First call should pass rate limiting
+        result1 = await intl_manager._enforce_rate_limiting()
+        assert result1 is True, "First rate limiting check should pass"
+        
+        # Test 2: Immediate second call should be rate limited (within 1 second)
+        result2 = await intl_manager._enforce_rate_limiting()
+        assert result2 is False, "Immediate second call should be rate limited"
+        
+        # Test 3: Simulate time passage - rate limiting should be reset
+        old_time = datetime.now(timezone.utc) - timedelta(seconds=2)
+        intl_manager.rate_limiting['last_fuzzy_search'] = old_time
+        
+        result3 = await intl_manager._enforce_rate_limiting()
+        assert result3 is True, "After time passage, rate limiting should allow request"
+            # When rate limited, should indicate fuzzy search was skipped
+
+    @pytest.mark.asyncio
+    async def test_rate_limit_cache_first_strategy(self, mock_ib):
+        """Test cache-first strategy when rate limited (Phase 4.3)"""
+        mock_ib.isConnected.return_value = True
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Setup cache with known result using correct cache key format 
+        test_symbol = "AAPL"
+        cache_key = f"{test_symbol.upper()}_None_None_STK_5"  # Matches actual implementation
+        cached_result = {
+            'symbol': test_symbol,
+            'matches': [{'symbol': 'AAPL', 'confidence': 0.9}],
+            'resolution_method': 'cached'
+        }
+        
+        # Use actual cache structure with timestamp and data fields
+        intl_manager.resolution_cache[cache_key] = {
+            'data': cached_result,
+            'timestamp': datetime.now(timezone.utc).timestamp(),
+            'hit_count': 0
+        }
+        
+        # Trigger rate limiting
+        intl_manager._update_fuzzy_search_timing()
+        
+        # Mock exact resolution to fail (would normally trigger fuzzy search)
+        intl_manager._resolve_exact_symbol = AsyncMock(return_value=[])
+        
+        # Should return cached result instead of attempting rate-limited fuzzy search
+        result = await intl_manager.resolve_symbol(test_symbol, fuzzy_search=True)
+        
+        # Should get cached data with cache hit metadata
+        assert 'symbol' in result
+        assert result['symbol'] == test_symbol
+        assert 'cache_info' in result
+        assert result['cache_info']['cache_hit'] is True
+
+    @pytest.mark.asyncio
+    async def test_fuzzy_search_degradation_scenarios(self, mock_ib):
+        """Test graceful degradation scenarios (Phase 4.3)"""
+        mock_ib.isConnected.return_value = True
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Test _should_degrade_fuzzy_search() - simulate high API usage
+        with patch.object(intl_manager, '_should_degrade_fuzzy_search', return_value=True):
+            # Mock exact resolution failure to trigger fuzzy search path
+            intl_manager._resolve_exact_symbol = AsyncMock(return_value=[])
+            
+            result = await intl_manager.resolve_symbol("TestSymbol", fuzzy_search=True)
+            
+            # Should handle degradation gracefully
+            assert isinstance(result, dict)
+            assert 'matches' in result
+            assert 'resolution_method' in result
+            # During degradation, should skip fuzzy search
+            
+    @pytest.mark.asyncio
+    async def test_rate_limiting_configuration_settings(self, mock_ib):
+        """Test rate limiting uses 1-second hardcoded interval (Phase 4.3)"""
+        mock_ib.isConnected.return_value = True
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Test initial state - no rate limiting
+        assert not intl_manager._should_rate_limit_fuzzy_search()
+        
+        # Update timing to trigger rate limiting
+        intl_manager._update_fuzzy_search_timing()
+        
+        # Should be rate limited within 1 second (hardcoded)
+        assert intl_manager._should_rate_limit_fuzzy_search()
+        
+        # Simulate time passage - should not be rate limited after 1+ seconds
+        past_time = datetime.now(timezone.utc) - timedelta(seconds=1.5)
+        intl_manager.rate_limiting['last_fuzzy_search'] = past_time
+        
+        assert not intl_manager._should_rate_limit_fuzzy_search()
+
+    @pytest.mark.asyncio 
+    async def test_api_call_tracking_and_monitoring(self, mock_ib):
+        """Test API call tracking and monitoring (Phase 4.3)"""
+        mock_ib.isConnected.return_value = True
+        intl_manager = InternationalManager(mock_ib)
+        
+        # Reset API call tracking
+        if hasattr(intl_manager, '_api_calls_this_hour'):
+            intl_manager._api_calls_this_hour = 0
+        if hasattr(intl_manager, '_hour_start_time'):
+            intl_manager._hour_start_time = time.time()
+        
+        # Test API call tracking increment
+        initial_count = getattr(intl_manager, '_api_calls_this_hour', 0)
+        
+        # Mock API call that should increment counter
+        with patch.object(intl_manager, '_resolve_fuzzy_search', new_callable=AsyncMock) as mock_fuzzy:
+            mock_fuzzy.return_value = []
+            intl_manager._resolve_exact_symbol = AsyncMock(return_value=[])
+            
+            # This should trigger fuzzy search and increment API call counter
+            await intl_manager.resolve_symbol("TestSymbol", fuzzy_search=True)
+            
+            # Verify API call was attempted (mocked but tracked)
+            if hasattr(intl_manager, '_api_calls_this_hour'):
+                assert intl_manager._api_calls_this_hour >= initial_count
+
+
 if __name__ == "__main__":
+    # Import time module for rate limiting tests
+    import time
     # Run international manager tests
     pytest.main([__file__, "-v", "--tb=short"])

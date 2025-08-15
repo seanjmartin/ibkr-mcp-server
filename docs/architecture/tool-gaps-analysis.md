@@ -8,7 +8,7 @@ The IBKR MCP Server is now a comprehensive trading platform with **23 fully test
 
 ### ✅ **Implemented & Tested**
 - **Portfolio & Account (5)**: `get_portfolio`, `get_account_summary`, `get_accounts`, `switch_account`, `get_connection_status`
-- **Market Data (2)**: `get_market_data`, `resolve_international_symbol`  
+- **Market Data (2)**: `get_market_data`, `resolve_symbol`  
 - **Forex (2)**: `get_forex_rates`, `convert_currency`
 - **Risk Management (4)**: `place_stop_loss`, `get_stop_losses`, `modify_stop_loss`, `cancel_stop_loss`
 - **Order History (3)**: `get_open_orders`, `get_completed_orders`, `get_executions`

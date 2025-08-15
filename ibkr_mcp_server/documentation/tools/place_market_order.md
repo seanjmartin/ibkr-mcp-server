@@ -82,7 +82,7 @@ Buys 500 shares of Google - check MAX_ORDER_SIZE limits
 5. **P&L analysis**: Review realized gains/losses
 
 **International Trading:**
-1. **Symbol research**: Use resolve_international_symbol for exchange info
+1. **Symbol research**: Use resolve_symbol for exchange info
 2. **Currency consideration**: Check forex rates with get_forex_rates
 3. **Market order placement**: Execute at local market price
 4. **Currency impact**: Consider FX exposure from international holdings
@@ -126,7 +126,7 @@ Buys 500 shares of Google - check MAX_ORDER_SIZE limits
 
 ### "Symbol not found" or "Contract qualification failed"
 • Verify symbol spelling and format
-• Use resolve_international_symbol for international stocks
+• Use resolve_symbol for international stocks
 • Some symbols may not be available in paper trading
 • Try SMART exchange for US stocks, specific exchange for international
 

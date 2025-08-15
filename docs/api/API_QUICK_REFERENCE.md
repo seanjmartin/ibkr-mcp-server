@@ -65,7 +65,7 @@
 | Tool | Purpose | Example |
 |------|---------|---------|
 | `get_market_data` | Live quotes (global) | "Quote for AAPL,ASML" |
-| `resolve_international_symbol` | Find exchange/currency | "Where does ASML trade?" |
+| `resolve_symbol` | Find symbol/exchange info | "Resolve Apple symbol" |
 
 ### **Forex & Currency (2 tools)**
 | Tool | Purpose | Example |

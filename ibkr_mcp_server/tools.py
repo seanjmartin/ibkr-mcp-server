@@ -65,7 +65,7 @@ MARKET_DATA_OPERATIONS = {
     "get_market_data": "market_data",
     "get_forex_rates": "market_data", 
     "convert_currency": "market_data",
-    "resolve_international_symbol": "market_data",
+    "resolve_symbol": "market_data",
 }
 
 # Safe operations (no validation needed)
@@ -173,16 +173,19 @@ TOOLS = [
     ),
     
     # ============ INTERNATIONAL TRADING TOOLS ============
-
     Tool(
-        name="resolve_international_symbol",
-        description="Look up which exchange and currency an international stock trades on (finds ASML->AEB/EUR, SAP->XETRA/EUR)",
+        name="resolve_symbol",
+        description="Resolve stock symbols with fuzzy matching - supports company names (Apple->AAPL), partial symbols, and alternative IDs (CUSIP, ISIN). Auto-detects exchange and currency for all global markets.",
         inputSchema={
             "type": "object",
             "properties": {
-                "symbol": {"type": "string", "description": "Stock symbol to resolve"},
-                "exchange": {"type": "string", "description": "Specific exchange code (optional)"},
-                "currency": {"type": "string", "description": "Specific currency code (optional)"}
+                "symbol": {"type": "string", "description": "Symbol, company name, or alternative ID to resolve (e.g., 'AAPL', 'Apple', 'CUSIP 037833100')"},
+                "exchange": {"type": "string", "description": "Preferred exchange code (optional, e.g., 'SMART', 'AEB', 'TSE')"},
+                "currency": {"type": "string", "description": "Preferred currency code (optional, e.g., 'USD', 'EUR', 'JPY')"},
+                "fuzzy_search": {"type": "boolean", "description": "Enable fuzzy matching for company names and partial symbols", "default": True},
+                "include_alternatives": {"type": "boolean", "description": "Include alternative symbols and exchanges in results", "default": False},
+                "max_results": {"type": "integer", "description": "Maximum number of results to return (1-16)", "default": 5, "minimum": 1, "maximum": 16},
+                "prefer_native_exchange": {"type": "boolean", "description": "Prefer native exchange over US ADRs for international stocks (e.g., SAP on XETRA vs NYSE)", "default": False}
             },
             "required": ["symbol"],
             "additionalProperties": False
@@ -610,13 +613,61 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
                 )]
         
         # ============ INTERNATIONAL TRADING TOOLS ============
-
-        elif name == "resolve_international_symbol":
+        elif name == "resolve_symbol":
             symbol = arguments["symbol"]
             exchange = arguments.get("exchange")
             currency = arguments.get("currency")
+            fuzzy_search = arguments.get("fuzzy_search", True)
+            include_alternatives = arguments.get("include_alternatives", False)
+            max_results = arguments.get("max_results", 5)
+            prefer_native_exchange = arguments.get("prefer_native_exchange", False)
             try:
-                result = await ibkr_client.resolve_international_symbol(symbol, exchange, currency)
+                # Special cache management commands (Phase 4.2 enhancement)
+                if symbol.upper() == "CLEAR_CACHE":
+                    ibkr_client.international_manager.clear_cache()
+                    return [TextContent(
+                        type="text",
+                        text=json.dumps({
+                            "success": True,
+                            "message": "International symbol resolution cache cleared",
+                            "action": "cache_cleared"
+                        }, indent=2)
+                    )]
+                
+                if symbol.upper() == "CACHE_STATS":
+                    cache_stats = ibkr_client.international_manager.get_cache_statistics()
+                    api_stats = ibkr_client.international_manager.api_call_stats
+                    fuzzy_stats = ibkr_client.international_manager.fuzzy_search_stats
+                    return [TextContent(
+                        type="text",
+                        text=json.dumps({
+                            "success": True,
+                            "cache_statistics": cache_stats,
+                            "api_call_statistics": api_stats,
+                            "fuzzy_search_statistics": fuzzy_stats
+                        }, indent=2)
+                    )]
+                
+                # Check rate limits for symbol resolution requests
+                if not safety_manager.rate_limiter.check_rate_limit("market_data"):
+                    return [TextContent(
+                        type="text",
+                        text=json.dumps({
+                            "success": False,
+                            "error": "Rate limit exceeded for symbol resolution requests",
+                            "details": "Too many market data requests in the last minute"
+                        }, indent=2)
+                    )]
+                
+                result = await ibkr_client.resolve_symbol(
+                    symbol=symbol,
+                    exchange=exchange,
+                    currency=currency,
+                    fuzzy_search=fuzzy_search,
+                    include_alternatives=include_alternatives,
+                    max_results=max_results,
+                    prefer_native_exchange=prefer_native_exchange
+                )
                 return [TextContent(
                     type="text",
                     text=json.dumps(result, indent=2)
@@ -624,7 +675,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> Sequence[TextConten
             except Exception as e:
                 return [TextContent(
                     type="text",
-                    text=f"Error resolving international symbol: {str(e)}"
+                    text=f"Error resolving symbol: {str(e)}"
                 )]
         
         # ============ STOP LOSS MANAGEMENT TOOLS ============

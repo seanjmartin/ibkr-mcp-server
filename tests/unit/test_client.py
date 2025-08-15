@@ -597,26 +597,38 @@ class TestClientMarketData:
             await ibkr_client.get_market_data("INVALID")
     
     @pytest.mark.asyncio
-    async def test_resolve_international_symbol_success(self, ibkr_client):
-        """Test symbol resolution"""
-        mock_result = {"symbol": "ASML", "exchange": "AEB", "currency": "EUR"}
+    async def test_resolve_symbol_success(self, ibkr_client):
+        """Test enhanced symbol resolution"""
+        mock_result = {
+            "symbol": "ASML", 
+            "matches": [{"exchange": "AEB", "currency": "EUR", "name": "ASML Holding NV", "confidence": 1.0}],
+            "exchange_info": {"exchange": "AEB", "currency": "EUR"}
+        }
         ibkr_client.international_manager.resolve_symbol = AsyncMock(return_value=mock_result)
         
-        result = await ibkr_client.resolve_international_symbol("ASML")
+        result = await ibkr_client.resolve_symbol("ASML")
         
         assert result == mock_result
-        ibkr_client.international_manager.resolve_symbol.assert_called_once_with("ASML", None, None)
+        ibkr_client.international_manager.resolve_symbol.assert_called_once_with(
+            "ASML", None, None, "STK", True, False, 5
+        )
     
     @pytest.mark.asyncio
-    async def test_resolve_international_symbol_not_found(self, ibkr_client):
-        """Test symbol not found"""
-        mock_result = {"symbol": "NOTFOUND", "matches": [], "error": "Symbol not found"}
+    async def test_resolve_symbol_with_params(self, ibkr_client):
+        """Test symbol resolution with custom parameters"""
+        mock_result = {
+            "symbol": "APPLE", 
+            "matches": [{"exchange": "SMART", "currency": "USD", "name": "Apple Inc", "confidence": 0.95}],
+            "exchange_info": {"exchange": "SMART", "currency": "USD"}
+        }
         ibkr_client.international_manager.resolve_symbol = AsyncMock(return_value=mock_result)
         
-        result = await ibkr_client.resolve_international_symbol("NOTFOUND")
+        result = await ibkr_client.resolve_symbol("APPLE", exchange="SMART", currency="USD", max_results=10, fuzzy_search=True, include_alternatives=True)
         
         assert result == mock_result
-        ibkr_client.international_manager.resolve_symbol.assert_called_once_with("NOTFOUND", None, None)
+        ibkr_client.international_manager.resolve_symbol.assert_called_once_with(
+            "APPLE", "SMART", "USD", "STK", True, True, 10
+        )
 
 
 @pytest.mark.unit

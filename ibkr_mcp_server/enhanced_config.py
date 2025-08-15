@@ -117,6 +117,12 @@ class EnhancedSettings(BaseSettings):
     default_european_exchange: str = "SMART"
     default_asian_exchange: str = "SMART"
     
+    # Enhanced symbol resolution settings
+    symbol_resolution_fuzzy_search: bool = True
+    symbol_resolution_include_alternatives: bool = False
+    symbol_resolution_exchange_preference: str = "SMART"
+    symbol_resolution_currency_preference: str = "USD"
+    
     # ========================================
     # STOP LOSS CONFIGURATION
     # ========================================
@@ -138,6 +144,11 @@ class EnhancedSettings(BaseSettings):
     market_data_cache_seconds: int = 2
     order_status_refresh_seconds: int = 1
     symbol_resolution_cache_hours: int = 24
+    
+    # Symbol resolution performance settings
+    symbol_resolution_cache_hit_rate_target: float = 0.8  # Target 80% cache hit rate
+    symbol_resolution_max_response_time_seconds: int = 5  # Maximum acceptable response time
+    symbol_resolution_fuzzy_search_rate_limit_seconds: int = 1  # Minimum interval between fuzzy searches
     
     # Connection and retry settings
     connection_retry_attempts: int = 3

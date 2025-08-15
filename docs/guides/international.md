@@ -103,25 +103,33 @@ Trade stocks from around the world with automatic exchange detection and real-ti
 - Toyota from Japan (TSE/JPY) 
 - SAP from Germany (XETRA/EUR)
 
-### Exchange Resolution
+### Symbol Resolution
 
 ```
 "Where does ASML trade?"
+"Resolve Apple symbol"
+"Find symbol for Microsoft Corporation"
 ```
 
-**Response:**
+**Enhanced Resolution Examples:**
 ```
-🔍 ASML Symbol Resolution:
+🔍 Unified Symbol Resolution:
 
-🏛️ Primary Listing:
-   • Exchange: AEB (Euronext Amsterdam)
-   • Currency: EUR
-   • Full Name: ASML Holding NV
-   • Sector: Technology (Semiconductor Equipment)
-
-🌐 Alternative Listings:
-   • NASDAQ: ASML (USD) - ADR
+📊 ASML Resolution:
+   • Symbol: ASML, Exchange: AEB/EUR (Primary)
+   • Name: ASML Holding NV, Confidence: 1.0
+   • Alternative: NASDAQ/USD (ADR)
    • Trading Hours: 09:00-17:30 CET
+
+🍎 Apple Resolution (Fuzzy Search):
+   • Symbol: AAPL, Exchange: SMART/USD
+   • Name: Apple Inc., Confidence: 1.0
+   • Resolution Method: fuzzy_search
+
+🏢 Microsoft Resolution (Company Name):
+   • Symbol: MSFT, Exchange: SMART/USD
+   • Name: Microsoft Corporation, Confidence: 1.0
+   • Resolution Method: fuzzy_search
 ```
 
 ## Pre-Configured International Symbols

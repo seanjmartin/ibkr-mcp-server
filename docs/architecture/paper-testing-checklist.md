@@ -107,12 +107,12 @@ Test → IBKR Client → IBKR API  ❌ (Bypasses MCP layer completely)
   - **Current Status:** ✅ **COMPLETE** - MCP layer working correctly, international symbol auto-detection operational, returns real IBKR API data
 
 - [x] **Test 2.3: Symbol Resolution MCP Tool** ✅ **PASSED**
-  - **MCP Call:** `await call_tool("resolve_international_symbol", {"symbol": "ASML"})`
-  - **Expected:** Exchange/currency resolution to AEB/EUR
-  - **Validation:** Symbol metadata and exchange information
-  - **Result:** Successfully returned comprehensive symbol resolution: `{"symbol": "ASML", "matches": [{"exchange": "AEB", "currency": "EUR", "name": "ASML Holding NV", "country": "Netherlands", "isin": "NL0010273215", "primary": true}], "exchange_info": {"exchange": "AEB", "currency": "EUR"}}`
-  - **Execution:** `C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_resolve_international_symbol.py::TestIndividualResolveInternationalSymbol::test_resolve_international_symbol_basic_functionality -v -s`
-  - **Current Status:** ✅ **COMPLETE** - MCP layer working correctly, symbol resolution operational with comprehensive metadata
+  - **MCP Call:** `await call_tool("resolve_symbol", {"symbol": "ASML"})`
+  - **Expected:** Exchange/currency resolution to AEB/EUR with enhanced capabilities
+  - **Validation:** Symbol metadata, fuzzy search, and confidence scoring
+  - **Result:** Successfully returned comprehensive symbol resolution: `{"symbol": "ASML", "matches": [{"exchange": "AEB", "currency": "EUR", "name": "ASML Holding NV", "country": "Netherlands", "isin": "NL0010273215", "primary": true, "confidence": 1.0}], "exchange_info": {"exchange": "AEB", "currency": "EUR"}}`
+  - **Execution:** `C:\Python313\python.exe -m pytest tests/paper/individual/test_individual_resolve_symbol.py::TestIndividualResolveSymbol::test_resolve_symbol_basic_functionality -v -s`
+  - **Current Status:** ✅ **COMPLETE** - MCP layer working correctly, unified symbol resolution operational with fuzzy search
 
 ### Forex & Currency Tools (2 tools)
 **Purpose:** Test currency operations through MCP interface

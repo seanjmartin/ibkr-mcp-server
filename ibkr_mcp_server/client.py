@@ -469,12 +469,38 @@ class IBKRClient:
     
 
     
-    async def resolve_international_symbol(self, symbol: str, exchange: str = None, currency: str = None) -> Dict:
-        """Resolve international symbol with comprehensive information."""
+    async def resolve_symbol(
+        self, 
+        symbol: str, 
+        exchange: str = None, 
+        currency: str = None,
+        sec_type: str = "STK",
+        fuzzy_search: bool = True,
+        include_alternatives: bool = False,
+        max_results: int = 5,
+        prefer_native_exchange: bool = False
+    ) -> Dict:
+        """
+        Unified symbol resolution for all exchanges and security types.
+        
+        Args:
+            symbol: Symbol, company name, CUSIP, ISIN, or FIGI
+            exchange: Specific exchange (None = auto-detect via SMART)
+            currency: Target currency (None = auto-detect)
+            sec_type: Security type (STK, OPT, FUT, etc.)
+            fuzzy_search: Enable company name and partial symbol matching
+            include_alternatives: Return alternative identifiers (CUSIP, ISIN, etc.)
+            max_results: Maximum number of results to return (1-16)
+        
+        Returns:
+            Enhanced resolution result with confidence scoring and multiple matches
+        """
         if not self.international_manager:
             raise ValidationError("International manager not initialized")
         
-        return await self.international_manager.resolve_symbol(symbol, exchange, currency)
+        return await self.international_manager.resolve_symbol(
+            symbol, exchange, currency, sec_type, fuzzy_search, include_alternatives, max_results, prefer_native_exchange
+        )
 
     # ============ STOP LOSS MANAGEMENT METHODS ============
     

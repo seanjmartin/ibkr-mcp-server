@@ -186,11 +186,11 @@ No documentation found for '{query}'.
         return {
             "forex": ["get_forex_rates", "convert_currency"],
             "stop_loss": ["place_stop_loss", "get_stop_losses", "modify_stop_loss", "cancel_stop_loss"],
-            "international": ["get_market_data", "resolve_international_symbol"],
+            "international": ["get_market_data", "resolve_symbol"],
             "portfolio": ["get_portfolio", "get_account_summary", "get_accounts", "switch_account", "get_connection_status"],
             "trading": ["place_stop_loss", "place_market_order", "place_limit_order", "cancel_order", "modify_order", "get_order_status", "place_bracket_order"],
             "order_placement": ["place_market_order", "place_limit_order", "place_bracket_order", "cancel_order", "modify_order", "get_order_status"],
-            "market_data": ["get_market_data", "get_forex_rates"],
+            "market_data": ["get_market_data", "get_forex_rates", "resolve_symbol"],
             "account": ["get_account_summary", "get_accounts", "switch_account", "get_connection_status"],
             "orders": ["place_market_order", "place_limit_order", "cancel_order", "modify_order", "get_order_status", "place_bracket_order", "get_open_orders", "get_completed_orders", "get_executions"]
         }

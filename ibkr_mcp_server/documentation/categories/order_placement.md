@@ -210,7 +210,7 @@ plus 3 additional tools for monitoring existing orders and executions.
 • **Currency Impact**: Factor in FX movements for international trades
 
 ## Related Tools
-• **Market Data**: get_market_data, resolve_international_symbol
+• **Market Data**: get_market_data, resolve_symbol
 • **Account Management**: get_account_summary, get_portfolio
 • **Risk Management**: place_stop_loss, get_stop_losses, modify_stop_loss
 • **Currency Tools**: get_forex_rates, convert_currency

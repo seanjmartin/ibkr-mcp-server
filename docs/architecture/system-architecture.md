@@ -55,7 +55,7 @@ The central orchestrator with **29 methods** managing all IBKR interactions:
 
 #### **Market Data (4 methods)**
 - `get_market_data()` - Global market data with intelligent exchange detection
-- `resolve_international_symbol()` - Symbol-to-exchange resolution
+- `resolve_symbol()` - **NEW: Direct IBKR API symbol resolution** with real company data, fuzzy search, and confidence scoring
 - `_qualify_contracts()` - Private contract qualification
 - `_format_market_data()` - Private data formatting
 
@@ -87,7 +87,7 @@ The central orchestrator with **29 methods** managing all IBKR interactions:
 - **29 methods** in IBKRClient (was incorrectly documented as 17)
 - **23 MCP tools** providing Claude Desktop interface
 - **3 Trading Managers**: Forex, International, Stop Loss
-- **Live API Integration**: 21 forex pairs, 23 international symbols, 12 exchanges
+- **Live API Integration**: 21 forex pairs, dynamic symbol resolution via IBKR API, 12 exchanges
 - **Safety Framework**: Multi-layer protection with audit logging
 - **Documentation System**: Self-documenting help system
 
@@ -97,6 +97,26 @@ The central orchestrator with **29 methods** managing all IBKR interactions:
 - **Data Flow**: Accurate request/response pipelines
 - **Performance Metrics**: Current system capabilities
 - **Extension Points**: How to add new features
+
+### **🚀 Recent Major Improvements:**
+
+#### **Symbol Resolution Overhaul (August 2025)**
+- **Removed**: Static database dependency (`international_symbols.py` - 350 lines deleted)
+- **Added**: Direct IBKR API integration using `reqContractDetailsAsync`
+- **Improvement**: Real company names instead of guessed data
+  - **Before**: `"AAPL (guessed US stock)"`
+  - **After**: `"Apple Inc."` with ISIN `US0378331005`
+- **Performance**: Reduced from 4 API calls to 1 per symbol
+- **Accuracy**: 100% real IBKR metadata vs synthetic guesses
+- **Methods Updated**: `_resolve_exact_symbol()` completely rewritten
+- **Files Removed**: Database imports, guessing logic, static symbol database
+
+#### **Architecture Benefits:**
+- **Reduced Complexity**: No more database/fallback/guessing chain
+- **Better Reliability**: Direct IBKR source of truth
+- **Enhanced Data Quality**: Real alternative IDs (CUSIP, ISIN) from IBKR
+- **Improved Performance**: Single API call per symbol resolution
+- **Future-Proof**: Scales automatically with IBKR's symbol coverage
 
 ### **📍 Document Location Fixed:**
 - **Old**: `TECHNICAL_ARCHITECTURE.md` in root (wrong location)

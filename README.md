@@ -341,12 +341,6 @@ The server integrates seamlessly with Claude Desktop through the MCP protocol:
 - **Rate Limiting**: Respects IBKR API limits
 - **Memory Efficient**: Optimized resource usage
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Test with paper trading
-4. Submit a pull request
 
 ## 📄 License
 
